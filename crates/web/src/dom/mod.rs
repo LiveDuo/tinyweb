@@ -4,6 +4,30 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
+pub fn create_element(tag: &str) -> ExternRef {
+    let create_fn = js!(r#"
+        function (t) {
+            return document.createElement(t);
+        }"#);
+    create_fn.invoke_and_return_object(&[tag.into()])
+}
+
+pub fn append_child(parent: &ExternRef, button: &ExternRef) {
+    let append_fn = js!("
+        function (p, e) {
+            p.appendChild(e);
+        }");
+    append_fn.invoke(&[parent.into(), button.into()]);
+}
+
+pub fn alert(message: &str) {
+    let message_fn = js!(r#"
+        function(message){
+            alert(message);
+        }"#);
+    message_fn.invoke(&[message.into()]);
+}
+
 pub fn query_selector(selector: &str) -> ExternRef {
     let query_selector = js!(r#"
         function(selector){
