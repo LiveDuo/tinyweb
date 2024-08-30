@@ -4,5 +4,4 @@ members = [
     "crates/js",
     "crates/web",
     "crates/web_gen",
-    "crates/web_macro",
 ]
