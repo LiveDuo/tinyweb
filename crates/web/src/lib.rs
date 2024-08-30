@@ -1,4 +1,5 @@
 
+pub mod keycodes;
 pub use js::*;
 mod common;
 pub use common::*;
