@@ -12,6 +12,14 @@ pub fn create_element(tag: &str) -> ExternRef {
     create_fn.invoke_and_return_object(&[tag.into()])
 }
 
+pub fn create_text_node(text: &str) -> ExternRef {
+    let create_fn = js!(r#"
+        function (t) {
+            return document.createTextNode(t);
+        }"#);
+    create_fn.invoke_and_return_object(&[text.into()])
+}
+
 pub fn append_child(parent: &ExternRef, child: &ExternRef) {
     let append_fn = js!("
         function (p, e) {
