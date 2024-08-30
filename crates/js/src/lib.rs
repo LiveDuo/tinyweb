@@ -5,6 +5,7 @@ use alloc::vec::Vec;
 use raw_parts::RawParts;
 use spin::Mutex;
 
+#[derive(Debug)]
 pub struct ExternRef {
     pub value: i64,
 }
