@@ -1,9 +1,79 @@
-#![no_std]
+
 extern crate alloc;
 use alloc::string::String;
 use alloc::vec::Vec;
-use raw_parts::RawParts;
-use spin::Mutex;
+use std::mem::ManuallyDrop;
+use std::sync::Mutex;
+
+pub struct RawParts<T> {
+    /// A non-null pointer to a buffer of `T`.
+    ///
+    /// This pointer is the same as the value returned by [`Vec::as_mut_ptr`] in
+    /// the source vector.
+    pub ptr: *mut T,
+    /// The number of elements in the source vector, also referred to as its
+    /// "length".
+    ///
+    /// This value is the same as the value returned by [`Vec::len`] in the
+    /// source vector.
+    pub length: usize,
+    /// The number of elements the source vector can hold without reallocating.
+    ///
+    /// This value is the same as the value returned by [`Vec::capacity`] in the
+    /// source vector.
+    pub capacity: usize,
+}
+
+impl<T> RawParts<T> {
+    /// Construct the raw components of a `Vec<T>` by decomposing it.
+    ///
+    /// Returns a struct containing the raw pointer to the underlying data, the
+    /// length of the vector (in elements), and the allocated capacity of the
+    /// data (in elements).
+    ///
+    /// After calling this function, the caller is responsible for the memory
+    /// previously managed by the `Vec`. The only way to do this is to convert
+    /// the raw pointer, length, and capacity back into a `Vec` with the
+    /// [`Vec::from_raw_parts`] function or the [`into_vec`] function, allowing
+    /// the destructor to perform the cleanup.
+    ///
+    /// [`into_vec`]: Self::into_vec
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use raw_parts::RawParts;
+    ///
+    /// let v: Vec<i32> = vec![-1, 0, 1];
+    ///
+    /// let RawParts { ptr, length, capacity } = RawParts::from_vec(v);
+    ///
+    /// let rebuilt = unsafe {
+    ///     // We can now make changes to the components, such as
+    ///     // transmuting the raw pointer to a compatible type.
+    ///     let ptr = ptr as *mut u32;
+    ///     let raw_parts = RawParts { ptr, length, capacity };
+    ///
+    ///     RawParts::into_vec(raw_parts)
+    /// };
+    /// assert_eq!(rebuilt, [4294967295, 0, 1]);
+    /// ```
+    #[must_use]
+    pub fn from_vec(vec: Vec<T>) -> RawParts<T> {
+        // TODO: convert to `Vec::into_raw_parts` once it is stabilized.
+        // See: https://doc.rust-lang.org/1.56.0/src/alloc/vec/mod.rs.html#717-720
+        //
+        // https://github.com/rust-lang/rust/issues/65816
+        let mut me = ManuallyDrop::new(vec);
+        let (ptr, length, capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
+
+        Self {
+            ptr,
+            length,
+            capacity,
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct ExternRef {
@@ -310,7 +380,7 @@ pub fn register_function(code: &str) -> JSFunction {
 static ALLOCATIONS: Mutex<Vec<Option<Vec<u8>>>> = Mutex::new(Vec::new());
 
 pub fn extract_string_from_memory(allocation_id: usize) -> String {
-    let allocations = ALLOCATIONS.lock();
+    let allocations = ALLOCATIONS.lock().unwrap();
     let allocation = allocations.get(allocation_id).unwrap();
     let vec = allocation.as_ref().unwrap();
     let s = String::from_utf8(vec.clone()).unwrap();
@@ -318,7 +388,7 @@ pub fn extract_string_from_memory(allocation_id: usize) -> String {
 }
 
 pub fn extract_vec_from_memory(allocation_id: usize) -> Vec<u8> {
-    let allocations = ALLOCATIONS.lock();
+    let allocations = ALLOCATIONS.lock().unwrap();
     let allocation = allocations.get(allocation_id).unwrap();
     let vec = allocation.as_ref().unwrap();
     vec.clone()
@@ -328,7 +398,7 @@ pub fn extract_vec_from_memory(allocation_id: usize) -> Vec<u8> {
 pub fn create_allocation(size: usize) -> usize {
     let mut buf = Vec::with_capacity(size as usize);
     buf.resize(size, 0);
-    let mut allocations = ALLOCATIONS.lock();
+    let mut allocations = ALLOCATIONS.lock().unwrap();
     let i = allocations.len();
     allocations.push(Some(buf));
     i
@@ -336,7 +406,7 @@ pub fn create_allocation(size: usize) -> usize {
 
 #[no_mangle]
 pub fn allocation_ptr(allocation_id: i32) -> *const u8 {
-    let allocations = ALLOCATIONS.lock();
+    let allocations = ALLOCATIONS.lock().unwrap();
     let allocation = allocations.get(allocation_id as usize).unwrap();
     let vec = allocation.as_ref().unwrap();
     vec.as_ptr()
@@ -344,14 +414,14 @@ pub fn allocation_ptr(allocation_id: i32) -> *const u8 {
 
 #[no_mangle]
 pub fn allocation_len(allocation_id: i32) -> f64 {
-    let allocations = ALLOCATIONS.lock();
+    let allocations = ALLOCATIONS.lock().unwrap();
     let allocation = allocations.get(allocation_id as usize).unwrap();
     let vec = allocation.as_ref().unwrap();
     vec.len() as f64
 }
 
 pub fn clear_allocation(allocation_id: usize) {
-    let mut allocations = ALLOCATIONS.lock();
+    let mut allocations = ALLOCATIONS.lock().unwrap();
     allocations[allocation_id] = None;
 }
 

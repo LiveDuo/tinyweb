@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use crate::set_timeout;
 
 extern crate alloc;
@@ -8,7 +10,6 @@ use {
         pin::Pin,
         task::{Context, Poll},
     },
-    spin::Mutex,
     woke::{waker_ref, Woke},
 };
 
@@ -43,7 +44,7 @@ impl<T> Woke for Task<T> {
 
 impl<T> Pendable for Arc<Task<T>> {
     fn is_pending(&self) -> bool {
-        let mut future = self.future.lock();
+        let mut future = self.future.lock().unwrap();
         // make a waker for our task
         let waker = waker_ref(self);
         // poll our future and give it a waker
@@ -102,11 +103,11 @@ pub fn run<T>(future: impl Future<Output = T> + 'static + Send + Sync)
 where
     T: Send + Sync + 'static,
 {
-    DEFAULT_EXECUTOR.lock().run(Box::pin(future))
+    DEFAULT_EXECUTOR.lock().unwrap().run(Box::pin(future))
 }
 
 pub fn poll_tasks() {
-    DEFAULT_EXECUTOR.lock().poll_tasks()
+    DEFAULT_EXECUTOR.lock().unwrap().poll_tasks()
 }
 
 pub fn coroutine<T>(future: impl Future<Output = T> + 'static + Send + Sync)
@@ -118,7 +119,7 @@ where
         move || {
             let b = a.take();
             if let Some(b) = b {
-                DEFAULT_EXECUTOR.lock().run(b);
+                DEFAULT_EXECUTOR.lock().unwrap().run(b);
             }
         },
         0,

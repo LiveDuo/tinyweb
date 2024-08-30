@@ -11,5 +11,4 @@ doctest = false
 globals = "1.0.5"
 js = { path = "../js" }
 once_cell = "1.17.0"
-spin = "0.9.4"
 woke = "0.0.4"
