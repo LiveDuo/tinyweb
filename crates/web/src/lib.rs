@@ -1,4 +1,4 @@
-pub use html_color::*;
+
 pub use js::*;
 mod common;
 pub use common::*;
@@ -19,7 +19,6 @@ pub use dom::*;
 pub mod executor;
 mod window;
 pub use executor::coroutine;
-pub use web_macro::main;
 pub use window::*;
 mod web_gpu;
 pub use web_gpu::*;

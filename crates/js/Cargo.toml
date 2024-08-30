@@ -1,16 +1,11 @@
 [package]
 name = "js"
-version = "0.5.6"
-authors = ["Richard Anaya"]
+version = "0.1.0"
 edition = "2021"
-description = "Call JavaScript from WebAssembly"
-license = "MIT OR Apache-2.0"
-categories = ["wasm", "no-std"]
-repository = "https://github.com/richardanaya/js-wasm"
-readme = "README.md"
-rust-version="1.63"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+doc = false
+doctest = false
 
 [dependencies]
 spin = "0.9.4"
