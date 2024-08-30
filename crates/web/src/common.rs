@@ -67,8 +67,8 @@ impl<T> EventHandler<T> {
             for (key, handler) in h.iter_mut() {
                 if key.0.value == id {
                     handler(event);
+                    return;
                 }
-                return;
             }
         }
     }
