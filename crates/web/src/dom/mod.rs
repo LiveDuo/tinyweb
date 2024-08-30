@@ -54,16 +54,16 @@ pub fn element_set_inner_html(element: &ExternRef, html: &str) {
 
 pub fn element_add_class(element: &ExternRef, class: &str) {
     let add_class = js!(r#"
-        function(element, class){
-            element.classList.add(class);
+        function(element, c){
+            element.classList.add(c);
         }"#);
     add_class.invoke(&[element.into(), class.into()]);
 }
 
 pub fn element_remove_class(element: &ExternRef, class: &str) {
     let remove_class = js!(r#"
-        function(element, class){
-            element.classList.remove(class);
+        function(element, c){
+            element.classList.remove(c);
         }"#);
     remove_class.invoke(&[element.into(), class.into()]);
 }
