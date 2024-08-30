@@ -32,8 +32,9 @@ pub fn remove_custom_component(id: i64) {
     state.remove(&id);
 }
 
-pub fn custom_element_define<T>(tag_name: &str)
+pub fn custom_element_define<T>(_tag_name: &str)
 where
     T: CustomElement + Into<ExternRef> + Default,
 {
+    todo!()
 }
