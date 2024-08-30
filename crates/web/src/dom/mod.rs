@@ -12,12 +12,12 @@ pub fn create_element(tag: &str) -> ExternRef {
     create_fn.invoke_and_return_object(&[tag.into()])
 }
 
-pub fn append_child(parent: &ExternRef, button: &ExternRef) {
+pub fn append_child(parent: &ExternRef, child: &ExternRef) {
     let append_fn = js!("
         function (p, e) {
             p.appendChild(e);
         }");
-    append_fn.invoke(&[parent.into(), button.into()]);
+    append_fn.invoke(&[parent.into(), child.into()]);
 }
 
 pub fn alert(message: &str) {
