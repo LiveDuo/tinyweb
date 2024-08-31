@@ -3,4 +3,9 @@ resolver = "2"
 members = [
     "crates/web",
     "crates/web_gen",
+    "crates/example",
+]
+default-members = [
+    "crates/web",
+    "crates/web_gen",
 ]
