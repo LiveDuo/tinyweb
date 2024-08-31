@@ -1,8 +1,8 @@
 use std::{marker::PhantomData, mem::{self, ManuallyDrop}, ops::Deref, sync::Mutex, task::{RawWaker, RawWakerVTable, Waker}};
 
-use crate::set_timeout;
-
 extern crate alloc;
+use crate::bindings::window::set_timeout;
+
 use {
     alloc::{boxed::Box, collections::vec_deque::VecDeque, sync::Arc},
     core::{

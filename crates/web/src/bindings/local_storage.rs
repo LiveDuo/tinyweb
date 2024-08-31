@@ -1,5 +1,6 @@
-use crate::js::*;
+
 use crate::js;
+use crate::utils::js::extract_string_from_memory;
 
 pub fn local_storage_set(key: &str, value: &str) {
     let local_storage_set = js!(r#"

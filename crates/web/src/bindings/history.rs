@@ -1,6 +1,7 @@
-use crate::common::*;
-use crate::js::*;
+
 use crate::js;
+use crate::utils::common::FunctionHandle;
+use crate::utils::js::ExternRef;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;

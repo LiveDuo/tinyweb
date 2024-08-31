@@ -1,6 +1,6 @@
-use crate::EventHandlerFuture;
+use crate::utils::js::ExternRef;
+use crate::utils::common::EventHandlerFuture;
 use core::future::Future;
-use crate::js::*;
 use crate::js;
 use std::collections::HashMap;
 use std::sync::Arc;

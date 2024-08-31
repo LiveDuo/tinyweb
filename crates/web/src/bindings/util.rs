@@ -1,7 +1,6 @@
-use crate::EventHandlerFuture;
+
 use core::future::Future;
-use crate::js::*;
-use crate::js;
+use crate::{js, utils::{common::EventHandlerFuture, js::{extract_string_from_memory, ExternRef}}};
 
 pub fn random() -> f64 {
     let random = js!(r#"

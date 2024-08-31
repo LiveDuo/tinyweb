@@ -5,12 +5,13 @@ use core::{
     task::{Context, Poll, Waker},
     any::{Any, TypeId}
 };
-use crate::js::*;
 
 use std::collections::{HashMap, LinkedList};
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use crate::random_i64;
+use crate::bindings::util::random_i64;
+
+use super::js::ExternRef;
 
 static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> =
     Mutex::new(LinkedList::new());

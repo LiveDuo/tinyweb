@@ -1,6 +1,10 @@
-use crate::{add_to_array, console_error, create_array, EventHandlerFuture};
-use crate::js::*;
+use crate::bindings::console::console_error;
+use crate::utils::common::EventHandlerFuture;
+use crate::utils::js::ExternRef;
+
 use crate::js;
+
+use super::util::*;
 
 pub struct WebGPU;
 

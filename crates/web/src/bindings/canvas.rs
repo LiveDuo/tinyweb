@@ -1,5 +1,5 @@
-use crate::js::*;
 use crate::js;
+use crate::utils::js::ExternRef;
 
 pub struct CanvasContext(ExternRef);
 

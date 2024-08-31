@@ -431,9 +431,9 @@ macro_rules! js {
         static mut FN: Option<f64> = None;
         unsafe {
             if FN.is_none() {
-                FN = Some(js::register_function($e).fn_handle);
+                FN = Some(crate::utils::js::register_function($e).fn_handle);
             }
-            crate::JSFunction {
+            crate::utils::js::JSFunction {
                 fn_handle: FN.unwrap(),
             }
         }

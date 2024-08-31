@@ -4,7 +4,7 @@ use crate::js;
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use crate::{get_property_f64, get_property_i64};
+use super::util::*;
 
 pub type TimerHandle = f64;
 

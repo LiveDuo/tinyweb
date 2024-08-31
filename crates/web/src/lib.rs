@@ -1,26 +1,3 @@
 
-pub mod keycodes;
-pub mod js;
-pub use js::*;
-mod common;
-pub use common::*;
-mod util;
-pub use util::*;
-mod console;
-pub use console::*;
-mod canvas;
-pub use canvas::*;
-mod local_storage;
-pub use local_storage::*;
-mod http_request;
-pub use http_request::*;
-mod history;
-pub use history::*;
-mod dom;
-pub use dom::*;
-pub mod executor;
-mod window;
-pub use executor::coroutine;
-pub use window::*;
-mod web_gpu;
-pub use web_gpu::*;
+pub mod utils;
+pub mod bindings;
