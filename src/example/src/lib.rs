@@ -1,5 +1,5 @@
 
-use web::bindings::dom;
+use tinyweb::bindings::dom;
 
 #[no_mangle]
 pub fn main() {
