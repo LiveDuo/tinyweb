@@ -47,8 +47,8 @@ async fn test_wasm() -> Result<(), fantoccini::error::CmdError> {
     // check body
     let body = client.find(Locator::Css("body")).await?;
     let body_str = body.html(true).await?;
+    dbg!(&url, &body_str);
     assert!(body_str.contains("hello"));
-    // dbg!(&url, &body_str);
 
     // stop browser
     client.close().await?;
