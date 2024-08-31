@@ -29,7 +29,7 @@ async fn test_wasm() -> Result<(), fantoccini::error::CmdError> {
         let child = Command::new("geckodriver").stderr(Stdio::null()).spawn().unwrap();
         lock_clone.lock().map(|mut s| { *s = Some(child); }).unwrap();
     });
-    std::thread::sleep(Duration::from_millis(100));
+    std::thread::sleep(Duration::from_millis(1_000));
     
     // open browser
     let mut client_builder = ClientBuilder::native();
@@ -44,6 +44,8 @@ async fn test_wasm() -> Result<(), fantoccini::error::CmdError> {
     let url = format!("file://{}{}", cwd.to_str().unwrap(), index_html);
     client.goto(&url).await?;
     
+    std::thread::sleep(Duration::from_millis(1_000));
+
     // check body
     let body = client.find(Locator::Css("body")).await?;
     let body_str = body.html(true).await?;
