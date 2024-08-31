@@ -14,7 +14,7 @@ fn get_pid_on_port(port: u16) -> Option<u32> {
 
 // lsof -i tcp:4444 && kill -9 ${PID}
 #[tokio::test]
-async fn main() -> Result<(), fantoccini::error::CmdError> {
+async fn test_wasm() -> Result<(), fantoccini::error::CmdError> {
 
     // start daemon
     let lock = Arc::new(Mutex::new(None));
@@ -34,7 +34,7 @@ async fn main() -> Result<(), fantoccini::error::CmdError> {
     // open browser
     let mut client_builder = ClientBuilder::native();
     let mut caps = Capabilities::new();
-    caps.insert("moz:firefoxOptions".to_string(), serde_json::json!({ "args": ["--headless"] }));
+    caps.insert("moz:firefoxOptions".to_string(), serde_json::json!({ "args": [] }));
     client_builder.capabilities(caps);
     let client = client_builder.connect("http://localhost:4444").await.unwrap();
 
