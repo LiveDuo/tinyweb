@@ -1,5 +1,6 @@
 import { ExternRef } from '../node_modules/externref_polyfill/';
 
+// npx tsc src/js-wasm.ts -t es2020 -m commonjs --sourceMap --outDir .
 interface JSWasmHandlerContext {
   functions: ((...args: unknown[]) => number)[];
   utf8dec: TextDecoder;
