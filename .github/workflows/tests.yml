@@ -1,0 +1,33 @@
+
+name: Tests
+
+on:
+  push:
+    branches: [ "master" ]
+
+env:
+  RUST_BACKTRACE: short
+  SKIP_GUEST_BUILD: 1
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  CI: 1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+
+      # setup geckodriver
+      - uses: browser-actions/setup-geckodriver@latest
+
+      # setup git
+      - uses: actions/checkout@v3
+      - uses: Swatinem/rust-cache@v2
+
+      # setup rust
+      - run: export PATH=~/.cargo/bin:/usr/local/bin/:$PATH
+      - run: rustup target add wasm32-unknown-unknown
+
+      # run test
+      - run: cargo test
