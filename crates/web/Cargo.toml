@@ -8,7 +8,4 @@ doc = false
 doctest = false
 
 [dependencies]
-globals = "1.0.5"
 js = { path = "../js" }
-once_cell = "1.17.0"
-woke = "0.0.4"

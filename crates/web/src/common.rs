@@ -3,13 +3,39 @@ use core::{
     future::Future,
     pin::Pin,
     task::{Context, Poll, Waker},
+    any::{Any, TypeId}
 };
 use js::*;
-use std::collections::HashMap;
-use std::sync::Arc;
-use std::sync::Mutex;
+
+use std::collections::{HashMap, LinkedList};
+use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::random_i64;
+
+static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> =
+    Mutex::new(LinkedList::new());
+
+/// Get a mutex gaurd handle to globle singleton
+pub fn globals_get<T>() -> MutexGuard<'static, T>
+where
+    T: 'static + Default + Send + core::marker::Sync,
+{
+    {
+        let mut globals = GLOBALS_LIST.lock().unwrap();
+        let id = TypeId::of::<T>();
+        let p = globals.iter().find(|&r| r.0 == id);
+        if let Some(v) = p {
+            let m = unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<T>) };
+            return m.lock().unwrap();
+        }
+        let v = Box::new(Mutex::new(T::default()));
+        let handle = Box::leak(v);
+        globals.push_front((id, handle));
+    }
+    globals_get()
+}
+
+
 pub struct FunctionHandle(pub ExternRef);
 
 impl PartialEq for FunctionHandle {
@@ -148,7 +174,7 @@ where
         }));
 
         let id = random_i64();
-        let state_storage = globals::get::<SharedStateMap<T>>();
+        let state_storage = globals_get::<SharedStateMap<T>>();
         state_storage.add_shared_state(id, shared_state.clone());
 
         (
@@ -160,7 +186,7 @@ where
     }
 
     pub fn wake_future_with_state_id(id: StateId, result: T) {
-        let state_storage = globals::get::<SharedStateMap<T>>();
+        let state_storage = globals_get::<SharedStateMap<T>>();
         state_storage.wake_future(id, result);
     }
 }

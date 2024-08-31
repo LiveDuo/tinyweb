@@ -23,5 +23,3 @@ pub use executor::coroutine;
 pub use window::*;
 mod web_gpu;
 pub use web_gpu::*;
-mod web_component;
-pub use web_component::*;
