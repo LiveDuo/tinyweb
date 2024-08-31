@@ -34,7 +34,7 @@ async fn test_wasm() -> Result<(), fantoccini::error::CmdError> {
     // open browser
     let mut client_builder = ClientBuilder::native();
     let mut caps = Capabilities::new();
-    caps.insert("moz:firefoxOptions".to_string(), serde_json::json!({ "args": [] }));
+    caps.insert("moz:firefoxOptions".to_string(), serde_json::json!({ "args": ["--headless"] }));
     client_builder.capabilities(caps);
     let client = client_builder.connect("http://localhost:4444").await.unwrap();
 
