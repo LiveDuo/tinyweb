@@ -1,27 +1,34 @@
-import { ExternRef } from '../node_modules/externref_polyfill/';
+import { ExternRef } from 'externref_polyfill';
 
-// npx tsc src/js-wasm.ts -t es2020 -m commonjs --sourceMap --outDir .
-interface JSWasmHandlerContext {
-  functions: ((...args: unknown[]) => number)[];
-  utf8dec: TextDecoder;
-  utf8enc: TextEncoder;
-  utf16dec: TextDecoder;
-  storeObject: (obj: unknown) => bigint;
-  releaseObject: (objHandle: bigint) => void;
-  module?: WebAssembly.WebAssemblyInstantiatedSource;
-  readUtf8FromMemory: (start: number, end: number) => string;
-  readUtf16FromMemory: (start: number, end: number) => string;
-  getMemory: () => Uint8Array;
-  createAllocation: (size: number) => [number,number] ;
-  writeUtf8ToMemory: (txt: string) => number;
-  writeArrayBufferToMemory: (ab: ArrayBuffer) => number;
-  readUint8ArrayFromMemory: (start: number, length: number) => Uint8Array;
-  getObject: (handle: bigint) => unknown;
-  readParameters: (start: number, length: number) => unknown[];
-}
+/**
+ * @typedef {Object} JSWasmHandlerContext
+ * @property {Array<(...args: unknown[]) => number>} functions
+ * @property {TextDecoder} utf8dec
+ * @property {TextEncoder} utf8enc
+ * @property {TextDecoder} utf16dec
+ * @property {function(unknown): bigint} storeObject
+ * @property {function(bigint): void} releaseObject
+ * @property {WebAssembly.WebAssemblyInstantiatedSource} [module]
+ * @property {function(number, number): string} readUtf8FromMemory
+ * @property {function(number, number): string} readUtf16FromMemory
+ * @property {function(): Uint8Array} getMemory
+ * @property {function(number): [number,number]} createAllocation
+ * @property {function(string): number} writeUtf8ToMemory
+ * @property {function(ArrayBuffer): number} writeArrayBufferToMemory
+ * @property {function(number, number): Uint8Array} readUint8ArrayFromMemory
+ * @property {function(bigint): unknown} getObject
+ * @property {function(number, number): unknown[]} readParameters
+ */
 
+/**
+ * JsWasm environment handler
+ */
 const JsWasm = {
-  createEnvironment(): [WebAssembly.ModuleImports, JSWasmHandlerContext] {
+  /**
+   * Creates a WebAssembly environment with necessary imports and context.
+   * @returns {[Object, JSWasmHandlerContext]} - The module imports and context.
+   */
+  createEnvironment() {
     ExternRef.create(undefined);
     ExternRef.create(null);
     ExternRef.create(self);
@@ -34,8 +41,7 @@ const JsWasm = {
     // 3 is reserved for document
     // 4 is reserved for document.body
 
-
-    const context: JSWasmHandlerContext = {
+    const context = {
       functions: [
         function () {
           debugger;
@@ -45,60 +51,56 @@ const JsWasm = {
       utf8dec: new TextDecoder("utf-8"),
       utf8enc: new TextEncoder(),
       utf16dec: new TextDecoder("utf-16"),
-      readUtf8FromMemory: function (start: number, len: number) {
+      readUtf8FromMemory: function (start, len) {
         const text = this.utf8dec.decode(
           this.getMemory().subarray(start, start + len)
         );
         return text;
       },
-      createAllocation: function (size: number): [number,number] {
+      createAllocation: function (size) {
         if (!this.module) {
           throw new Error("module not set");
         }
-        const allocationId = (this.module.instance.exports.create_allocation as (
-          size: number
-        ) => number)(size);
-        const allocationPtr = (this.module.instance.exports.allocation_ptr as (
-          size: number
-        ) => number)(allocationId);
+        const allocationId = this.module.instance.exports.create_allocation(size);
+        const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId);
         return [allocationId, allocationPtr];
       },
-      writeUtf8ToMemory: function (str: string) {
+      writeUtf8ToMemory: function (str) {
         const bytes = this.utf8enc.encode(str);
         const len = bytes.length;
-        const [id,start] = this.createAllocation(len);
+        const [id, start] = this.createAllocation(len);
         this.getMemory().set(bytes, start);
         return id;
       },
-      writeArrayBufferToMemory: function (ab: ArrayBuffer) {
+      writeArrayBufferToMemory: function (ab) {
         const bytes = new Uint8Array(ab);
         const len = bytes.length;
-        const [id,start] = this.createAllocation(len);
+        const [id, start] = this.createAllocation(len);
         this.getMemory().set(bytes, start);
         return id;
       },
-      readUtf16FromMemory: function (start: number, len: number) {
+      readUtf16FromMemory: function (start, len) {
         const text = this.utf16dec.decode(
           this.getMemory().subarray(start, start + len)
         );
         return text;
       },
-      readUint8ArrayFromMemory(start: number, length: number) {
+      readUint8ArrayFromMemory(start, length) {
         if (!this.module) {
           throw new Error("module not set");
         }
-        const b = this.getMemory().slice(start,start+length);
+        const b = this.getMemory().slice(start, start + length);
         return new Uint8Array(b);
       },
-      storeObject: function (obj: unknown) : bigint {
+      storeObject: function (obj) {
         return ExternRef.create(obj);
       },
-      getObject: function (handle: bigint) {
+      getObject: function (handle) {
         return ExternRef.load(handle);
       },
-      releaseObject: function (handle: bigint) {
-        // dont release our fixed references
-        if(handle <= 4n) {
+      releaseObject: function (handle) {
+        // Don't release our fixed references
+        if (handle <= 4n) {
           return;
         }
         ExternRef.delete(handle);
@@ -108,25 +110,25 @@ const JsWasm = {
           throw new Error("module not set");
         }
         return new Uint8Array(
-          (this.module.instance.exports.memory as WebAssembly.Memory).buffer
+          this.module.instance.exports.memory.buffer
         );
       },
-      readParameters: function (start: number, length: number) {
-        //get bytes of parameters out of wasm module
+      readParameters: function (start, length) {
+        // Get bytes of parameters out of wasm module
         const parameters = this.readUint8ArrayFromMemory(start, length);
-        //convert bytes to array of values  
-        //assuming each paramter is preceded by a 32 bit integer indicating its type
-        //0 = undefined
-        //1 = null
-        //2 = float-64
-        //3 = bigint
-        //4 = string (followed by 32-bit start and size of string in memory)
-        //5 = extern ref
-        //6 = array of float-64 (followed by 32-bit start and size of string in memory)
-        //7 = true
-        //8 = false
+        // Convert bytes to array of values  
+        // Assuming each parameter is preceded by a 32-bit integer indicating its type
+        // 0 = undefined
+        // 1 = null
+        // 2 = float-64
+        // 3 = bigint
+        // 4 = string (followed by 32-bit start and size of string in memory)
+        // 5 = extern ref
+        // 6 = array of float-64 (followed by 32-bit start and size of string in memory)
+        // 7 = true
+        // 8 = false
         
-        const values: unknown[] = [];
+        const values = [];
         let i = 0;
         while (i < parameters.length) {
           const type = parameters[i];
@@ -143,7 +145,7 @@ const JsWasm = {
               i += 8;
               break;
             case 3:
-              values.push(new DataView(parameters.buffer).getBigInt64(i,true));
+              values.push(new DataView(parameters.buffer).getBigInt64(i, true));
               i += 8;
               break;
             case 4: {
@@ -157,7 +159,7 @@ const JsWasm = {
               break;
             }
             case 5: {
-              const handle = new DataView(parameters.buffer).getBigInt64(i,true);
+              const handle = new DataView(parameters.buffer).getBigInt64(i, true);
               values.push(context.getObject(handle));
               i += 8;
               break;
@@ -212,10 +214,10 @@ const JsWasm = {
       abort() {
         throw new Error("WebAssembly module aborted");
       },
-      externref_drop(obj: bigint) {
+      externref_drop(obj) {
         context.releaseObject(obj);
       },
-      js_register_function(start: number, len: number, utfByteLen: number) {
+      js_register_function(start, len, utfByteLen) {
         let functionBody;
         if (utfByteLen === 16) {
           functionBody = context.readUtf16FromMemory(start, len);
@@ -229,9 +231,9 @@ const JsWasm = {
         return id;
       },
       js_invoke_function(
-        funcHandle: number,
-        parametersStart: number,
-        parametersLength: number
+        funcHandle,
+        parametersStart,
+        parametersLength
       ) {
         const values = context.readParameters(parametersStart, parametersLength);
         
@@ -241,9 +243,9 @@ const JsWasm = {
         );
       },
       js_invoke_function_and_return_object(
-        funcHandle: number,
-        parametersStart: number,
-        parametersLength: number
+        funcHandle,
+        parametersStart,
+        parametersLength
       ) {
         const values = context.readParameters(parametersStart, parametersLength);
         const result = context.functions[funcHandle].call(
@@ -256,9 +258,9 @@ const JsWasm = {
         return context.storeObject(result);
       },
       js_invoke_function_and_return_bool(
-        funcHandle: number,
-        parametersStart: number,
-        parametersLength: number
+        funcHandle,
+        parametersStart,
+        parametersLength
       ) {
         const values = context.readParameters(parametersStart, parametersLength);
         const result = context.functions[funcHandle].call(
@@ -268,9 +270,9 @@ const JsWasm = {
         return result ? 1 : 0;
       },
       js_invoke_function_and_return_bigint(
-        funcHandle: number,
-        parametersStart: number,
-        parametersLength: number
+        funcHandle,
+        parametersStart,
+        parametersLength
       ) {
         const values = context.readParameters(parametersStart, parametersLength);
         const result = context.functions[funcHandle].call(
@@ -280,9 +282,9 @@ const JsWasm = {
         return result;
       },
       js_invoke_function_and_return_string(
-        funcHandle: number,
-        parametersStart: number,
-        parametersLength: number
+        funcHandle,
+        parametersStart,
+        parametersLength
       ) {
         const values = context.readParameters(parametersStart, parametersLength);
         const result = context.functions[funcHandle].call(
@@ -296,9 +298,9 @@ const JsWasm = {
         return context.writeUtf8ToMemory(result);
       },
       js_invoke_function_and_return_array_buffer(
-        funcHandle: number,
-        parametersStart: number,
-        parametersLength: number
+        funcHandle,
+        parametersStart,
+        parametersLength
       ) {
         const values = context.readParameters(parametersStart, parametersLength);
         const result = context.functions[funcHandle].call(
@@ -311,16 +313,25 @@ const JsWasm = {
         }
         return context.writeArrayBufferToMemory(result);
       }
-    },context];
+    }, context];
   },
 
-  async loadAndRunWasm(wasmURL: string) {
+  /**
+   * Loads and runs a WebAssembly module from the provided URL.
+   * @param {string} wasmURL - The URL of the WebAssembly module.
+   */
+  async loadAndRunWasm(wasmURL) {
     const context = await this.load(wasmURL);
-    (context.module!.instance.exports.main as ()=>void)();
+    (context.module.instance.exports.main)();
   },
 
-  async load(wasmURL: string) {
-    const [env,context] = JsWasm.createEnvironment();
+  /**
+   * Loads a WebAssembly module from the provided URL.
+   * @param {string} wasmURL - The URL of the WebAssembly module.
+   * @returns {Promise<JSWasmHandlerContext>} - The context of the loaded module.
+   */
+  async load(wasmURL) {
+    const [env, context] = JsWasm.createEnvironment();
     const response = await fetch(wasmURL);
     const bytes = await response.arrayBuffer();
     const module = await WebAssembly.instantiate(bytes, {
@@ -336,7 +347,7 @@ document.addEventListener("DOMContentLoaded", function () {
     "script[type='application/wasm']"
   );
   for (let i = 0; i < wasmScripts.length; i++) {
-    const src = (wasmScripts[i] as HTMLSourceElement).src;
+    const src = wasmScripts[i].src;
     if (src) {
       JsWasm.loadAndRunWasm(src);
     } else {

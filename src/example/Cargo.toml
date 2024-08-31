@@ -7,5 +7,5 @@ edition = "2021"
 crate-type =["cdylib"]
 
 [dependencies]
-web = { path = "../web" }
+web = { path = "../rust" }
 

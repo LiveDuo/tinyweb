@@ -1,11 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/web",
-    "crates/web_gen",
-    "crates/example",
+    "src/rust",
+    "src/example",
 ]
 default-members = [
-    "crates/web",
-    "crates/web_gen",
+    "src/rust",
 ]

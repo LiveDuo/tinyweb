@@ -1,8 +1,0 @@
-[package]
-name = "web_gen"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-clap = { version = "4", features = ["derive"] }
-nom = "7.1.2"
