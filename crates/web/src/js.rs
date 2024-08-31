@@ -433,7 +433,7 @@ macro_rules! js {
             if FN.is_none() {
                 FN = Some(js::register_function($e).fn_handle);
             }
-            JSFunction {
+            crate::JSFunction {
                 fn_handle: FN.unwrap(),
             }
         }

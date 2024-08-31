@@ -6,6 +6,3 @@ edition = "2021"
 [lib]
 doc = false
 doctest = false
-
-[dependencies]
-js = { path = "../js" }

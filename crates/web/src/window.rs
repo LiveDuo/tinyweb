@@ -1,4 +1,6 @@
-use js::*;
+
+use crate::js;
+
 use std::collections::HashMap;
 use std::sync::Mutex;
 

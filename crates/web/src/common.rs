@@ -5,7 +5,7 @@ use core::{
     task::{Context, Poll, Waker},
     any::{Any, TypeId}
 };
-use js::*;
+use crate::js::*;
 
 use std::collections::{HashMap, LinkedList};
 use std::sync::{Arc, Mutex, MutexGuard};

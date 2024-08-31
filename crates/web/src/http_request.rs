@@ -1,6 +1,7 @@
 use crate::EventHandlerFuture;
 use core::future::Future;
-use js::*;
+use crate::js::*;
+use crate::js;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;

@@ -1,4 +1,4 @@
-use js::*;
+use crate::js;
 
 pub fn console_log(message: &str) {
     let console_log = js!(r#"
