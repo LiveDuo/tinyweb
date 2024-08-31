@@ -8,17 +8,8 @@ use fantoccini::{ClientBuilder, Locator};
 
 fn get_pid_on_port(port: u16) -> Option<u32> {
     let output = Command::new("lsof").args(&["-ti", format!(":{port}").as_str()]).output().unwrap();
-
-    if !output.stdout.is_empty() {
-        let pid_str = std::str::from_utf8(&output.stdout).expect("Failed to parse output");
-        pid_str.trim().parse().ok()
-    } else {
-        None
-    }
-}
-
-fn kill_process(pid: u32) -> Result<(), std::io::Error> {
-    Command::new("kill").arg(format!("{}", pid)).status().map(|_| ())
+    let stdout_opt = if output.stdout.is_empty() { None } else { Some(output.stdout) };
+    stdout_opt.map(|o| std::str::from_utf8(&o).map(|p| p.trim().parse().unwrap()).unwrap())
 }
 
 // lsof -i tcp:4444 && kill -9 ${PID}
@@ -32,7 +23,7 @@ async fn main() -> Result<(), fantoccini::error::CmdError> {
 
         let pid = get_pid_on_port(4444);
         if let Some(pid) = pid {
-            kill_process(pid).unwrap();
+            Command::new("kill").arg(format!("{}", pid)).status().unwrap();
         }
 
         let child = Command::new("geckodriver").stderr(Stdio::null()).spawn().unwrap();
