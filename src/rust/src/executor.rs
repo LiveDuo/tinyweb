@@ -3,7 +3,6 @@ use std::{
     future::Future,
     marker::PhantomData,
     mem::{self, ManuallyDrop},
-    ops::Deref,
     pin::Pin,
     sync::{Arc, Mutex},
     task::{Context, Poll, RawWaker, RawWakerVTable, Waker}
@@ -12,10 +11,7 @@ use std::{
 use crate::bindings::window::set_timeout;
 
 #[derive(Debug)]
-pub struct WakerRef<'a> {
-    waker: ManuallyDrop<Waker>,
-    _marker: PhantomData<&'a ()>,
-}
+pub struct WakerRef<'a> { waker: ManuallyDrop<Waker>, _marker: PhantomData<&'a ()>, }
 
 pub trait Woke: Send + Sync {
     fn wake(self: Arc<Self>) {
@@ -28,17 +24,11 @@ pub trait Woke: Send + Sync {
 impl<'a> WakerRef<'a> {
     pub fn new(waker: &'a Waker) -> Self {
         let waker = ManuallyDrop::new(unsafe { core::ptr::read(waker) });
-        WakerRef {
-            waker,
-            _marker: PhantomData,
-        }
+        WakerRef { waker, _marker: PhantomData, }
     }
 
     pub fn new_unowned(waker: ManuallyDrop<Waker>) -> Self {
-        WakerRef {
-            waker,
-            _marker: PhantomData,
-        }
+        WakerRef { waker, _marker: PhantomData, }
     }
 }
 
@@ -68,35 +58,19 @@ unsafe fn drop_arc_raw<T>(data: *const ()) {
 }
 
 pub fn waker_vtable<W: Woke>() -> &'static RawWakerVTable {
-    &RawWakerVTable::new(
-        clone_arc_raw::<W>,
-        wake_arc_raw::<W>,
-        wake_by_ref_arc_raw::<W>,
-        drop_arc_raw::<W>,
-    )
+    &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw::<W>, wake_by_ref_arc_raw::<W>, drop_arc_raw::<W>)
 }
 
 #[inline]
-pub fn waker_ref<W>(wake: &Arc<W>) -> WakerRef<'_>
-where
-    W: Woke,
-{
+pub fn waker_ref<W: Woke>(wake: &Arc<W>) -> WakerRef<'_> {
+    
     let ptr = (&**wake as *const W) as *const ();
-
     let waker =
         ManuallyDrop::new(unsafe { Waker::from_raw(RawWaker::new(ptr, waker_vtable::<W>())) });
     WakerRef::new_unowned(waker)
 }
 
-impl Deref for WakerRef<'_> {
-    type Target = Waker;
-
-    fn deref(&self) -> &Waker {
-        &self.waker
-    }
-}
-
-type TasksList = VecDeque<Box<dyn Pendable + core::marker::Send + core::marker::Sync>>;
+type TasksList = VecDeque<Box<dyn Pendable + Send + Sync>>;
 
 pub struct Executor {
     tasks: Option<TasksList>,
@@ -126,27 +100,19 @@ impl<T> Pendable for Arc<Task<T>> {
     fn is_pending(&self) -> bool {
         let mut future = self.future.lock().unwrap();
         let waker = waker_ref(self);
-        let context = &mut Context::from_waker(&*waker);
+        let context = &mut Context::from_waker(&*waker.waker);
         matches!(future.as_mut().poll(context), Poll::Pending)
     }
 }
 
 impl Executor {
-    pub fn run<T>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>)
-    where
-        T: Send + Sync + 'static,
-    {
+    pub fn run<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
         self.add_task(future);
         self.poll_tasks();
     }
 
-    fn add_task<T>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>)
-    where
-        T: Send + Sync + 'static,
-    {
-        let task = Arc::new(Task {
-            future: Mutex::new(future),
-        });
+    fn add_task<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
+        let task = Arc::new(Task { future: Mutex::new(future), });
         if self.tasks.is_none() {
             self.tasks = Some(TasksList::new());
         }
@@ -158,10 +124,10 @@ impl Executor {
         if self.tasks.is_none() {
             self.tasks = Some(TasksList::new());
         }
+
         let tasks: &mut TasksList = self.tasks.as_mut().expect("tasks not initialized");
-        if tasks.is_empty() {
-            return;
-        }
+        if tasks.is_empty() { return; }
+
         for _ in 0..tasks.len() {
             let task = tasks.pop_front().unwrap();
             if task.is_pending() {
@@ -173,10 +139,7 @@ impl Executor {
 
 static DEFAULT_EXECUTOR: Mutex<Executor> = Mutex::new(Executor { tasks: None });
 
-pub fn run<T>(future: impl Future<Output = T> + 'static + Send + Sync)
-where
-    T: Send + Sync + 'static,
-{
+pub fn run<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
     DEFAULT_EXECUTOR.lock().unwrap().run(Box::pin(future))
 }
 
@@ -184,10 +147,7 @@ pub fn poll_tasks() {
     DEFAULT_EXECUTOR.lock().unwrap().poll_tasks()
 }
 
-pub fn coroutine<T>(future: impl Future<Output = T> + 'static + Send + Sync)
-where
-    T: Send + Sync + 'static,
-{
+pub fn coroutine<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
     let mut a = Some(Box::pin(future));
     set_timeout(
         move || {

@@ -1,5 +1,6 @@
 
 use std::mem::ManuallyDrop;
+use std::hash::{Hash, Hasher};
 
 use crate::params::*;
 
@@ -15,6 +16,20 @@ extern "C" {
 
 #[derive(Debug, Clone)]
 pub struct ExternRef { pub value: i64, }
+
+impl PartialEq for ExternRef {
+    fn eq(&self, other: &Self) -> bool {
+        self.value == other.value
+    }
+}
+
+impl Eq for ExternRef {}
+
+impl Hash for ExternRef {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.value.hash(state);
+    }
+}
 
 #[derive(Copy, Clone)]
 pub struct JSFunction {

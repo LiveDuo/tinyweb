@@ -4,27 +4,12 @@ use crate::js::ExternRef;
 
 use std::{
     collections::{HashMap, LinkedList},
-    hash::{Hash, Hasher},
     future::Future,
     pin::Pin,
     task::{Context, Poll, Waker},
     sync::{Arc, Mutex, MutexGuard},
     any::{Any, TypeId},
 };
-
-impl PartialEq for ExternRef {
-    fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
-    }
-}
-
-impl Eq for ExternRef {}
-
-impl Hash for ExternRef {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.value.hash(state);
-    }
-}
 
 pub struct EventHandler<T> {
     pub listeners: Mutex<Option<HashMap<Arc<ExternRef>, Box<dyn FnMut(T) + Send + 'static>>>>,
