@@ -5,80 +5,20 @@ use alloc::vec::Vec;
 use std::mem::ManuallyDrop;
 use std::sync::Mutex;
 
-pub struct RawParts<T> {
-    /// A non-null pointer to a buffer of `T`.
-    ///
-    /// This pointer is the same as the value returned by [`Vec::as_mut_ptr`] in
-    /// the source vector.
-    pub ptr: *mut T,
-    /// The number of elements in the source vector, also referred to as its
-    /// "length".
-    ///
-    /// This value is the same as the value returned by [`Vec::len`] in the
-    /// source vector.
-    pub length: usize,
-    /// The number of elements the source vector can hold without reallocating.
-    ///
-    /// This value is the same as the value returned by [`Vec::capacity`] in the
-    /// source vector.
-    pub capacity: usize,
-}
+// https://docs.rs/raw-parts/latest/raw_parts/
+struct RawParts<T> { ptr: *mut T, length: usize, }
 
 impl<T> RawParts<T> {
-    /// Construct the raw components of a `Vec<T>` by decomposing it.
-    ///
-    /// Returns a struct containing the raw pointer to the underlying data, the
-    /// length of the vector (in elements), and the allocated capacity of the
-    /// data (in elements).
-    ///
-    /// After calling this function, the caller is responsible for the memory
-    /// previously managed by the `Vec`. The only way to do this is to convert
-    /// the raw pointer, length, and capacity back into a `Vec` with the
-    /// [`Vec::from_raw_parts`] function or the [`into_vec`] function, allowing
-    /// the destructor to perform the cleanup.
-    ///
-    /// [`into_vec`]: Self::into_vec
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use raw_parts::RawParts;
-    ///
-    /// let v: Vec<i32> = vec![-1, 0, 1];
-    ///
-    /// let RawParts { ptr, length, capacity } = RawParts::from_vec(v);
-    ///
-    /// let rebuilt = unsafe {
-    ///     // We can now make changes to the components, such as
-    ///     // transmuting the raw pointer to a compatible type.
-    ///     let ptr = ptr as *mut u32;
-    ///     let raw_parts = RawParts { ptr, length, capacity };
-    ///
-    ///     RawParts::into_vec(raw_parts)
-    /// };
-    /// assert_eq!(rebuilt, [4294967295, 0, 1]);
-    /// ```
-    #[must_use]
-    pub fn from_vec(vec: Vec<T>) -> RawParts<T> {
-        // TODO: convert to `Vec::into_raw_parts` once it is stabilized.
-        // See: https://doc.rust-lang.org/1.56.0/src/alloc/vec/mod.rs.html#717-720
-        //
-        // https://github.com/rust-lang/rust/issues/65816
+    fn from_vec(vec: Vec<T>) -> RawParts<T> {
         let mut me = ManuallyDrop::new(vec);
-        let (ptr, length, capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
+        let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
 
-        Self {
-            ptr,
-            length,
-            capacity,
-        }
+        Self { ptr, length, }
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct ExternRef {
-    pub value: i64,
-}
+pub struct ExternRef { pub value: i64, }
 
 extern "C" {
     fn externref_drop(extern_ref: i64);
@@ -298,11 +238,7 @@ impl JSFunction {
     pub fn invoke(&self, params: &[InvokeParam]) -> f64
 where {
         let param_bytes = param_to_bytes(params);
-        let RawParts {
-            ptr,
-            length,
-            capacity: _,
-        } = RawParts::from_vec(param_bytes);
+        let RawParts { ptr, length, } = RawParts::from_vec(param_bytes);
         unsafe { js_invoke_function(self.fn_handle, ptr, length) }
     }
 
@@ -312,7 +248,6 @@ where {
         let RawParts {
             ptr,
             length,
-            capacity: _,
         } = RawParts::from_vec(param_bytes);
         let handle = unsafe { js_invoke_function_and_return_object(self.fn_handle, ptr, length) };
         ExternRef { value: handle }
@@ -324,7 +259,6 @@ where {
         let RawParts {
             ptr,
             length,
-            capacity: _,
         } = RawParts::from_vec(param_bytes);
         unsafe { js_invoke_function_and_return_bigint(self.fn_handle, ptr, length) }
     }
@@ -332,11 +266,7 @@ where {
     pub fn invoke_and_return_string(&self, params: &[InvokeParam]) -> String
 where {
         let param_bytes = param_to_bytes(params);
-        let RawParts {
-            ptr,
-            length,
-            capacity: _,
-        } = RawParts::from_vec(param_bytes);
+        let RawParts { ptr, length, } = RawParts::from_vec(param_bytes);
         let allocation_id =
             unsafe { js_invoke_function_and_return_string(self.fn_handle, ptr, length) };
         extract_string_from_memory(allocation_id)
@@ -345,11 +275,7 @@ where {
     pub fn invoke_and_return_array_buffer(&self, params: &[InvokeParam]) -> Vec<u8>
 where {
         let param_bytes = param_to_bytes(params);
-        let RawParts {
-            ptr,
-            length,
-            capacity: _,
-        } = RawParts::from_vec(param_bytes);
+        let RawParts { ptr, length, } = RawParts::from_vec(param_bytes);
         let allocation_id =
             unsafe { js_invoke_function_and_return_array_buffer(self.fn_handle, ptr, length) };
         extract_vec_from_memory(allocation_id)
@@ -357,11 +283,7 @@ where {
 
     pub fn invoke_and_return_bool(&self, params: &[InvokeParam]) -> bool {
         let param_bytes = param_to_bytes(params);
-        let RawParts {
-            ptr,
-            length,
-            capacity: _,
-        } = RawParts::from_vec(param_bytes);
+        let RawParts { ptr, length, } = RawParts::from_vec(param_bytes);
         let ret = unsafe { js_invoke_function_and_return_bool(self.fn_handle, ptr, length) };
         ret != 0.0
     }

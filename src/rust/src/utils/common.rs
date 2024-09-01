@@ -16,7 +16,6 @@ use super::js::ExternRef;
 static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> =
     Mutex::new(LinkedList::new());
 
-/// Get a mutex gaurd handle to globle singleton
 pub fn globals_get<T>() -> MutexGuard<'static, T>
 where
     T: 'static + Default + Send + core::marker::Sync,
@@ -55,14 +54,6 @@ impl Hash for FunctionHandle {
 
 pub struct EventHandler<T> {
     pub listeners: Mutex<Option<HashMap<Arc<FunctionHandle>, Box<dyn FnMut(T) + Send + 'static>>>>,
-}
-
-impl<T> Default for EventHandler<T> {
-    fn default() -> Self {
-        Self {
-            listeners: Mutex::new(None),
-        }
-    }
 }
 
 impl<T> EventHandler<T> {
@@ -105,7 +96,6 @@ pub struct EventHandlerFuture<T> {
     shared_state: Arc<Mutex<EventHandlerSharedState<T>>>,
 }
 
-/// Shared state between the future and the waiting thread
 pub struct EventHandlerSharedState<T> {
     completed: bool,
     waker: Option<Waker>,

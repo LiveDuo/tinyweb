@@ -23,7 +23,6 @@ pub extern "C" fn web_handle_http_load_event_handler(id: i64) {
     {
         let mut handlers = HTTP_LOAD_HANDLERS.lock().unwrap();
         if let Some(h) = handlers.as_mut() {
-            // remove
             if let Some(handler) = h.remove(&id) {
                 c = Some(handler);
             }

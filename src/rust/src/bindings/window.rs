@@ -18,7 +18,6 @@ pub extern "C" fn web_one_time_empty_handler(id: i64) {
     {
         let mut handlers = ANIMATION_FRAME_EVENT_HANDLERS.lock().unwrap();
         if let Some(h) = handlers.as_mut() {
-            // remove
             if let Some(handler) = h.remove(&id) {
                 c = Some(handler);
             }

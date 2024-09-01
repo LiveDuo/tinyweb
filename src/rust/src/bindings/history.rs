@@ -6,7 +6,6 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
-// History API
 pub fn history_push_state(title: &str, url: &str) {
     js!("
         function(title, url) {
@@ -124,7 +123,6 @@ pub fn location_reload() {
     .invoke(&[]);
 }
 
-// PopState Events
 pub struct PopStateEvent {}
 
 static HISTORY_POP_STATE_EVENT_HANDLERS: Mutex<

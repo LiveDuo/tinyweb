@@ -96,7 +96,6 @@ pub fn element_remove(element: &ExternRef) {
     remove.invoke(&[element.into()]);
 }
 
-// Change Events
 pub struct ChangeEvent {
     pub value: String,
 }
@@ -171,7 +170,6 @@ pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Arc
     remove_change_event_handler(function_handle);
 }
 
-// Mouse Events
 pub struct MouseEvent {
     pub offset_x: f64,
     pub offset_y: f64,
@@ -316,8 +314,6 @@ pub fn element_remove_mouse_up_listener(
     remove_mouse_up_listener.invoke(&[element.into(), (&(function_handle.0)).into()]);
     MOUSE_EVENT_HANDLER.remove_listener(function_handle);
 }
-
-// Keyboard Events
 
 pub struct KeyboardEvent {
     pub key_code: f64,
