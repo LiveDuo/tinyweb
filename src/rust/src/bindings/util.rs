@@ -1,6 +1,6 @@
 
 use core::future::Future;
-use crate::utils::common::EventHandlerFuture;
+use crate::utils::handlers::EventHandlerFuture;
 use crate::utils::js::{extract_string_from_memory, ExternRef};
 use crate::utils::js::register_function;
 

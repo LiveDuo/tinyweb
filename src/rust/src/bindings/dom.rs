@@ -1,7 +1,7 @@
 
 use crate::utils::js::register_function;
-use crate::utils::common::EventHandler;
-use crate::utils::common::FunctionHandle;
+use crate::utils::handlers::EventHandler;
+use crate::utils::handlers::FunctionHandle;
 use crate::utils::js::extract_string_from_memory;
 use crate::utils::js::ExternRef;
 use std::collections::HashMap;

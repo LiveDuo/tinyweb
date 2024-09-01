@@ -1,6 +1,6 @@
 
 use crate::utils::js::register_function;
-use crate::utils::common::FunctionHandle;
+use crate::utils::handlers::FunctionHandle;
 use crate::utils::js::ExternRef;
 use std::collections::HashMap;
 use std::sync::Arc;

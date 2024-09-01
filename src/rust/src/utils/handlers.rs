@@ -1,4 +1,7 @@
 
+use crate::bindings::util::random_i64;
+use crate::utils::js::ExternRef;
+
 use std::{
     collections::{HashMap, LinkedList},
     hash::{Hash, Hasher},
@@ -8,32 +11,6 @@ use std::{
     sync::{Arc, Mutex, MutexGuard},
     any::{Any, TypeId},
 };
-
-use crate::bindings::util::random_i64;
-use crate::utils::js::ExternRef;
-
-static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> =
-    Mutex::new(LinkedList::new());
-
-pub fn globals_get<T>() -> MutexGuard<'static, T>
-where
-    T: 'static + Default + Send + core::marker::Sync,
-{
-    {
-        let mut globals = GLOBALS_LIST.lock().unwrap();
-        let id = TypeId::of::<T>();
-        let p = globals.iter().find(|&r| r.0 == id);
-        if let Some(v) = p {
-            let m = unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<T>) };
-            return m.lock().unwrap();
-        }
-        let v = Box::new(Mutex::new(T::default()));
-        let handle = Box::leak(v);
-        globals.push_front((id, handle));
-    }
-    globals_get()
-}
-
 
 pub struct FunctionHandle(pub ExternRef);
 
@@ -148,6 +125,28 @@ impl<T> SharedStateMap<T> {
             waker.wake();
         }
     }
+}
+
+static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> =
+    Mutex::new(LinkedList::new());
+
+pub fn globals_get<T>() -> MutexGuard<'static, T>
+where
+    T: 'static + Default + Send + core::marker::Sync,
+{
+    {
+        let mut globals = GLOBALS_LIST.lock().unwrap();
+        let id = TypeId::of::<T>();
+        let p = globals.iter().find(|&r| r.0 == id);
+        if let Some(v) = p {
+            let m = unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<T>) };
+            return m.lock().unwrap();
+        }
+        let v = Box::new(Mutex::new(T::default()));
+        let handle = Box::leak(v);
+        globals.push_front((id, handle));
+    }
+    globals_get()
 }
 
 impl<T> EventHandlerFuture<T>
