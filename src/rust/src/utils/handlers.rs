@@ -130,10 +130,7 @@ impl<T> SharedStateMap<T> {
 static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> =
     Mutex::new(LinkedList::new());
 
-pub fn globals_get<T>() -> MutexGuard<'static, T>
-where
-    T: 'static + Default + Send + core::marker::Sync,
-{
+pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, T> {
     {
         let mut globals = GLOBALS_LIST.lock().unwrap();
         let id = TypeId::of::<T>();
@@ -149,10 +146,7 @@ where
     globals_get()
 }
 
-impl<T> EventHandlerFuture<T>
-where
-    T: 'static + Sync + Send,
-{
+impl <T: 'static + Sync + Send> EventHandlerFuture<T> {
     pub fn create_future_with_state_id() -> (Self, i64) {
         let shared_state = Arc::new(Mutex::new(EventHandlerSharedState {
             completed: false,
