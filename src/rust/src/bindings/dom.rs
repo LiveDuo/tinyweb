@@ -1,15 +1,14 @@
 
-use crate::utils::js::register_function;
 use crate::utils::handlers::EventHandler;
 use crate::utils::handlers::FunctionHandle;
 use crate::utils::allocations::extract_string_from_memory;
-use crate::utils::js::ExternRef;
+use crate::utils::js::{ExternRef, JSFunction};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
 
 pub fn create_element(tag: &str) -> ExternRef {
-    let create_fn = register_function(r#"
+    let create_fn = JSFunction::register(r#"
         function (t) {
             return document.createElement(t);
         }"#);
@@ -17,7 +16,7 @@ pub fn create_element(tag: &str) -> ExternRef {
 }
 
 pub fn create_text_node(text: &str) -> ExternRef {
-    let create_fn = register_function(r#"
+    let create_fn = JSFunction::register(r#"
         function (t) {
             return document.createTextNode(t);
         }"#);
@@ -25,7 +24,7 @@ pub fn create_text_node(text: &str) -> ExternRef {
 }
 
 pub fn append_child(parent: &ExternRef, child: &ExternRef) {
-    let append_fn = register_function("
+    let append_fn = JSFunction::register("
         function (p, e) {
             p.appendChild(e);
         }");
@@ -33,7 +32,7 @@ pub fn append_child(parent: &ExternRef, child: &ExternRef) {
 }
 
 pub fn alert(message: &str) {
-    let message_fn = register_function(r#"
+    let message_fn = JSFunction::register(r#"
         function(message){
             alert(message);
         }"#);
@@ -41,7 +40,7 @@ pub fn alert(message: &str) {
 }
 
 pub fn query_selector(selector: &str) -> ExternRef {
-    let query_selector = register_function(r#"
+    let query_selector = JSFunction::register(r#"
         function(selector){
             return document.querySelector(selector);
         }"#);
@@ -49,7 +48,7 @@ pub fn query_selector(selector: &str) -> ExternRef {
 }
 
 pub fn element_set_inner_html(element: &ExternRef, html: &str) {
-    let set_inner_html = register_function(r#"
+    let set_inner_html = JSFunction::register(r#"
         function(element, html){
             element.innerHTML = html;
         }"#);
@@ -57,7 +56,7 @@ pub fn element_set_inner_html(element: &ExternRef, html: &str) {
 }
 
 pub fn element_add_class(element: &ExternRef, class: &str) {
-    let add_class = register_function(r#"
+    let add_class = JSFunction::register(r#"
         function(element, c){
             element.classList.add(c);
         }"#);
@@ -65,7 +64,7 @@ pub fn element_add_class(element: &ExternRef, class: &str) {
 }
 
 pub fn element_remove_class(element: &ExternRef, class: &str) {
-    let remove_class = register_function(r#"
+    let remove_class = JSFunction::register(r#"
         function(element, c){
             element.classList.remove(c);
         }"#);
@@ -73,7 +72,7 @@ pub fn element_remove_class(element: &ExternRef, class: &str) {
 }
 
 pub fn element_set_style_attribute(element: &ExternRef, attribute: &str, value: &str) {
-    let set_style_attribute = register_function(r#"
+    let set_style_attribute = JSFunction::register(r#"
         function(element, attribute, value){
             element.style[attribute] = value;
         }"#);
@@ -81,7 +80,7 @@ pub fn element_set_style_attribute(element: &ExternRef, attribute: &str, value: 
 }
 
 pub fn element_set_attribute(element: &ExternRef, attribute: &str, value: &str) {
-    let set_attribute = register_function(r#"
+    let set_attribute = JSFunction::register(r#"
         function(element, attribute, value){
             element.setAttribute(attribute, value);
         }"#);
@@ -89,7 +88,7 @@ pub fn element_set_attribute(element: &ExternRef, attribute: &str, value: &str) 
 }
 
 pub fn element_remove(element: &ExternRef) {
-    let remove = register_function(r#"
+    let remove = JSFunction::register(r#"
         function(element){
             element.remove();
         }"#);
@@ -142,7 +141,7 @@ pub fn add_change_event_listener(
     element: &ExternRef,
     handler: impl FnMut(ChangeEvent) + Send + 'static,
 ) -> Arc<FunctionHandle> {
-    let function_ref = register_function(r#"
+    let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
                 const value = e.target.value;
@@ -162,7 +161,7 @@ pub fn add_change_event_listener(
 }
 
 pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Arc<FunctionHandle>) {
-    let remove_change_listener = register_function(r#"
+    let remove_change_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("change", f);
         }"#);
@@ -194,7 +193,7 @@ pub fn element_add_click_listener(
     element: &ExternRef,
     handler: impl FnMut(MouseEvent) + Send + 'static,
 ) -> Arc<FunctionHandle> {
-    let function_ref = register_function(r#"
+    let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
                 this.module.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
@@ -211,7 +210,7 @@ pub fn element_add_click_listener(
 }
 
 pub fn element_remove_click_listener(element: &ExternRef, function_handle: &Arc<FunctionHandle>) {
-    let remove_click_listener = register_function(r#"
+    let remove_click_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("click", f);
         }"#);
@@ -223,7 +222,7 @@ pub fn element_add_mouse_move_listener(
     element: &ExternRef,
     handler: impl FnMut(MouseEvent) + Send + 'static,
 ) -> Arc<FunctionHandle> {
-    let function_ref = register_function(r#"
+    let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
                 this.module.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
@@ -243,7 +242,7 @@ pub fn element_remove_mouse_move_listener(
     element: &ExternRef,
     function_handle: &Arc<FunctionHandle>,
 ) {
-    let remove_mouse_move_listener = register_function(r#"
+    let remove_mouse_move_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("mousemove", f);
         }"#);
@@ -255,7 +254,7 @@ pub fn element_add_mouse_down_listener(
     element: &ExternRef,
     handler: impl FnMut(MouseEvent) + Send + 'static,
 ) -> Arc<FunctionHandle> {
-    let function_ref = register_function(r#"
+    let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
                 this.module.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
@@ -275,7 +274,7 @@ pub fn element_remove_mouse_down_listener(
     element: &ExternRef,
     function_handle: &Arc<FunctionHandle>,
 ) {
-    let remove_mouse_down_listener = register_function(r#"
+    let remove_mouse_down_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("mousedown", f);
         }"#);
@@ -287,7 +286,7 @@ pub fn element_add_mouse_up_listener(
     element: &ExternRef,
     handler: impl FnMut(MouseEvent) + Send + 'static,
 ) -> Arc<FunctionHandle> {
-    let function_ref = register_function(r#"
+    let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
                 this.module.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
@@ -307,7 +306,7 @@ pub fn element_remove_mouse_up_listener(
     element: &ExternRef,
     function_handle: &Arc<FunctionHandle>,
 ) {
-    let remove_mouse_up_listener = register_function(r#"
+    let remove_mouse_up_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("mouseup", f);
         }"#);
@@ -358,7 +357,7 @@ pub fn element_add_key_down_listener(
     element: &ExternRef,
     handler: impl FnMut(KeyboardEvent) + Send + 'static,
 ) -> Arc<FunctionHandle> {
-    let function_ref = register_function(r#"
+    let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
                 this.module.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
@@ -379,7 +378,7 @@ pub fn element_remove_key_down_listener(
     element: &ExternRef,
     function_handle: &Arc<FunctionHandle>,
 ) {
-    let remove_key_down_listener = register_function(r#"
+    let remove_key_down_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("keydown", f);
         }"#);
@@ -391,7 +390,7 @@ pub fn element_add_key_up_listener(
     element: &ExternRef,
     handler: impl FnMut(KeyboardEvent) + Send + 'static,
 ) -> Arc<FunctionHandle> {
-    let function_ref = register_function(r#"
+    let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
                 this.module.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
@@ -409,7 +408,7 @@ pub fn element_add_key_up_listener(
 }
 
 pub fn element_remove_key_up_listener(element: &ExternRef, function_handle: &Arc<FunctionHandle>) {
-    let remove_key_up_listener = register_function(r#"
+    let remove_key_up_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("keyup", f);
         }"#);

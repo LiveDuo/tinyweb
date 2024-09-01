@@ -1,7 +1,7 @@
 use crate::bindings::console::console_error;
 use crate::bindings::util::*;
 
-use crate::utils::js::{ExternRef, register_function};
+use crate::utils::js::{ExternRef, JSFunction};
 use crate::utils::handlers::EventHandlerFuture;
 
 
@@ -14,7 +14,7 @@ pub extern "C" fn web_extern_ref_callback(id: i64, value: i64) {
 
 impl WebGPU {
     pub fn is_available() -> bool {
-        register_function(r#"
+        JSFunction::register(r#"
         function(element){
             return (typeof navigator !== "undefined" && navigator.gpu);
         }"#)
@@ -23,7 +23,7 @@ impl WebGPU {
 
     pub async fn request_adapter() -> GPUAdapter {
         let (future, state_id) = EventHandlerFuture::<ExternRef>::create_future_with_state_id();
-        register_function(r#"
+        JSFunction::register(r#"
             async function(state_id){
                 const a = await navigator.gpu.requestAdapter();
                 const ref = this.storeObject(a);
@@ -35,7 +35,7 @@ impl WebGPU {
     }
 
     pub fn get_preferred_canvas_format() -> GPUTextureFormat {
-        let f = register_function(r#"
+        let f = JSFunction::register(r#"
             function(){
                 return navigator.gpu.getPreferredCanvasFormat();
             }"#)
@@ -49,7 +49,7 @@ pub struct GPUAdapter(ExternRef);
 impl GPUAdapter {
     pub async fn request_device(&self) -> GPUDevice {
         let (future, state_id) = EventHandlerFuture::<ExternRef>::create_future_with_state_id();
-        register_function(r#"
+        JSFunction::register(r#"
             async function(adapter, state_id){
                 const d = await adapter.requestDevice();
                 const ref = this.storeObject(d);
@@ -74,7 +74,7 @@ impl GPUQueue {
         command_buffers.iter().for_each(|command_buffer| {
             add_to_array(&command_buffers_ref, &command_buffer.0);
         });
-        let submit = register_function(r#"
+        let submit = JSFunction::register(r#"
             function(queue, commandBuffers){
                 queue.submit(commandBuffers);
             }"#);
@@ -84,7 +84,7 @@ impl GPUQueue {
 
 impl GPUDevice {
     pub fn create_buffer(&self, descriptor: &GPUBufferDescriptor) -> GPUBuffer {
-        let create_buffer = register_function(r#"
+        let create_buffer = JSFunction::register(r#"
             function(device, size, usage, mappedAtCreation){
                 return device.createBuffer({
                     size,
@@ -102,7 +102,7 @@ impl GPUDevice {
     }
 
     pub fn create_shader_module_from_source(&self, source: &str) -> GPUShaderModule {
-        let create_shader_module = register_function(r#"
+        let create_shader_module = JSFunction::register(r#"
             function(device, source){
                 return device.createShaderModule({code: source});
             }"#);
@@ -115,7 +115,7 @@ impl GPUDevice {
         &self,
         descriptor: &GPUPipelineLayoutDescriptor,
     ) -> GPUPipelineLayout {
-        let create_pipeline_layout = register_function(r#"
+        let create_pipeline_layout = JSFunction::register(r#"
             function(device, bindGroupLayouts){
                 return device.createPipelineLayout({
                     bindGroupLayouts:[]
@@ -131,7 +131,7 @@ impl GPUDevice {
     }
 
     pub fn get_queue(&self) -> GPUQueue {
-        let get_queue = register_function(r#"
+        let get_queue = JSFunction::register(r#"
             function(device){
                 return device.queue;
             }"#);
@@ -140,7 +140,7 @@ impl GPUDevice {
     }
 
     pub fn create_command_encoder(&self) -> GPUCommandEncoder {
-        let create_command_encoder = register_function(r#"
+        let create_command_encoder = JSFunction::register(r#"
             function(device){
                 return device.createCommandEncoder();
             }"#);
@@ -158,7 +158,7 @@ impl GPUDevice {
             let targets_ref = create_array();
             descriptor.fragment.targets.iter().for_each(|target| {
                 let format = target.format;
-                let target_ref = register_function(r#"
+                let target_ref = JSFunction::register(r#"
                 function(format){
                     return {
                         format
@@ -168,7 +168,7 @@ impl GPUDevice {
                 add_to_array(&targets_ref, &target_ref);
             });
 
-            register_function(r#"
+            JSFunction::register(r#"
                 function(module, entryPoint, targets){
                     return {
                         module,
@@ -188,7 +188,7 @@ impl GPUDevice {
             vertex_state.buffers.iter().for_each(|buffer| {
                 let attributes_ref = create_array();
                 buffer.attributes.iter().for_each(|attribute| {
-                    let attribute_ref = register_function(r#"
+                    let attribute_ref = JSFunction::register(r#"
                     function(shaderLocation, offset, format){
                         return {
                             shaderLocation,
@@ -203,7 +203,7 @@ impl GPUDevice {
                     ]);
                     add_to_array(&attributes_ref, &attribute_ref);
                 });
-                let buffer_ref = register_function(r#"
+                let buffer_ref = JSFunction::register(r#"
                     function(arrayStride, stepMode, attributes){
                         return {
                             arrayStride,
@@ -218,7 +218,7 @@ impl GPUDevice {
                 ]);
                 add_to_array(&vertex_buffers_ref, &buffer_ref);
             });
-            register_function(r#"
+            JSFunction::register(r#"
                 function(module, entryPoint, buffers){
                     return {
                         module,
@@ -232,7 +232,7 @@ impl GPUDevice {
                 (&vertex_buffers_ref).into(),
             ])
         };
-        let primitive_state_ref = register_function(r#"
+        let primitive_state_ref = JSFunction::register(r#"
             function(topology, cullMode, frontFace){
                 return {
                     topology,
@@ -246,7 +246,7 @@ impl GPUDevice {
             descriptor.primitive.front_face.as_str().into(),
         ]);
 
-        let pipeline_ref = register_function(r#"
+        let pipeline_ref = JSFunction::register(r#"
             function(device, layout, fragment, vertex, primitive){
                 let config = {
                     layout,
@@ -272,7 +272,7 @@ pub struct GPUTexture(ExternRef);
 
 impl GPUTexture {
     pub fn create_view(&self) -> GPUTextureView {
-        let create_view = register_function(r#"
+        let create_view = JSFunction::register(r#"
             function(texture){
                 return texture.createView();
             }"#);
@@ -285,7 +285,7 @@ pub struct GPUTextureView(ExternRef);
 
 impl GPUCanvasContext {
     pub fn from_element(element: &ExternRef) -> Self {
-        let get_context = register_function(r#"
+        let get_context = JSFunction::register(r#"
             function(element){
                 return element.getContext("webgpu");
             }"#);
@@ -294,7 +294,7 @@ impl GPUCanvasContext {
     }
 
     pub fn configure(&self, config: &GpuCanvasConfiguration) {
-        register_function(r#"
+        JSFunction::register(r#"
             function(ctx, device, format, alphaMode){
                 ctx.configure({
                     device: device,
@@ -311,7 +311,7 @@ impl GPUCanvasContext {
     }
 
     pub fn get_current_texture(&self) -> GPUTexture {
-        let texture_ref = register_function(r#"
+        let texture_ref = JSFunction::register(r#"
             function(ctx){
                 return ctx.getCurrentTexture();
             }"#)
@@ -362,7 +362,7 @@ pub struct GPUBuffer(ExternRef);
 
 impl GPUBuffer {
     pub fn set_from_f32_array(&self, data: &[f32]) {
-        register_function(r#"
+        JSFunction::register(r#"
             function(buffer, data){
                 new Float32Array(buffer.getMappedRange()).set(data);
             }"#)
@@ -370,7 +370,7 @@ impl GPUBuffer {
     }
 
     pub fn set_from_u32_array(&self, data: &[u32]) {
-        register_function(r#"
+        JSFunction::register(r#"
             function(buffer, data){
                 new Uint32Array(buffer.getMappedRange()).set(data);
             }"#)
@@ -378,7 +378,7 @@ impl GPUBuffer {
     }
 
     pub fn unmap(&self) {
-        register_function(r#"
+        JSFunction::register(r#"
             function(buffer){
                 buffer.unmap();
             }"#)
@@ -660,7 +660,7 @@ impl GPUCommandEncoder {
     pub fn begin_render_pass(&self, descriptor: &GPURenderPassDescriptor) -> GPURenderPass {
         let color_attachments_ref = create_array();
         for attachment in &descriptor.color_attachments {
-            let clear_value = register_function(r#"
+            let clear_value = JSFunction::register(r#"
             function(r, g, b, a){
                 return {r, g, b, a};
             }
@@ -671,7 +671,7 @@ impl GPUCommandEncoder {
                 attachment.clear_value.b.into(),
                 attachment.clear_value.a.into(),
             ]);
-            let attachment_ref = register_function(r#"
+            let attachment_ref = JSFunction::register(r#"
                 function(view, loadOp, storeOp, clearValue){
                     return {
                         view,
@@ -690,7 +690,7 @@ impl GPUCommandEncoder {
             add_to_array(&color_attachments_ref, &attachment_ref);
         }
 
-        let render_pass_ref = register_function(r#"
+        let render_pass_ref = JSFunction::register(r#"
         function(encoder, colorAttachments){
             return encoder.beginRenderPass({
                 colorAttachments
@@ -702,7 +702,7 @@ impl GPUCommandEncoder {
     }
 
     pub fn finish(&self) -> GPUCommandBuffer {
-        let command_buffer_ref = register_function(r#"
+        let command_buffer_ref = JSFunction::register(r#"
         function(encoder){
             return encoder.finish();
         }
@@ -717,7 +717,7 @@ pub struct GPUCommandBuffer(ExternRef);
 
 impl GPURenderPass {
     pub fn set_pipeline(&self, pipeline: &GPURenderPipeline) {
-        register_function(r#"
+        JSFunction::register(r#"
         function(encoder, pipeline){
             encoder.setPipeline(pipeline);
         }
@@ -734,7 +734,7 @@ impl GPURenderPass {
         min_depth: f64,
         max_depth: f64,
     ) {
-        register_function(r#"
+        JSFunction::register(r#"
         function(encoder, x, y, width, height, minDepth, maxDepth){
             encoder.setViewport(x, y, width, height, minDepth, maxDepth);
         }
@@ -751,7 +751,7 @@ impl GPURenderPass {
     }
 
     pub fn set_scissor_rect(&self, x: f64, y: f64, width: f64, height: f64) {
-        register_function(r#"
+        JSFunction::register(r#"
         function(encoder, x, y, width, height){
             encoder.setScissorRect(x, y, width, height);
         }
@@ -766,7 +766,7 @@ impl GPURenderPass {
     }
 
     pub fn set_vertex_buffer(&self, slot: usize, buffer: &GPUBuffer) {
-        register_function(r#"
+        JSFunction::register(r#"
         function(encoder, slot, buffer){
             encoder.setVertexBuffer(slot, buffer);
         }
@@ -775,7 +775,7 @@ impl GPURenderPass {
     }
 
     pub fn set_index_buffer(&self, buffer: &GPUBuffer, index_format: &str) {
-        register_function(r#"
+        JSFunction::register(r#"
         function(encoder, buffer, indexFormat){
             encoder.setIndexBuffer(buffer, indexFormat);
         }
@@ -784,7 +784,7 @@ impl GPURenderPass {
     }
 
     pub fn draw_indexed(&self, index_count: usize) {
-        register_function(r#"
+        JSFunction::register(r#"
         function(encoder, indexCount){
             encoder.drawIndexed(indexCount);
         }
@@ -793,7 +793,7 @@ impl GPURenderPass {
     }
 
     pub fn end(&self) {
-        register_function(r#"
+        JSFunction::register(r#"
         function(encoder){
             encoder.end();
         }

@@ -1,7 +1,7 @@
-use crate::utils::js::register_function;
+use crate::utils::js::JSFunction;
 
 pub fn console_log(message: &str) {
-    let console_log = register_function(r#"
+    let console_log = JSFunction::register(r#"
         function(message){
             console.log(message);
         }"#);
@@ -9,7 +9,7 @@ pub fn console_log(message: &str) {
 }
 
 pub fn console_error(message: &str) {
-    let console_error = register_function(r#"
+    let console_error = JSFunction::register(r#"
         function(message){
             console.error(message);
         }"#);
@@ -17,7 +17,7 @@ pub fn console_error(message: &str) {
 }
 
 pub fn console_warn(message: &str) {
-    let console_warn = register_function(r#"
+    let console_warn = JSFunction::register(r#"
         function(message){
             console.warn(message);
         }"#);
@@ -25,7 +25,7 @@ pub fn console_warn(message: &str) {
 }
 
 pub fn console_time(label: &str) {
-    let console_time = register_function(r#"
+    let console_time = JSFunction::register(r#"
         function(label){
             console.time(label);
         }"#);
@@ -33,7 +33,7 @@ pub fn console_time(label: &str) {
 }
 
 pub fn console_time_end(label: &str) {
-    let console_time_end = register_function(r#"
+    let console_time_end = JSFunction::register(r#"
         function(label){
             console.timeEnd(label);
         }"#);

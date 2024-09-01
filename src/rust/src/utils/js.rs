@@ -3,14 +3,6 @@ use std::mem::ManuallyDrop;
 
 use crate::utils::params::*;
 
-#[derive(Debug, Clone)]
-pub struct ExternRef { pub value: i64, }
-
-#[derive(Copy, Clone)]
-pub struct JSFunction {
-    pub fn_handle: f64,
-}
-
 extern "C" {
     fn js_register_function(ptr: f64, len: f64) -> f64;
     fn js_invoke_function(fn_handle: f64, ptr: *const u8, len: usize) -> f64;
@@ -21,13 +13,22 @@ extern "C" {
     fn js_invoke_function_and_return_bool(fn_handle: f64, ptr: *const u8, len: usize) -> f64;
 }
 
-pub fn register_function(code: &str) -> JSFunction {
-    let start = code.as_ptr();
-    let len = code.len();
-    unsafe { JSFunction { fn_handle: js_register_function(start as usize as f64, len as f64), } }
+#[derive(Debug, Clone)]
+pub struct ExternRef { pub value: i64, }
+
+#[derive(Copy, Clone)]
+pub struct JSFunction {
+    pub fn_handle: f64,
 }
 
 impl JSFunction {
+
+    pub fn register(code: &str) -> JSFunction {
+        let start = code.as_ptr();
+        let len = code.len();
+        unsafe { JSFunction { fn_handle: js_register_function(start as usize as f64, len as f64), } }
+    }
+
     pub fn invoke(&self, params: &[InvokeParam]) -> f64 {
         let param_bytes = param_to_bytes(params);
         let mut me = ManuallyDrop::new(param_bytes);
