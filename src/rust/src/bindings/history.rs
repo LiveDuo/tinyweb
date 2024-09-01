@@ -1,6 +1,6 @@
 
-use crate::handlers::FunctionHandle;
 use crate::js::{ExternRef, JSFunction};
+use crate::params::InvokeParam;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -125,11 +125,11 @@ pub fn location_reload() {
 pub struct PopStateEvent {}
 
 static HISTORY_POP_STATE_EVENT_HANDLERS: Mutex<
-    Option<HashMap<Arc<FunctionHandle>, Box<dyn FnMut(PopStateEvent) + Send + 'static>>>,
+    Option<HashMap<Arc<ExternRef>, Box<dyn FnMut(PopStateEvent) + Send + 'static>>>,
 > = Mutex::new(None);
 
 fn add_history_pop_state_event_handler(
-    id: Arc<FunctionHandle>,
+    id: Arc<ExternRef>,
     handler: Box<dyn FnMut(PopStateEvent) + Send + 'static>,
 ) {
     let mut handlers = HISTORY_POP_STATE_EVENT_HANDLERS.lock().unwrap();
@@ -142,7 +142,7 @@ fn add_history_pop_state_event_handler(
     }
 }
 
-fn remove_history_pop_state_event_handler(id: &Arc<FunctionHandle>) {
+fn remove_history_pop_state_event_handler(id: &Arc<ExternRef>) {
     let mut handlers = HISTORY_POP_STATE_EVENT_HANDLERS.lock().unwrap();
     if let Some(h) = handlers.as_mut() {
         h.remove(id);
@@ -154,7 +154,7 @@ pub extern "C" fn web_handle_history_pop_state_event(id: i64) {
     let mut handlers = HISTORY_POP_STATE_EVENT_HANDLERS.lock().unwrap();
     if let Some(h) = handlers.as_mut() {
         for (key, handler) in h.iter_mut() {
-            if key.0.value == id {
+            if key.value == id {
                 handler(PopStateEvent {});
             }
         }
@@ -163,7 +163,7 @@ pub extern "C" fn web_handle_history_pop_state_event(id: i64) {
 
 pub fn add_history_pop_state_event_listener(
     handler: impl FnMut(PopStateEvent) + Send + 'static,
-) -> Arc<FunctionHandle> {
+) -> Arc<ExternRef> {
     let function_ref = JSFunction::register(r#"
         function(){
             const handler = (e) => {
@@ -174,21 +174,19 @@ pub fn add_history_pop_state_event_listener(
             return id;
         }"#)
     .invoke_and_return_bigint(&[]);
-    let function_handle = Arc::new(FunctionHandle(ExternRef {
-        value: function_ref,
-    }));
+    let function_handle = Arc::new(ExternRef { value: function_ref, });
     add_history_pop_state_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
 pub fn remove_history_pop_state_listener(
     element: &ExternRef,
-    function_handle: &Arc<FunctionHandle>,
+    function_handle: &Arc<ExternRef>,
 ) {
     JSFunction::register(r#"
         function(element, f){
             window.removeEventListener("popstate", f);
         }"#)
-    .invoke(&[element.into(), (&(function_handle.0)).into()]);
+    .invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
     remove_history_pop_state_event_handler(function_handle);
 }

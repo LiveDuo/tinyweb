@@ -1,8 +1,8 @@
 
 use crate::handlers::EventHandler;
-use crate::handlers::FunctionHandle;
 use crate::allocations::extract_string_from_memory;
 use crate::js::{ExternRef, JSFunction};
+use crate::params::InvokeParam;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -100,11 +100,11 @@ pub struct ChangeEvent {
 }
 
 static CHANGE_EVENT_HANDLERS: Mutex<
-    Option<HashMap<Arc<FunctionHandle>, Box<dyn FnMut(ChangeEvent) + Send + 'static>>>,
+    Option<HashMap<Arc<ExternRef>, Box<dyn FnMut(ChangeEvent) + Send + 'static>>>,
 > = Mutex::new(None);
 
 fn add_change_event_handler(
-    id: Arc<FunctionHandle>,
+    id: Arc<ExternRef>,
     handler: Box<dyn FnMut(ChangeEvent) + Send + 'static>,
 ) {
     let mut handlers = CHANGE_EVENT_HANDLERS.lock().unwrap();
@@ -117,7 +117,7 @@ fn add_change_event_handler(
     }
 }
 
-fn remove_change_event_handler(id: &Arc<FunctionHandle>) {
+fn remove_change_event_handler(id: &Arc<ExternRef>) {
     let mut handlers = CHANGE_EVENT_HANDLERS.lock().unwrap();
     if let Some(h) = handlers.as_mut() {
         h.remove(id);
@@ -129,7 +129,7 @@ pub extern "C" fn web_handle_change_event(id: i64, allocation_id: usize) {
     let mut handlers = CHANGE_EVENT_HANDLERS.lock().unwrap();
     if let Some(h) = handlers.as_mut() {
         for (key, handler) in h.iter_mut() {
-            if key.0.value == id {
+            if key.value == id {
                 let value = extract_string_from_memory(allocation_id);
                 handler(ChangeEvent { value });
             }
@@ -140,7 +140,7 @@ pub extern "C" fn web_handle_change_event(id: i64, allocation_id: usize) {
 pub fn add_change_event_listener(
     element: &ExternRef,
     handler: impl FnMut(ChangeEvent) + Send + 'static,
-) -> Arc<FunctionHandle> {
+) -> Arc<ExternRef> {
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -153,19 +153,17 @@ pub fn add_change_event_listener(
             return id;
         }"#)
     .invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Arc::new(FunctionHandle(ExternRef {
-        value: function_ref,
-    }));
+    let function_handle = Arc::new(ExternRef { value: function_ref, });
     add_change_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
-pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Arc<FunctionHandle>) {
+pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Arc<ExternRef>) {
     let remove_change_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("change", f);
         }"#);
-    remove_change_listener.invoke(&[element.into(), (&(function_handle.0)).into()]);
+    remove_change_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
     remove_change_event_handler(function_handle);
 }
 
@@ -192,7 +190,7 @@ pub extern "C" fn web_handle_mouse_event_handler(id: i64, x: f64, y: f64) {
 pub fn element_add_click_listener(
     element: &ExternRef,
     handler: impl FnMut(MouseEvent) + Send + 'static,
-) -> Arc<FunctionHandle> {
+) -> Arc<ExternRef> {
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -202,26 +200,24 @@ pub fn element_add_click_listener(
             element.addEventListener("click",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Arc::new(FunctionHandle(ExternRef {
-        value: function_ref,
-    }));
+    let function_handle = Arc::new(ExternRef { value: function_ref, });
     MOUSE_EVENT_HANDLER.add_listener(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
-pub fn element_remove_click_listener(element: &ExternRef, function_handle: &Arc<FunctionHandle>) {
+pub fn element_remove_click_listener(element: &ExternRef, function_handle: &Arc<ExternRef>) {
     let remove_click_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("click", f);
         }"#);
-    remove_click_listener.invoke(&[element.into(), (&(function_handle.0)).into()]);
+    remove_click_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.remove_listener(function_handle);
 }
 
 pub fn element_add_mouse_move_listener(
     element: &ExternRef,
     handler: impl FnMut(MouseEvent) + Send + 'static,
-) -> Arc<FunctionHandle> {
+) -> Arc<ExternRef> {
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -231,29 +227,27 @@ pub fn element_add_mouse_move_listener(
             element.addEventListener("mousemove",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Arc::new(FunctionHandle(ExternRef {
-        value: function_ref,
-    }));
+    let function_handle = Arc::new(ExternRef { value: function_ref, });
     MOUSE_EVENT_HANDLER.add_listener(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
 pub fn element_remove_mouse_move_listener(
     element: &ExternRef,
-    function_handle: &Arc<FunctionHandle>,
+    function_handle: &Arc<ExternRef>,
 ) {
     let remove_mouse_move_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("mousemove", f);
         }"#);
-    remove_mouse_move_listener.invoke(&[element.into(), (&(function_handle.0)).into()]);
+    remove_mouse_move_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.remove_listener(function_handle);
 }
 
 pub fn element_add_mouse_down_listener(
     element: &ExternRef,
     handler: impl FnMut(MouseEvent) + Send + 'static,
-) -> Arc<FunctionHandle> {
+) -> Arc<ExternRef> {
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -263,29 +257,27 @@ pub fn element_add_mouse_down_listener(
             element.addEventListener("mousedown",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Arc::new(FunctionHandle(ExternRef {
-        value: function_ref,
-    }));
+    let function_handle = Arc::new(ExternRef { value: function_ref, });
     MOUSE_EVENT_HANDLER.add_listener(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
 pub fn element_remove_mouse_down_listener(
     element: &ExternRef,
-    function_handle: &Arc<FunctionHandle>,
+    function_handle: &Arc<ExternRef>,
 ) {
     let remove_mouse_down_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("mousedown", f);
         }"#);
-    remove_mouse_down_listener.invoke(&[element.into(), (&(function_handle.0)).into()]);
+    remove_mouse_down_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.remove_listener(function_handle);
 }
 
 pub fn element_add_mouse_up_listener(
     element: &ExternRef,
     handler: impl FnMut(MouseEvent) + Send + 'static,
-) -> Arc<FunctionHandle> {
+) -> Arc<ExternRef> {
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -295,22 +287,20 @@ pub fn element_add_mouse_up_listener(
             element.addEventListener("mouseup",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Arc::new(FunctionHandle(ExternRef {
-        value: function_ref,
-    }));
+    let function_handle = Arc::new(ExternRef { value: function_ref, });
     MOUSE_EVENT_HANDLER.add_listener(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
 pub fn element_remove_mouse_up_listener(
     element: &ExternRef,
-    function_handle: &Arc<FunctionHandle>,
+    function_handle: &Arc<ExternRef>,
 ) {
     let remove_mouse_up_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("mouseup", f);
         }"#);
-    remove_mouse_up_listener.invoke(&[element.into(), (&(function_handle.0)).into()]);
+    remove_mouse_up_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.remove_listener(function_handle);
 }
 
@@ -319,11 +309,11 @@ pub struct KeyboardEvent {
 }
 
 static KEYBOARD_EVENT_HANDLERS: Mutex<
-    Option<HashMap<Arc<FunctionHandle>, Box<dyn FnMut(KeyboardEvent) + Send + 'static>>>,
+    Option<HashMap<Arc<ExternRef>, Box<dyn FnMut(KeyboardEvent) + Send + 'static>>>,
 > = Mutex::new(None);
 
 fn add_keyboard_event_handler(
-    function_handle: Arc<FunctionHandle>,
+    function_handle: Arc<ExternRef>,
     handler: Box<dyn FnMut(KeyboardEvent) + Send + 'static>,
 ) {
     let mut h = KEYBOARD_EVENT_HANDLERS.lock().unwrap();
@@ -333,7 +323,7 @@ fn add_keyboard_event_handler(
     h.as_mut().unwrap().insert(function_handle, handler);
 }
 
-fn remove_keyboard_event_handler(function_handle: &Arc<FunctionHandle>) {
+fn remove_keyboard_event_handler(function_handle: &Arc<ExternRef>) {
     let mut h = KEYBOARD_EVENT_HANDLERS.lock().unwrap();
     if h.is_none() {
         return;
@@ -346,7 +336,7 @@ pub extern "C" fn web_handle_keyboard_event_handler(id: i64, key_code: f64) {
     let mut handlers = KEYBOARD_EVENT_HANDLERS.lock().unwrap();
     if let Some(h) = handlers.as_mut() {
         for (key, handler) in h.iter_mut() {
-            if key.0.value == id {
+            if key.value == id {
                 handler(KeyboardEvent { key_code });
             }
         }
@@ -356,7 +346,7 @@ pub extern "C" fn web_handle_keyboard_event_handler(id: i64, key_code: f64) {
 pub fn element_add_key_down_listener(
     element: &ExternRef,
     handler: impl FnMut(KeyboardEvent) + Send + 'static,
-) -> Arc<FunctionHandle> {
+) -> Arc<ExternRef> {
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -367,29 +357,27 @@ pub fn element_add_key_down_listener(
             return id;
         }"#)
     .invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Arc::new(FunctionHandle(ExternRef {
-        value: function_ref,
-    }));
+    let function_handle = Arc::new(ExternRef { value: function_ref, });
     add_keyboard_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
 pub fn element_remove_key_down_listener(
     element: &ExternRef,
-    function_handle: &Arc<FunctionHandle>,
+    function_handle: &Arc<ExternRef>,
 ) {
     let remove_key_down_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("keydown", f);
         }"#);
-    remove_key_down_listener.invoke(&[element.into(), (&(function_handle.0)).into()]);
+    remove_key_down_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
     remove_keyboard_event_handler(function_handle);
 }
 
 pub fn element_add_key_up_listener(
     element: &ExternRef,
     handler: impl FnMut(KeyboardEvent) + Send + 'static,
-) -> Arc<FunctionHandle> {
+) -> Arc<ExternRef> {
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -400,18 +388,16 @@ pub fn element_add_key_up_listener(
             return id;
         }"#)
     .invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Arc::new(FunctionHandle(ExternRef {
-        value: function_ref,
-    }));
+    let function_handle = Arc::new(ExternRef { value: function_ref, });
     add_keyboard_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
-pub fn element_remove_key_up_listener(element: &ExternRef, function_handle: &Arc<FunctionHandle>) {
+pub fn element_remove_key_up_listener(element: &ExternRef, function_handle: &Arc<ExternRef>) {
     let remove_key_up_listener = JSFunction::register(r#"
         function(element, f){
             element.removeEventListener("keyup", f);
         }"#);
-    remove_key_up_listener.invoke(&[element.into(), (&(function_handle.0)).into()]);
+    remove_key_up_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
     remove_keyboard_event_handler(function_handle);
 }

@@ -12,30 +12,28 @@ use std::{
     any::{Any, TypeId},
 };
 
-pub struct FunctionHandle(pub ExternRef);
-
-impl PartialEq for FunctionHandle {
+impl PartialEq for ExternRef {
     fn eq(&self, other: &Self) -> bool {
-        self.0.value == other.0.value
+        self.value == other.value
     }
 }
 
-impl Eq for FunctionHandle {}
+impl Eq for ExternRef {}
 
-impl Hash for FunctionHandle {
+impl Hash for ExternRef {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.0.value.hash(state);
+        self.value.hash(state);
     }
 }
 
 pub struct EventHandler<T> {
-    pub listeners: Mutex<Option<HashMap<Arc<FunctionHandle>, Box<dyn FnMut(T) + Send + 'static>>>>,
+    pub listeners: Mutex<Option<HashMap<Arc<ExternRef>, Box<dyn FnMut(T) + Send + 'static>>>>,
 }
 
 impl<T> EventHandler<T> {
     pub fn add_listener(
         &self,
-        id: Arc<FunctionHandle>,
+        id: Arc<ExternRef>,
         handler: Box<dyn FnMut(T) + Send + 'static>,
     ) {
         let mut handlers = self.listeners.lock().unwrap();
@@ -48,7 +46,7 @@ impl<T> EventHandler<T> {
         }
     }
 
-    pub fn remove_listener(&self, id: &Arc<FunctionHandle>) {
+    pub fn remove_listener(&self, id: &Arc<ExternRef>) {
         let mut handlers = self.listeners.lock().unwrap();
         if let Some(h) = handlers.as_mut() {
             h.remove(id);
@@ -59,7 +57,7 @@ impl<T> EventHandler<T> {
         let mut handlers = self.listeners.lock().unwrap();
         if let Some(h) = handlers.as_mut() {
             for (key, handler) in h.iter_mut() {
-                if key.0.value == id {
+                if key.value == id {
                     handler(event);
                     return;
                 }
