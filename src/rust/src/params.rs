@@ -145,7 +145,7 @@ mod tests {
         let text = "hello";
         let text_ptr = text.as_ptr() as u32;
         let text_len = text.len() as u64;
-        let expected = [vec![4], text_ptr.to_le_bytes().to_vec(), vec![1, 0, 0, 0], text_len.to_le_bytes().to_vec()].concat();
+        let expected = [vec![4], text_ptr.to_le_bytes().to_vec(), text_len.to_le_bytes().to_vec()].concat();
         assert_eq!(param_to_bytes(&[InvokeParam::String(text)]), expected);
 
         // extern ref
@@ -155,14 +155,14 @@ mod tests {
         let array = [1.0, 2.0];
         let array_ptr = array.as_ptr() as u32;
         let array_len = array.len() as u64;
-        let expected = [vec![6], array_ptr.to_le_bytes().to_vec(), vec![0, 112, 0, 0], array_len.to_le_bytes().to_vec()].concat();
+        let expected = [vec![6], array_ptr.to_le_bytes().to_vec(), array_len.to_le_bytes().to_vec()].concat();
         assert_eq!(param_to_bytes(&[InvokeParam::Float32Array(&array)]), expected);
         
         // float64 array
         let array = [1.0, 2.0];
         let array_ptr = array.as_ptr() as u32;
         let array_len = array.len() as u64;
-        let expected = [vec![9], array_ptr.to_le_bytes().to_vec(), vec![0, 112, 0, 0], array_len.to_le_bytes().to_vec()].concat();
+        let expected = [vec![9], array_ptr.to_le_bytes().to_vec(), array_len.to_le_bytes().to_vec()].concat();
         assert_eq!(param_to_bytes(&[InvokeParam::Float64Array(&array)]), expected);
         
         // bool
@@ -172,7 +172,7 @@ mod tests {
         let array = [1, 2];
         let array_ptr = array.as_ptr() as u32;
         let array_len = array.len() as u64;
-        let expected = [vec![10], array_ptr.to_le_bytes().to_vec(), vec![0, 112, 0, 0], array_len.to_le_bytes().to_vec()].concat();
+        let expected = [vec![10], array_ptr.to_le_bytes().to_vec(), array_len.to_le_bytes().to_vec()].concat();
         assert_eq!(param_to_bytes(&[InvokeParam::Uint32Array(&array)]), expected);
 
     }
