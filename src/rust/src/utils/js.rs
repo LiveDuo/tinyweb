@@ -347,17 +347,7 @@ pub fn clear_allocation(allocation_id: usize) {
     allocations[allocation_id] = None;
 }
 
-#[macro_export]
-macro_rules! js {
-    ($e:expr) => {{
-        static mut FN: Option<f64> = None;
-        unsafe {
-            if FN.is_none() {
-                FN = Some(crate::utils::js::register_function($e).fn_handle);
-            }
-            crate::utils::js::JSFunction {
-                fn_handle: FN.unwrap(),
-            }
-        }
-    }};
+pub fn run_js(e: &str) -> JSFunction {
+    let cb = crate::utils::js::register_function(e);
+    crate::utils::js::JSFunction { fn_handle: cb.fn_handle }
 }

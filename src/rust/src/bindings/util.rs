@@ -1,9 +1,11 @@
 
 use core::future::Future;
-use crate::{js, utils::{common::EventHandlerFuture, js::{extract_string_from_memory, ExternRef}}};
+use crate::utils::common::EventHandlerFuture;
+use crate::utils::js::{extract_string_from_memory, ExternRef};
+use crate::utils::js::run_js;
 
 pub fn random() -> f64 {
-    let random = js!(r#"
+    let random = run_js(r#"
         function(){
             return Math.random();
         }"#);
@@ -17,7 +19,7 @@ pub fn random_i64() -> i64 {
 }
 
 pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
-    let get_property = js!(r#"
+    let get_property = run_js(r#"
         function(element, property){
             return element[property];
         }"#);
@@ -25,7 +27,7 @@ pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
 }
 
 pub fn set_property_i64(element: &ExternRef, property: &str, value: i64) {
-    let set_property = js!(r#"
+    let set_property = run_js(r#"
         function(element, property, value){
             element[property] = value;
         }"#);
@@ -33,7 +35,7 @@ pub fn set_property_i64(element: &ExternRef, property: &str, value: i64) {
 }
 
 pub fn get_property_f64(element: &ExternRef, property: &str) -> f64 {
-    let get_property = js!(r#"
+    let get_property = run_js(r#"
         function(element, property){
             return element[property];
         }"#);
@@ -41,7 +43,7 @@ pub fn get_property_f64(element: &ExternRef, property: &str) -> f64 {
 }
 
 pub fn set_property_f64(element: &ExternRef, property: &str, value: f64) {
-    let set_property = js!(r#"
+    let set_property = run_js(r#"
         function(element, property, value){
             element[property] = value;
         }"#);
@@ -49,7 +51,7 @@ pub fn set_property_f64(element: &ExternRef, property: &str, value: f64) {
 }
 
 pub fn get_property_bool(element: &ExternRef, property: &str) -> bool {
-    let get_property = js!(r#"
+    let get_property = run_js(r#"
         function(element, property){
             return element[property]?1:0;
         }"#);
@@ -58,7 +60,7 @@ pub fn get_property_bool(element: &ExternRef, property: &str) -> bool {
 }
 
 pub fn set_property_bool(element: &ExternRef, property: &str, value: bool) {
-    let set_property = js!(r#"
+    let set_property = run_js(r#"
         function(element, property, value){
             element[property] = value !==0;
         }"#);
@@ -66,7 +68,7 @@ pub fn set_property_bool(element: &ExternRef, property: &str, value: bool) {
 }
 
 pub fn get_property_string(element: &ExternRef, property: &str) -> String {
-    let get_property = js!(r#"
+    let get_property = run_js(r#"
         function(element, property){
             const text = element[property];
             const allocationId = this.writeUtf8ToMemory(text);
@@ -78,7 +80,7 @@ pub fn get_property_string(element: &ExternRef, property: &str) -> String {
 }
 
 pub fn set_property_string(element: &ExternRef, property: &str, value: &str) {
-    let set_property = js!(r#"
+    let set_property = run_js(r#"
         function(element, property, value){
             element[property] = value;
         }"#);
@@ -91,7 +93,7 @@ pub extern "C" fn web_handle_empty_callback(id: i64) {
 }
 
 pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
-    let sleep = js!(r#"
+    let sleep = run_js(r#"
         function(ms, state_id){
             window.setTimeout(()=>{
                 this.module.instance.exports.web_handle_empty_callback(state_id);
@@ -104,7 +106,7 @@ pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
 }
 
 pub fn wait_til_animation_frame() -> impl Future<Output = ()> {
-    let wait_til_animation_frame = js!(r#"
+    let wait_til_animation_frame = run_js(r#"
         function(state_id){
             window.requestAnimationFrame(()=>{
                 this.module.instance.exports.web_handle_empty_callback(state_id);
@@ -116,7 +118,7 @@ pub fn wait_til_animation_frame() -> impl Future<Output = ()> {
 }
 
 pub fn create_object() -> ExternRef {
-    let config_ref = js!(r#"
+    let config_ref = run_js(r#"
         function(){
             return {};
         }"#)
@@ -125,7 +127,7 @@ pub fn create_object() -> ExternRef {
 }
 
 pub fn create_array() -> ExternRef {
-    let config_ref = js!(r#"
+    let config_ref = run_js(r#"
         function(){
             return [];
         }"#)
@@ -134,7 +136,7 @@ pub fn create_array() -> ExternRef {
 }
 
 pub fn add_to_array(array: &ExternRef, value: &ExternRef) {
-    let add_to_array = js!(r#"
+    let add_to_array = run_js(r#"
         function(array, value){
             array.push(value);
         }"#);

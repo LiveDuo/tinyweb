@@ -2,7 +2,7 @@ use crate::bindings::console::console_error;
 use crate::utils::common::EventHandlerFuture;
 use crate::utils::js::ExternRef;
 
-use crate::js;
+use crate::utils::js::run_js;
 
 use super::util::*;
 
@@ -15,7 +15,7 @@ pub extern "C" fn web_extern_ref_callback(id: i64, value: i64) {
 
 impl WebGPU {
     pub fn is_available() -> bool {
-        js!(r#"
+        run_js(r#"
         function(element){
             return (typeof navigator !== "undefined" && navigator.gpu);
         }"#)
@@ -24,7 +24,7 @@ impl WebGPU {
 
     pub async fn request_adapter() -> GPUAdapter {
         let (future, state_id) = EventHandlerFuture::<ExternRef>::create_future_with_state_id();
-        js!(r#"
+        run_js(r#"
             async function(state_id){
                 const a = await navigator.gpu.requestAdapter();
                 const ref = this.storeObject(a);
@@ -36,7 +36,7 @@ impl WebGPU {
     }
 
     pub fn get_preferred_canvas_format() -> GPUTextureFormat {
-        let f = js!(r#"
+        let f = run_js(r#"
             function(){
                 return navigator.gpu.getPreferredCanvasFormat();
             }"#)
@@ -50,7 +50,7 @@ pub struct GPUAdapter(ExternRef);
 impl GPUAdapter {
     pub async fn request_device(&self) -> GPUDevice {
         let (future, state_id) = EventHandlerFuture::<ExternRef>::create_future_with_state_id();
-        js!(r#"
+        run_js(r#"
             async function(adapter, state_id){
                 const d = await adapter.requestDevice();
                 const ref = this.storeObject(d);
@@ -75,7 +75,7 @@ impl GPUQueue {
         command_buffers.iter().for_each(|command_buffer| {
             add_to_array(&command_buffers_ref, &command_buffer.0);
         });
-        let submit = js!(r#"
+        let submit = run_js(r#"
             function(queue, commandBuffers){
                 queue.submit(commandBuffers);
             }"#);
@@ -85,7 +85,7 @@ impl GPUQueue {
 
 impl GPUDevice {
     pub fn create_buffer(&self, descriptor: &GPUBufferDescriptor) -> GPUBuffer {
-        let create_buffer = js!(r#"
+        let create_buffer = run_js(r#"
             function(device, size, usage, mappedAtCreation){
                 return device.createBuffer({
                     size,
@@ -103,7 +103,7 @@ impl GPUDevice {
     }
 
     pub fn create_shader_module_from_source(&self, source: &str) -> GPUShaderModule {
-        let create_shader_module = js!(r#"
+        let create_shader_module = run_js(r#"
             function(device, source){
                 return device.createShaderModule({code: source});
             }"#);
@@ -116,7 +116,7 @@ impl GPUDevice {
         &self,
         descriptor: &GPUPipelineLayoutDescriptor,
     ) -> GPUPipelineLayout {
-        let create_pipeline_layout = js!(r#"
+        let create_pipeline_layout = run_js(r#"
             function(device, bindGroupLayouts){
                 return device.createPipelineLayout({
                     bindGroupLayouts:[]
@@ -132,7 +132,7 @@ impl GPUDevice {
     }
 
     pub fn get_queue(&self) -> GPUQueue {
-        let get_queue = js!(r#"
+        let get_queue = run_js(r#"
             function(device){
                 return device.queue;
             }"#);
@@ -141,7 +141,7 @@ impl GPUDevice {
     }
 
     pub fn create_command_encoder(&self) -> GPUCommandEncoder {
-        let create_command_encoder = js!(r#"
+        let create_command_encoder = run_js(r#"
             function(device){
                 return device.createCommandEncoder();
             }"#);
@@ -159,7 +159,7 @@ impl GPUDevice {
             let targets_ref = create_array();
             descriptor.fragment.targets.iter().for_each(|target| {
                 let format = target.format;
-                let target_ref = js!(r#"
+                let target_ref = run_js(r#"
                 function(format){
                     return {
                         format
@@ -169,7 +169,7 @@ impl GPUDevice {
                 add_to_array(&targets_ref, &target_ref);
             });
 
-            js!(r#"
+            run_js(r#"
                 function(module, entryPoint, targets){
                     return {
                         module,
@@ -189,7 +189,7 @@ impl GPUDevice {
             vertex_state.buffers.iter().for_each(|buffer| {
                 let attributes_ref = create_array();
                 buffer.attributes.iter().for_each(|attribute| {
-                    let attribute_ref = js!(r#"
+                    let attribute_ref = run_js(r#"
                     function(shaderLocation, offset, format){
                         return {
                             shaderLocation,
@@ -204,7 +204,7 @@ impl GPUDevice {
                     ]);
                     add_to_array(&attributes_ref, &attribute_ref);
                 });
-                let buffer_ref = js!(r#"
+                let buffer_ref = run_js(r#"
                     function(arrayStride, stepMode, attributes){
                         return {
                             arrayStride,
@@ -219,7 +219,7 @@ impl GPUDevice {
                 ]);
                 add_to_array(&vertex_buffers_ref, &buffer_ref);
             });
-            js!(r#"
+            run_js(r#"
                 function(module, entryPoint, buffers){
                     return {
                         module,
@@ -233,7 +233,7 @@ impl GPUDevice {
                 (&vertex_buffers_ref).into(),
             ])
         };
-        let primitive_state_ref = js!(r#"
+        let primitive_state_ref = run_js(r#"
             function(topology, cullMode, frontFace){
                 return {
                     topology,
@@ -247,7 +247,7 @@ impl GPUDevice {
             descriptor.primitive.front_face.as_str().into(),
         ]);
 
-        let pipeline_ref = js!(r#"
+        let pipeline_ref = run_js(r#"
             function(device, layout, fragment, vertex, primitive){
                 let config = {
                     layout,
@@ -273,7 +273,7 @@ pub struct GPUTexture(ExternRef);
 
 impl GPUTexture {
     pub fn create_view(&self) -> GPUTextureView {
-        let create_view = js!(r#"
+        let create_view = run_js(r#"
             function(texture){
                 return texture.createView();
             }"#);
@@ -286,7 +286,7 @@ pub struct GPUTextureView(ExternRef);
 
 impl GPUCanvasContext {
     pub fn from_element(element: &ExternRef) -> Self {
-        let get_context = js!(r#"
+        let get_context = run_js(r#"
             function(element){
                 return element.getContext("webgpu");
             }"#);
@@ -295,7 +295,7 @@ impl GPUCanvasContext {
     }
 
     pub fn configure(&self, config: &GpuCanvasConfiguration) {
-        js!(r#"
+        run_js(r#"
             function(ctx, device, format, alphaMode){
                 ctx.configure({
                     device: device,
@@ -312,7 +312,7 @@ impl GPUCanvasContext {
     }
 
     pub fn get_current_texture(&self) -> GPUTexture {
-        let texture_ref = js!(r#"
+        let texture_ref = run_js(r#"
             function(ctx){
                 return ctx.getCurrentTexture();
             }"#)
@@ -363,7 +363,7 @@ pub struct GPUBuffer(ExternRef);
 
 impl GPUBuffer {
     pub fn set_from_f32_array(&self, data: &[f32]) {
-        js!(r#"
+        run_js(r#"
             function(buffer, data){
                 new Float32Array(buffer.getMappedRange()).set(data);
             }"#)
@@ -371,7 +371,7 @@ impl GPUBuffer {
     }
 
     pub fn set_from_u32_array(&self, data: &[u32]) {
-        js!(r#"
+        run_js(r#"
             function(buffer, data){
                 new Uint32Array(buffer.getMappedRange()).set(data);
             }"#)
@@ -379,7 +379,7 @@ impl GPUBuffer {
     }
 
     pub fn unmap(&self) {
-        js!(r#"
+        run_js(r#"
             function(buffer){
                 buffer.unmap();
             }"#)
@@ -661,7 +661,7 @@ impl GPUCommandEncoder {
     pub fn begin_render_pass(&self, descriptor: &GPURenderPassDescriptor) -> GPURenderPass {
         let color_attachments_ref = create_array();
         for attachment in &descriptor.color_attachments {
-            let clear_value = js!(r#"
+            let clear_value = run_js(r#"
             function(r, g, b, a){
                 return {r, g, b, a};
             }
@@ -672,7 +672,7 @@ impl GPUCommandEncoder {
                 attachment.clear_value.b.into(),
                 attachment.clear_value.a.into(),
             ]);
-            let attachment_ref = js!(r#"
+            let attachment_ref = run_js(r#"
                 function(view, loadOp, storeOp, clearValue){
                     return {
                         view,
@@ -691,7 +691,7 @@ impl GPUCommandEncoder {
             add_to_array(&color_attachments_ref, &attachment_ref);
         }
 
-        let render_pass_ref = js!(r#"
+        let render_pass_ref = run_js(r#"
         function(encoder, colorAttachments){
             return encoder.beginRenderPass({
                 colorAttachments
@@ -703,7 +703,7 @@ impl GPUCommandEncoder {
     }
 
     pub fn finish(&self) -> GPUCommandBuffer {
-        let command_buffer_ref = js!(r#"
+        let command_buffer_ref = run_js(r#"
         function(encoder){
             return encoder.finish();
         }
@@ -718,7 +718,7 @@ pub struct GPUCommandBuffer(ExternRef);
 
 impl GPURenderPass {
     pub fn set_pipeline(&self, pipeline: &GPURenderPipeline) {
-        js!(r#"
+        run_js(r#"
         function(encoder, pipeline){
             encoder.setPipeline(pipeline);
         }
@@ -735,7 +735,7 @@ impl GPURenderPass {
         min_depth: f64,
         max_depth: f64,
     ) {
-        js!(r#"
+        run_js(r#"
         function(encoder, x, y, width, height, minDepth, maxDepth){
             encoder.setViewport(x, y, width, height, minDepth, maxDepth);
         }
@@ -752,7 +752,7 @@ impl GPURenderPass {
     }
 
     pub fn set_scissor_rect(&self, x: f64, y: f64, width: f64, height: f64) {
-        js!(r#"
+        run_js(r#"
         function(encoder, x, y, width, height){
             encoder.setScissorRect(x, y, width, height);
         }
@@ -767,7 +767,7 @@ impl GPURenderPass {
     }
 
     pub fn set_vertex_buffer(&self, slot: usize, buffer: &GPUBuffer) {
-        js!(r#"
+        run_js(r#"
         function(encoder, slot, buffer){
             encoder.setVertexBuffer(slot, buffer);
         }
@@ -776,7 +776,7 @@ impl GPURenderPass {
     }
 
     pub fn set_index_buffer(&self, buffer: &GPUBuffer, index_format: &str) {
-        js!(r#"
+        run_js(r#"
         function(encoder, buffer, indexFormat){
             encoder.setIndexBuffer(buffer, indexFormat);
         }
@@ -785,7 +785,7 @@ impl GPURenderPass {
     }
 
     pub fn draw_indexed(&self, index_count: usize) {
-        js!(r#"
+        run_js(r#"
         function(encoder, indexCount){
             encoder.drawIndexed(indexCount);
         }
@@ -794,7 +794,7 @@ impl GPURenderPass {
     }
 
     pub fn end(&self) {
-        js!(r#"
+        run_js(r#"
         function(encoder){
             encoder.end();
         }

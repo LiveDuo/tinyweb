@@ -1,9 +1,9 @@
 
-use crate::js;
+use crate::utils::js::run_js;
 use crate::utils::js::extract_string_from_memory;
 
 pub fn local_storage_set(key: &str, value: &str) {
-    let local_storage_set = js!(r#"
+    let local_storage_set = run_js(r#"
         function(key, value){
             localStorage.setItem(key, value);
         }"#);
@@ -11,7 +11,7 @@ pub fn local_storage_set(key: &str, value: &str) {
 }
 
 pub fn local_storage_remove(key: &str) {
-    let local_storage_remove = js!(r#"
+    let local_storage_remove = run_js(r#"
         function(key){
             localStorage.removeItem(key);
         }"#);
@@ -19,7 +19,7 @@ pub fn local_storage_remove(key: &str) {
 }
 
 pub fn local_storage_get(key: &str) -> Option<String> {
-    let local_storage_get = js!(r#"
+    let local_storage_get = run_js(r#"
         function(key){
             const text = localStorage.getItem(key);
             if(text === null){
@@ -37,7 +37,7 @@ pub fn local_storage_get(key: &str) -> Option<String> {
 }
 
 pub fn local_storage_clear() {
-    let local_storage_clear = js!(r#"
+    let local_storage_clear = run_js(r#"
         function(){
             localStorage.clear();
         }"#);
