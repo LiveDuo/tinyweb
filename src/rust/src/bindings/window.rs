@@ -5,11 +5,7 @@ use std::sync::Mutex;
 use crate::utils::js::register_function;
 use crate::bindings::util::*;
 
-pub type TimerHandle = f64;
-
-static ANIMATION_FRAME_EVENT_HANDLERS: Mutex<
-    Option<HashMap<i64, Box<dyn FnMut() + Send + 'static>>>,
-> = Mutex::new(None);
+static ANIMATION_FRAME_EVENT_HANDLERS: Mutex<Option<HashMap<i64, Box<dyn FnMut() + Send + 'static>>>> = Mutex::new(None);
 
 #[no_mangle]
 pub extern "C" fn web_one_time_empty_handler(id: i64) {
@@ -51,7 +47,7 @@ pub fn request_animation_frame(handler: impl FnMut() + Send + Sync + 'static) {
 pub fn set_timeout(
     handler: impl FnMut() + 'static + Send + Sync,
     ms: impl Into<f64>,
-) -> TimerHandle {
+) -> f64 {
     let obj_handle = register_function(r#"
         function(ms){
             const handler = () => {

@@ -10,7 +10,6 @@ use std::{
 };
 
 use crate::bindings::util::random_i64;
-
 use crate::utils::js::ExternRef;
 
 static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> =
@@ -151,13 +150,11 @@ impl<T> SharedStateMap<T> {
     }
 }
 
-pub type StateId = i64;
-
 impl<T> EventHandlerFuture<T>
 where
     T: 'static + Sync + Send,
 {
-    pub fn create_future_with_state_id() -> (Self, StateId) {
+    pub fn create_future_with_state_id() -> (Self, i64) {
         let shared_state = Arc::new(Mutex::new(EventHandlerSharedState {
             completed: false,
             waker: None,
@@ -174,7 +171,7 @@ where
         )
     }
 
-    pub fn wake_future_with_state_id(id: StateId, result: T) {
+    pub fn wake_future_with_state_id(id: i64, result: T) {
         let state_storage = globals_get::<SharedStateMap<T>>();
         state_storage.wake_future(id, result);
     }
