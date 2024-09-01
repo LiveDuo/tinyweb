@@ -1,16 +1,15 @@
-use std::{marker::PhantomData, mem::{self, ManuallyDrop}, ops::Deref, sync::Mutex, task::{RawWaker, RawWakerVTable, Waker}};
-
-extern crate alloc;
-use crate::bindings::window::set_timeout;
-
-use {
-    alloc::{boxed::Box, collections::vec_deque::VecDeque, sync::Arc},
-    core::{
-        future::Future,
-        pin::Pin,
-        task::{Context, Poll},
-    },
+use std::{
+    collections::VecDeque,
+    future::Future,
+    marker::PhantomData,
+    mem::{self, ManuallyDrop},
+    ops::Deref,
+    pin::Pin,
+    sync::{Arc, Mutex},
+    task::{Context, Poll, RawWaker, RawWakerVTable, Waker}
 };
+
+use crate::bindings::window::set_timeout;
 
 #[derive(Debug)]
 pub struct WakerRef<'a> {
@@ -43,7 +42,7 @@ impl<'a> WakerRef<'a> {
     }
 }
 
-unsafe fn increase_refcount<T: Woke>(data: *const ()) {
+unsafe fn increase_refcount<T>(data: *const ()) {
     let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data as *const T));
     let _arc_clone: mem::ManuallyDrop<_> = arc.clone();
 }
@@ -64,7 +63,7 @@ unsafe fn wake_by_ref_arc_raw<T: Woke>(data: *const ()) {
     Woke::wake_by_ref(&arc);
 }
 
-unsafe fn drop_arc_raw<T: Woke>(data: *const ()) {
+unsafe fn drop_arc_raw<T>(data: *const ()) {
     drop(Arc::<T>::from_raw(data as *const T))
 }
 

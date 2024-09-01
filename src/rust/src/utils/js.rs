@@ -1,48 +1,9 @@
 
-extern crate alloc;
-use alloc::string::String;
-use alloc::vec::Vec;
 use std::mem::ManuallyDrop;
 use std::sync::Mutex;
 
-// https://docs.rs/raw-parts/latest/raw_parts/
-struct RawParts<T> { ptr: *mut T, length: usize, }
-
-impl<T> RawParts<T> {
-    fn from_vec(vec: Vec<T>) -> RawParts<T> {
-        let mut me = ManuallyDrop::new(vec);
-        let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
-
-        Self { ptr, length, }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct ExternRef { pub value: i64, }
-
-extern "C" {
-    fn externref_drop(extern_ref: i64);
-}
-
-impl From<i64> for ExternRef {
-    fn from(value: i64) -> Self {
-        ExternRef { value }
-    }
-}
-
-impl Into<i64> for &ExternRef {
-    fn into(self) -> i64 {
-        self.value
-    }
-}
-
-impl Drop for ExternRef {
-    fn drop(&mut self) {
-        unsafe {
-            externref_drop(self.value);
-        }
-    }
-}
 
 pub const JS_UNDEFINED: ExternRef = ExternRef { value: 0 };
 pub const JS_NULL: ExternRef = ExternRef { value: 1 };
@@ -238,17 +199,16 @@ impl JSFunction {
     pub fn invoke(&self, params: &[InvokeParam]) -> f64
 where {
         let param_bytes = param_to_bytes(params);
-        let RawParts { ptr, length, } = RawParts::from_vec(param_bytes);
+        let mut me = ManuallyDrop::new(param_bytes);
+        let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
         unsafe { js_invoke_function(self.fn_handle, ptr, length) }
     }
 
     pub fn invoke_and_return_object(&self, params: &[InvokeParam]) -> ExternRef
 where {
         let param_bytes = param_to_bytes(params);
-        let RawParts {
-            ptr,
-            length,
-        } = RawParts::from_vec(param_bytes);
+        let mut me = ManuallyDrop::new(param_bytes);
+        let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
         let handle = unsafe { js_invoke_function_and_return_object(self.fn_handle, ptr, length) };
         ExternRef { value: handle }
     }
@@ -256,17 +216,16 @@ where {
     pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> i64
 where {
         let param_bytes = param_to_bytes(params);
-        let RawParts {
-            ptr,
-            length,
-        } = RawParts::from_vec(param_bytes);
+        let mut me = ManuallyDrop::new(param_bytes);
+        let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
         unsafe { js_invoke_function_and_return_bigint(self.fn_handle, ptr, length) }
     }
 
     pub fn invoke_and_return_string(&self, params: &[InvokeParam]) -> String
 where {
         let param_bytes = param_to_bytes(params);
-        let RawParts { ptr, length, } = RawParts::from_vec(param_bytes);
+        let mut me = ManuallyDrop::new(param_bytes);
+        let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
         let allocation_id =
             unsafe { js_invoke_function_and_return_string(self.fn_handle, ptr, length) };
         extract_string_from_memory(allocation_id)
@@ -275,7 +234,8 @@ where {
     pub fn invoke_and_return_array_buffer(&self, params: &[InvokeParam]) -> Vec<u8>
 where {
         let param_bytes = param_to_bytes(params);
-        let RawParts { ptr, length, } = RawParts::from_vec(param_bytes);
+        let mut me = ManuallyDrop::new(param_bytes);
+        let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
         let allocation_id =
             unsafe { js_invoke_function_and_return_array_buffer(self.fn_handle, ptr, length) };
         extract_vec_from_memory(allocation_id)
@@ -283,7 +243,8 @@ where {
 
     pub fn invoke_and_return_bool(&self, params: &[InvokeParam]) -> bool {
         let param_bytes = param_to_bytes(params);
-        let RawParts { ptr, length, } = RawParts::from_vec(param_bytes);
+        let mut me = ManuallyDrop::new(param_bytes);
+        let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
         let ret = unsafe { js_invoke_function_and_return_bool(self.fn_handle, ptr, length) };
         ret != 0.0
     }

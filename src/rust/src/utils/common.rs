@@ -1,17 +1,17 @@
-use core::hash::{Hash, Hasher};
-use core::{
+
+use std::{
+    collections::{HashMap, LinkedList},
+    hash::{Hash, Hasher},
     future::Future,
     pin::Pin,
     task::{Context, Poll, Waker},
-    any::{Any, TypeId}
+    sync::{Arc, Mutex, MutexGuard},
+    any::{Any, TypeId},
 };
-
-use std::collections::{HashMap, LinkedList};
-use std::sync::{Arc, Mutex, MutexGuard};
 
 use crate::bindings::util::random_i64;
 
-use super::js::ExternRef;
+use crate::utils::js::ExternRef;
 
 static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> =
     Mutex::new(LinkedList::new());
@@ -169,9 +169,7 @@ where
         state_storage.add_shared_state(id, shared_state.clone());
 
         (
-            EventHandlerFuture {
-                shared_state: shared_state.clone(),
-            },
+            EventHandlerFuture { shared_state: shared_state.clone(), },
             id,
         )
     }

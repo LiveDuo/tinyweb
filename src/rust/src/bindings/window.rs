@@ -1,10 +1,9 @@
 
-use crate::utils::js::register_function;
-
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use super::util::*;
+use crate::utils::js::register_function;
+use crate::bindings::util::*;
 
 pub type TimerHandle = f64;
 
