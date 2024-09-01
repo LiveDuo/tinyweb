@@ -1,8 +1,8 @@
 
 use core::future::Future;
 use crate::utils::handlers::EventHandlerFuture;
-use crate::utils::js::{extract_string_from_memory, ExternRef};
-use crate::utils::js::register_function;
+use crate::utils::allocations::extract_string_from_memory;
+use crate::utils::js::{ExternRef, register_function};
 
 pub fn random() -> f64 {
     let random = register_function(r#"

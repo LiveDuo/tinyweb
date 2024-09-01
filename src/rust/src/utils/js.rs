@@ -1,6 +1,5 @@
 
 use std::mem::ManuallyDrop;
-use std::sync::Mutex;
 
 #[derive(Debug, Clone)]
 pub struct ExternRef { pub value: i64, }
@@ -228,7 +227,7 @@ where {
         let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
         let allocation_id =
             unsafe { js_invoke_function_and_return_string(self.fn_handle, ptr, length) };
-        extract_string_from_memory(allocation_id)
+        crate::utils::allocations::extract_string_from_memory(allocation_id)
     }
 
     pub fn invoke_and_return_array_buffer(&self, params: &[InvokeParam]) -> Vec<u8>
@@ -238,7 +237,7 @@ where {
         let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
         let allocation_id =
             unsafe { js_invoke_function_and_return_array_buffer(self.fn_handle, ptr, length) };
-        extract_vec_from_memory(allocation_id)
+        crate::utils::allocations::extract_vec_from_memory(allocation_id)
     }
 
     pub fn invoke_and_return_bool(&self, params: &[InvokeParam]) -> bool {
@@ -258,52 +257,4 @@ pub fn register_function(code: &str) -> JSFunction {
             fn_handle: js_register_function(start as usize as f64, len as f64),
         }
     }
-}
-
-static ALLOCATIONS: Mutex<Vec<Option<Vec<u8>>>> = Mutex::new(Vec::new());
-
-pub fn extract_string_from_memory(allocation_id: usize) -> String {
-    let allocations = ALLOCATIONS.lock().unwrap();
-    let allocation = allocations.get(allocation_id).unwrap();
-    let vec = allocation.as_ref().unwrap();
-    let s = String::from_utf8(vec.clone()).unwrap();
-    s
-}
-
-pub fn extract_vec_from_memory(allocation_id: usize) -> Vec<u8> {
-    let allocations = ALLOCATIONS.lock().unwrap();
-    let allocation = allocations.get(allocation_id).unwrap();
-    let vec = allocation.as_ref().unwrap();
-    vec.clone()
-}
-
-#[no_mangle]
-pub fn create_allocation(size: usize) -> usize {
-    let mut buf = Vec::with_capacity(size as usize);
-    buf.resize(size, 0);
-    let mut allocations = ALLOCATIONS.lock().unwrap();
-    let i = allocations.len();
-    allocations.push(Some(buf));
-    i
-}
-
-#[no_mangle]
-pub fn allocation_ptr(allocation_id: i32) -> *const u8 {
-    let allocations = ALLOCATIONS.lock().unwrap();
-    let allocation = allocations.get(allocation_id as usize).unwrap();
-    let vec = allocation.as_ref().unwrap();
-    vec.as_ptr()
-}
-
-#[no_mangle]
-pub fn allocation_len(allocation_id: i32) -> f64 {
-    let allocations = ALLOCATIONS.lock().unwrap();
-    let allocation = allocations.get(allocation_id as usize).unwrap();
-    let vec = allocation.as_ref().unwrap();
-    vec.len() as f64
-}
-
-pub fn clear_allocation(allocation_id: usize) {
-    let mut allocations = ALLOCATIONS.lock().unwrap();
-    allocations[allocation_id] = None;
 }

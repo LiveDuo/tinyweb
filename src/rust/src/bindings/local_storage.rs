@@ -1,6 +1,6 @@
 
 use crate::utils::js::register_function;
-use crate::utils::js::extract_string_from_memory;
+use crate::utils::allocations::extract_string_from_memory;
 
 pub fn local_storage_set(key: &str, value: &str) {
     let local_storage_set = register_function(r#"
