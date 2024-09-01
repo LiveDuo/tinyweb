@@ -1,6 +1,6 @@
 
 use crate::bindings::util::random_i64;
-use crate::utils::js::ExternRef;
+use crate::js::ExternRef;
 
 use std::{
     collections::{HashMap, LinkedList},

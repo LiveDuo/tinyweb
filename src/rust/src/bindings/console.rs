@@ -1,4 +1,4 @@
-use crate::utils::js::JSFunction;
+use crate::js::JSFunction;
 
 pub fn console_log(message: &str) {
     let console_log = JSFunction::register(r#"

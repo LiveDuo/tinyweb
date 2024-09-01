@@ -1,6 +1,6 @@
 
-use crate::utils::js::JSFunction;
-use crate::utils::allocations::extract_string_from_memory;
+use crate::js::JSFunction;
+use crate::allocations::extract_string_from_memory;
 
 pub fn local_storage_set(key: &str, value: &str) {
     let local_storage_set = JSFunction::register(r#"

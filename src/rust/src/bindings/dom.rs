@@ -1,8 +1,8 @@
 
-use crate::utils::handlers::EventHandler;
-use crate::utils::handlers::FunctionHandle;
-use crate::utils::allocations::extract_string_from_memory;
-use crate::utils::js::{ExternRef, JSFunction};
+use crate::handlers::EventHandler;
+use crate::handlers::FunctionHandle;
+use crate::allocations::extract_string_from_memory;
+use crate::js::{ExternRef, JSFunction};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;

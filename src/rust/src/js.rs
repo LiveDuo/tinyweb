@@ -1,7 +1,7 @@
 
 use std::mem::ManuallyDrop;
 
-use crate::utils::params::*;
+use crate::params::*;
 
 extern "C" {
     fn js_register_function(ptr: f64, len: f64) -> f64;
@@ -57,7 +57,7 @@ impl JSFunction {
         let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
         let allocation_id =
             unsafe { js_invoke_function_and_return_string(self.fn_handle, ptr, length) };
-        crate::utils::allocations::extract_string_from_memory(allocation_id)
+        crate::allocations::extract_string_from_memory(allocation_id)
     }
 
     pub fn invoke_and_return_array_buffer(&self, params: &[InvokeParam]) -> Vec<u8> {
@@ -66,7 +66,7 @@ impl JSFunction {
         let (ptr, length, _capacity) = (me.as_mut_ptr(), me.len(), me.capacity());
         let allocation_id =
             unsafe { js_invoke_function_and_return_array_buffer(self.fn_handle, ptr, length) };
-        crate::utils::allocations::extract_vec_from_memory(allocation_id)
+        crate::allocations::extract_vec_from_memory(allocation_id)
     }
 
     pub fn invoke_and_return_bool(&self, params: &[InvokeParam]) -> bool {

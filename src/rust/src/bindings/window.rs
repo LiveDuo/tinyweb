@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use crate::utils::js::JSFunction;
+use crate::js::JSFunction;
 use crate::bindings::util::*;
 
 static ANIMATION_FRAME_EVENT_HANDLERS: Mutex<Option<HashMap<i64, Box<dyn FnMut() + Send + 'static>>>> = Mutex::new(None);

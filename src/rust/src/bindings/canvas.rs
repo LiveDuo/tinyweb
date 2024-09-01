@@ -1,4 +1,4 @@
-use crate::utils::js::{ExternRef, JSFunction};
+use crate::js::{ExternRef, JSFunction};
 
 pub struct CanvasContext(ExternRef);
 

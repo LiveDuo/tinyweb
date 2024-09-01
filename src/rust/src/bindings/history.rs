@@ -1,6 +1,6 @@
 
-use crate::utils::handlers::FunctionHandle;
-use crate::utils::js::{ExternRef, JSFunction};
+use crate::handlers::FunctionHandle;
+use crate::js::{ExternRef, JSFunction};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
