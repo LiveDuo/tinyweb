@@ -32,13 +32,9 @@ impl<'a> WakerRef<'a> {
     }
 }
 
-unsafe fn increase_refcount<T>(data: *const ()) {
+unsafe fn clone_arc_raw<T: Woke>(data: *const ()) -> RawWaker {
     let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data as *const T));
     let _arc_clone: mem::ManuallyDrop<_> = arc.clone();
-}
-
-unsafe fn clone_arc_raw<T: Woke>(data: *const ()) -> RawWaker {
-    increase_refcount::<T>(data);
     RawWaker::new(data, waker_vtable::<T>())
 }
 
@@ -89,7 +85,7 @@ impl<T> Woke for Task<T> {
     fn wake_by_ref(_: &Arc<Self>) {
         set_timeout(
             || {
-                poll_tasks();
+                DEFAULT_EXECUTOR.lock().unwrap().poll_tasks();
             },
             0,
         );
@@ -141,10 +137,6 @@ static DEFAULT_EXECUTOR: Mutex<Executor> = Mutex::new(Executor { tasks: None });
 
 pub fn run<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
     DEFAULT_EXECUTOR.lock().unwrap().run(Box::pin(future))
-}
-
-pub fn poll_tasks() {
-    DEFAULT_EXECUTOR.lock().unwrap().poll_tasks()
 }
 
 pub fn coroutine<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
