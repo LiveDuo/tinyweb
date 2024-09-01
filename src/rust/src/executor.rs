@@ -43,7 +43,12 @@ unsafe fn drop_arc_raw<T>(data: *const ()) {
 }
 
 fn waker_vtable<W: Woke>() -> &'static RawWakerVTable {
-    &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw::<W>, wake_by_ref_arc_raw::<W>, drop_arc_raw::<W>)
+    &RawWakerVTable::new(
+        clone_arc_raw::<W>,
+        wake_arc_raw::<W>,
+        wake_by_ref_arc_raw::<W>,
+        drop_arc_raw::<W>
+    )
 }
 
 #[inline]
@@ -66,7 +71,7 @@ trait Pendable {
 }
 
 struct Task<T> {
-    pub future: Mutex<Pin<Box<dyn Future<Output = T> + Send + 'static>>>,
+    future: Mutex<Pin<Box<dyn Future<Output = T> + Send + 'static>>>,
 }
 
 impl<T> Woke for Task<T> {
