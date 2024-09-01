@@ -1,7 +1,7 @@
 use crate::utils::js::ExternRef;
 use crate::utils::common::EventHandlerFuture;
 use core::future::Future;
-use crate::utils::js::run_js;
+use crate::utils::js::register_function;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -37,7 +37,7 @@ pub struct XMLHttpRequest(ExternRef);
 
 impl XMLHttpRequest {
     pub fn new() -> XMLHttpRequest {
-        let request = run_js("
+        let request = register_function("
             function() {
                 return new XMLHttpRequest();
             }
@@ -47,7 +47,7 @@ impl XMLHttpRequest {
     }
 
     pub fn open(&self, method: &str, url: &str) {
-        run_js("
+        register_function("
             function(request, method, url) {
                 request.open(method, url);
             }
@@ -56,7 +56,7 @@ impl XMLHttpRequest {
     }
 
     pub fn send(&self) {
-        run_js("
+        register_function("
             function(request) {
                 request.send();
             }
@@ -65,7 +65,7 @@ impl XMLHttpRequest {
     }
 
     pub fn send_with_body(&self, body: &str) {
-        run_js("
+        register_function("
             function(request, body) {
                 request.send(body);
             }
@@ -74,7 +74,7 @@ impl XMLHttpRequest {
     }
 
     pub fn set_request_header(&self, key: &str, value: &str) {
-        run_js("
+        register_function("
             function(request, key, value) {
                 request.setRequestHeader(key, value);
             }
@@ -83,7 +83,7 @@ impl XMLHttpRequest {
     }
 
     pub fn response_status(&self) -> usize {
-        run_js("
+        register_function("
             function(request) {
                 return request.status;
             }
@@ -92,7 +92,7 @@ impl XMLHttpRequest {
     }
 
     pub fn response_text(&self) -> String {
-        run_js("
+        register_function("
             function(request) {
                 return request.responseText;
             }
@@ -101,7 +101,7 @@ impl XMLHttpRequest {
     }
 
     pub fn response_array_buffer(&self) -> Vec<u8> {
-        run_js("
+        register_function("
             function(request) {
                 return request.response;
             }
@@ -110,7 +110,7 @@ impl XMLHttpRequest {
     }
 
     pub fn response_header(&self, key: &str) -> String {
-        run_js("
+        register_function("
             function(request, key) {
                 return request.getResponseHeader(key);
             }
@@ -119,7 +119,7 @@ impl XMLHttpRequest {
     }
 
     pub fn set_on_load(&self, callback: impl FnMut() + Send + 'static) {
-        let function_ref = run_js(r#"
+        let function_ref = register_function(r#"
             function(request){
                 const handler = () => {
                     this.module.instance.exports.web_handle_http_load_event_handler(id);
@@ -134,7 +134,7 @@ impl XMLHttpRequest {
     }
 
     pub fn set_response_type(&self, response_type: &str) {
-        run_js("
+        register_function("
             function(request, response_type) {
                 request.responseType = response_type;
             }

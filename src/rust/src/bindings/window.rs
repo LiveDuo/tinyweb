@@ -1,5 +1,5 @@
 
-use crate::utils::js::run_js;
+use crate::utils::js::register_function;
 
 use std::collections::HashMap;
 use std::sync::Mutex;
@@ -29,7 +29,7 @@ pub extern "C" fn web_one_time_empty_handler(id: i64) {
 }
 
 pub fn request_animation_frame(handler: impl FnMut() + Send + Sync + 'static) {
-    let function_handle = run_js(r#"
+    let function_handle = register_function(r#"
         function(){
             const handler = () => {
                 this.module.instance.exports.web_one_time_empty_handler(id);
@@ -53,7 +53,7 @@ pub fn set_timeout(
     handler: impl FnMut() + 'static + Send + Sync,
     ms: impl Into<f64>,
 ) -> TimerHandle {
-    let obj_handle = run_js(r#"
+    let obj_handle = register_function(r#"
         function(ms){
             const handler = () => {
                 this.module.instance.exports.web_one_time_empty_handler(id);
@@ -77,7 +77,7 @@ pub fn set_timeout(
 }
 
 pub fn clear_timeout(interval_id: impl Into<f64>) {
-    let clear_interval = run_js(r#"
+    let clear_interval = register_function(r#"
         function(interval_id){
             window.clearTimeout(interval_id);
         }"#);

@@ -346,8 +346,3 @@ pub fn clear_allocation(allocation_id: usize) {
     let mut allocations = ALLOCATIONS.lock().unwrap();
     allocations[allocation_id] = None;
 }
-
-pub fn run_js(e: &str) -> JSFunction {
-    let cb = crate::utils::js::register_function(e);
-    crate::utils::js::JSFunction { fn_handle: cb.fn_handle }
-}
