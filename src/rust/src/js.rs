@@ -4,6 +4,7 @@ use std::hash::{Hash, Hasher};
 
 use crate::params::*;
 
+#[cfg(not(test))]
 extern "C" {
     fn js_register_function(ptr: f64, len: f64) -> f64;
     fn js_invoke_function(fn_handle: f64, ptr: *const u8, len: usize) -> f64;
@@ -13,6 +14,21 @@ extern "C" {
     fn js_invoke_function_and_return_array_buffer(fn_handle: f64, ptr: *const u8, len: usize) -> usize;
     fn js_invoke_function_and_return_bool(fn_handle: f64, ptr: *const u8, len: usize) -> f64;
 }
+
+#[cfg(test)]
+fn js_register_function(_ptr: f64, _len: f64) -> f64 { 0.0 }
+#[cfg(test)]
+fn js_invoke_function(_fn_handle: f64, _ptr: *const u8, _len: usize) -> f64 { 0.0 }
+#[cfg(test)]
+fn js_invoke_function_and_return_object(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
+#[cfg(test)]
+fn js_invoke_function_and_return_bigint(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
+#[cfg(test)]
+fn js_invoke_function_and_return_string(_fn_handle: f64, _ptr: *const u8, _len: usize) -> usize { 0 }
+#[cfg(test)]
+fn js_invoke_function_and_return_array_buffer(_fn_handle: f64, _ptr: *const u8, _len: usize) -> usize { 0 }
+#[cfg(test)]
+fn js_invoke_function_and_return_bool(_fn_handle: f64, _ptr: *const u8, _len: usize) -> f64 { 0.0 }
 
 #[derive(Debug, Clone)]
 pub struct ExternRef { pub value: i64, }
@@ -36,10 +52,11 @@ pub struct JSFunction {
     pub fn_handle: f64,
 }
 
+#[allow(unused_unsafe)]
 impl JSFunction {
 
     pub fn register(code: &str) -> JSFunction {
-        unsafe { JSFunction { fn_handle: js_register_function(code.as_ptr() as usize as f64, code.len() as f64), } }
+        JSFunction { fn_handle: unsafe { js_register_function(code.as_ptr() as usize as f64, code.len() as f64) } }
     }
 
     pub fn invoke(&self, params: &[InvokeParam]) -> f64 {
@@ -83,4 +100,59 @@ impl JSFunction {
         let ret = unsafe { js_invoke_function_and_return_bool(self.fn_handle, me.as_mut_ptr(), me.len()) };
         ret != 0.0
     }
+}
+
+
+
+#[cfg(test)]
+mod tests {
+    
+    use super::*;
+
+    #[test]
+    fn test_register_invoke() {
+        
+        // register
+        let func = JSFunction::register("");
+        assert_eq!(func.fn_handle, 0.0);
+
+        // invoke
+        let result = func.invoke(&[]);
+        assert_eq!(result, 0.0);
+        
+        // invoke and return object
+        let result = func.invoke_and_return_object(&[]);
+        assert_eq!(result, ExternRef { value: 0 });
+        
+        // invoke and return bigint
+        let result = func.invoke_and_return_bigint(&[]);
+        assert_eq!(result, 0);
+        
+        // invoke and return string
+        let text = "hello";
+        let id = crate::allocations::create_allocation(5);
+        crate::allocations::ALLOCATIONS.lock().map(|mut s| {
+            s[id] = Some(text.as_bytes().to_vec());
+        }).unwrap();
+        let result = func.invoke_and_return_string(&[]);
+        assert_eq!(result, "hello".to_owned());
+        
+        crate::allocations::ALLOCATIONS.lock().map(|mut s| {
+            s.clear();
+        }).unwrap();
+
+        // invoke and return array buffer
+        let id2 = crate::allocations::create_allocation(5);
+        let vec = vec![1, 2];
+        crate::allocations::ALLOCATIONS.lock().map(|mut s| {
+            s[id2] = Some(vec.clone());
+        }).unwrap();
+        let result = func.invoke_and_return_array_buffer(&[]);
+        assert_eq!(result, vec);
+        
+        // invoke and return bool
+        let result = func.invoke_and_return_bool(&[]);
+        assert_eq!(result, false);
+    }
+
 }

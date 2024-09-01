@@ -1,7 +1,7 @@
 
 use std::sync::Mutex;
 
-static ALLOCATIONS: Mutex<Vec<Option<Vec<u8>>>> = Mutex::new(Vec::new());
+pub(crate) static ALLOCATIONS: Mutex<Vec<Option<Vec<u8>>>> = Mutex::new(Vec::new());
 
 pub fn extract_string_from_memory(allocation_id: usize) -> String {
     let allocations = ALLOCATIONS.lock().unwrap();
