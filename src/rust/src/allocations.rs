@@ -29,17 +29,17 @@ pub fn create_allocation(size: usize) -> usize {
 }
 
 #[no_mangle]
-pub fn allocation_ptr(allocation_id: i32) -> *const u8 {
+pub fn allocation_ptr(allocation_id: usize) -> *const u8 {
     let allocations = ALLOCATIONS.lock().unwrap();
-    let allocation = allocations.get(allocation_id as usize).unwrap();
+    let allocation = allocations.get(allocation_id).unwrap();
     let vec = allocation.as_ref().unwrap();
     vec.as_ptr()
 }
 
 #[no_mangle]
-pub fn allocation_len(allocation_id: i32) -> f64 {
+pub fn allocation_len(allocation_id: usize) -> f64 {
     let allocations = ALLOCATIONS.lock().unwrap();
-    let allocation = allocations.get(allocation_id as usize).unwrap();
+    let allocation = allocations.get(allocation_id).unwrap();
     let vec = allocation.as_ref().unwrap();
     vec.len() as f64
 }
@@ -47,4 +47,61 @@ pub fn allocation_len(allocation_id: i32) -> f64 {
 pub fn clear_allocation(allocation_id: usize) {
     let mut allocations = ALLOCATIONS.lock().unwrap();
     allocations[allocation_id] = None;
+}
+
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_allocation() {
+        
+        let id = create_allocation(1);
+        let allocation = ALLOCATIONS.lock().map(|s| s[id].clone()).unwrap();
+        assert_eq!(allocation.is_some(), true);
+
+        let ptr = allocation_ptr(id);
+        assert_eq!(ptr.is_null(), false);
+        
+        let len = allocation_len(id);
+        assert_eq!(len, 1f64);
+        
+        let id2 = create_allocation(1);
+        let allocation = ALLOCATIONS.lock().map(|s| s[id2].clone()).unwrap();
+        assert_eq!(allocation.is_some(), true);
+
+        clear_allocation(id);
+
+        let allocation = ALLOCATIONS.lock().map(|s| s[id].clone()).unwrap();
+        assert_eq!(allocation.is_some(), false);
+
+    }
+
+    #[test]
+    fn test_memory() {
+        
+        // test string
+        let id = create_allocation(1);
+        
+        let text = "hello";
+        ALLOCATIONS.lock().map(|mut s| {
+            s[id] = Some(text.as_bytes().to_vec());
+        }).unwrap();
+        
+        let memory_text = extract_string_from_memory(id);
+        assert_eq!(memory_text, text);
+        
+        // test vec
+        let id = create_allocation(1);
+        
+        let vec = vec![1, 2];
+        ALLOCATIONS.lock().map(|mut s| {
+            s[id] = Some(vec.clone());
+        }).unwrap();
+        
+        let memory_vec = extract_vec_from_memory(id);
+        assert_eq!(memory_vec, vec);
+    }
 }
