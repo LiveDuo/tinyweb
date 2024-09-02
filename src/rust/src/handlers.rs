@@ -11,11 +11,7 @@ pub struct EventHandler<T> {
 }
 
 impl<T> EventHandler<T> {
-    pub fn add_listener(
-        &self,
-        id: Rc<ExternRef>,
-        handler: Box<dyn FnMut(T) + 'static>,
-    ) {
+    pub fn add_listener(&self, id: Rc<ExternRef>, handler: Box<dyn FnMut(T) + 'static>) {
         let mut handlers = self.listeners.borrow_mut();
         if let Some(h) = handlers.as_mut() {
             h.insert(id, handler);
@@ -46,15 +42,9 @@ impl<T> EventHandler<T> {
     }
 }
 
-pub struct EventHandlerFuture<T> {
-    shared_state: Rc<RefCell<EventHandlerSharedState<T>>>,
-}
+pub struct EventHandlerFuture<T> { shared_state: Rc<RefCell<EventHandlerSharedState<T>>>, }
 
-pub struct EventHandlerSharedState<T> {
-    completed: bool,
-    waker: Option<Waker>,
-    result: Option<T>,
-}
+pub struct EventHandlerSharedState<T> { completed: bool, waker: Option<Waker>, result: Option<T>, }
 
 impl<T> Future for EventHandlerFuture<T> {
     type Output = T;
@@ -77,9 +67,7 @@ pub struct SharedStateMap<T> {
 
 impl<T> Default for SharedStateMap<T> {
     fn default() -> Self {
-        Self {
-            map: RefCell::new(HashMap::new()),
-        }
+        Self { map: RefCell::new(HashMap::new()), }
     }
 }
 
