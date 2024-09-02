@@ -40,235 +40,234 @@ class GenerationalArena {
 }
 const store = new GenerationalArena()
 
-const createEnvironment = () => {
+// 0 is reserved for undefined
+// 1 is reserved for null
+// 2 is reserved for self
+// 3 is reserved for document
+// 4 is reserved for document.body
+
+const context = {
+    functions: [
+        function() {
+            debugger
+            return 0
+        }
+    ],
+    utf8dec: new TextDecoder('utf-8'),
+    utf8enc: new TextEncoder(),
+    utf16dec: new TextDecoder('utf-16'),
+    readUtf8FromMemory: function(start, len) {
+        const text = this.utf8dec.decode(this.getMemory().subarray(start, start + len))
+        return text
+    },
+    createAllocation: function(size) {
+        if (!this.module) throw new Error('module not set')
+        const allocationId = this.module.instance.exports.create_allocation(size)
+        const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId)
+        return [
+            allocationId,
+            allocationPtr
+        ]
+    },
+    writeUtf8ToMemory: function(str) {
+        const bytes = this.utf8enc.encode(str)
+        const len = bytes.length
+        const [id, start] = this.createAllocation(len)
+        this.getMemory().set(bytes, start)
+        return id
+    },
+    writeArrayBufferToMemory: function(ab) {
+        const bytes = new Uint8Array(ab)
+        const len = bytes.length
+        const [id, start] = this.createAllocation(len)
+        this.getMemory().set(bytes, start)
+        return id
+    },
+    readUtf16FromMemory: function(start, len) {
+        const text = this.utf16dec.decode(this.getMemory().subarray(start, start + len))
+        return text
+    },
+    readUint8ArrayFromMemory (start, length) {
+        if (!this.module) throw new Error('module not set')
+        const b = this.getMemory().slice(start, start + length)
+        return new Uint8Array(b)
+    },
+    storeObject: function(obj) {
+        return store.allocate(obj)
+    },
+    getObject: function(handle) {
+        return store.retrieve(handle)
+    },
+    releaseObject: function(handle) {
+        // don't release our fixed references
+        if (handle <= 4n) return
+        store.deallocate(handle)
+    },
+    getMemory: function() {
+        if (!this.module) throw new Error('module not set')
+        return new Uint8Array(this.module.instance.exports.memory.buffer)
+    },
+    readParameters: function(start, length) {
+        //get bytes of parameters out of wasm module
+        const parameters = this.readUint8ArrayFromMemory(start, length)
+        //convert bytes to array of values  
+        //assuming each paramter is preceded by a 32 bit integer indicating its type
+        //0 = undefined
+        //1 = null
+        //2 = float-64
+        //3 = bigint
+        //4 = string (followed by 32-bit start and size of string in memory)
+        //5 = extern ref
+        //6 = array of float-64 (followed by 32-bit start and size of string in memory)
+        //7 = true
+        //8 = false
+        const values = []
+        let i = 0
+        while(i < parameters.length){
+            const type = parameters[i]
+            i++
+            switch(type){
+                case 0:
+                    values.push(undefined)
+                    break
+                case 1:
+                    values.push(null)
+                    break
+                case 2:
+                    values.push(new DataView(parameters.buffer).getFloat64(i, true))
+                    i += 8
+                    break
+                case 3:
+                    values.push(new DataView(parameters.buffer).getBigInt64(i, true))
+                    i += 8
+                    break
+                case 4:
+                    {
+                        const start1 = new DataView(parameters.buffer).getInt32(i, true)
+                        i += 4
+                        const len = new DataView(parameters.buffer).getInt32(i, true)
+                        i += 4
+                        values.push(context.readUtf8FromMemory(start1, len))
+                        break
+                    }
+                case 5:
+                    {
+                        const handle = new DataView(parameters.buffer).getBigInt64(i, true)
+                        values.push(context.getObject(handle))
+                        i += 8
+                        break
+                    }
+                case 6:
+                    {
+                        const start2 = new DataView(parameters.buffer).getInt32(i, true)
+                        i += 4
+                        const len1 = new DataView(parameters.buffer).getInt32(i, true)
+                        i += 4
+                        const memory = context.getMemory()
+                        const slice = memory.buffer.slice(start2, start2 + len1 * 4)
+                        const array = new Float32Array(slice)
+                        values.push(array)
+                        break
+                    }
+                case 7:
+                    values.push(true)
+                    break
+                case 8:
+                    values.push(false)
+                    break
+                case 9:
+                    {
+                        const start3 = new DataView(parameters.buffer).getInt32(i, true)
+                        i += 4
+                        const len2 = new DataView(parameters.buffer).getInt32(i, true)
+                        i += 4
+                        const memory1 = context.getMemory()
+                        const slice1 = memory1.buffer.slice(start3, start3 + len2 * 8)
+                        const array1 = new Float64Array(slice1)
+                        values.push(array1)
+                        break
+                    }
+                case 10:
+                    {
+                        const start4 = new DataView(parameters.buffer).getInt32(i, true)
+                        i += 4
+                        const len3 = new DataView(parameters.buffer).getInt32(i, true)
+                        i += 4
+                        const memory2 = context.getMemory()
+                        const slice2 = memory2.buffer.slice(start4, start4 + len3 * 4)
+                        const array2 = new Uint32Array(slice2)
+                        values.push(array2)
+                        break
+                    }
+                default:
+                    throw new Error('unknown parameter type')
+            }
+        }
+        return values
+    }
+}
+
+const getWasmEnv = () => {
+    
+    return {
+        abort () {
+            throw new Error('WebAssembly module aborted')
+        },
+        externref_drop (obj) {
+            context.releaseObject(obj)
+        },
+        js_register_function (start, len, utfByteLen) {
+            let functionBody
+            if (utfByteLen === 16) functionBody = context.readUtf16FromMemory(start, len)
+            else functionBody = context.readUtf8FromMemory(start, len)
+            const id = context.functions.length
+            context.functions.push(Function(`'use strict';return(${functionBody})`)())
+            return id
+        },
+        js_invoke_function (funcHandle, parametersStart, parametersLength) {
+            const values = context.readParameters(parametersStart, parametersLength)
+            return context.functions[funcHandle].call(context, ...values)
+        },
+        js_invoke_function_and_return_object (funcHandle, parametersStart, parametersLength) {
+            const values = context.readParameters(parametersStart, parametersLength)
+            const result = context.functions[funcHandle].call(context, ...values)
+            if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_object returned undefined or null while trying to return an object')
+            return context.storeObject(result)
+        },
+        js_invoke_function_and_return_bool (funcHandle, parametersStart, parametersLength) {
+            const values = context.readParameters(parametersStart, parametersLength)
+            const result = context.functions[funcHandle].call(context, ...values)
+            return result ? 1 : 0
+        },
+        js_invoke_function_and_return_bigint (funcHandle, parametersStart, parametersLength) {
+            const values = context.readParameters(parametersStart, parametersLength)
+            const result = context.functions[funcHandle].call(context, ...values)
+            return result
+        },
+        js_invoke_function_and_return_string (funcHandle, parametersStart, parametersLength) {
+            const values = context.readParameters(parametersStart, parametersLength)
+            const result = context.functions[funcHandle].call(context, ...values)
+            if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_string returned undefined or null while trying to retrieve string.')
+            return context.writeUtf8ToMemory(result)
+        },
+        js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {
+            const values = context.readParameters(parametersStart, parametersLength)
+            const result = context.functions[funcHandle].call(context, ...values)
+            if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_array_buffer returned undefined or null while trying to retrieve arraybuffer.')
+            return context.writeArrayBufferToMemory(result)
+        }
+    }
+}
+
+const loadWasm = async (wasmURL) => {
+
     store.allocate(undefined);
     store.allocate(null);
     store.allocate(self);
     store.allocate(typeof document != 'undefined' ? document : null);
     store.allocate(typeof document != 'undefined' ? document.body : null);
-    // 0 is reserved for undefined
-    // 1 is reserved for null
-    // 2 is reserved for self
-    // 3 is reserved for document
-    // 4 is reserved for document.body
-    const context = {
-        functions: [
-            function() {
-                debugger
-                return 0
-            }
-        ],
-        utf8dec: new TextDecoder('utf-8'),
-        utf8enc: new TextEncoder(),
-        utf16dec: new TextDecoder('utf-16'),
-        readUtf8FromMemory: function(start, len) {
-            const text = this.utf8dec.decode(this.getMemory().subarray(start, start + len))
-            return text
-        },
-        createAllocation: function(size) {
-            if (!this.module) throw new Error('module not set')
-            const allocationId = this.module.instance.exports.create_allocation(size)
-            const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId)
-            return [
-                allocationId,
-                allocationPtr
-            ]
-        },
-        writeUtf8ToMemory: function(str) {
-            const bytes = this.utf8enc.encode(str)
-            const len = bytes.length
-            const [id, start] = this.createAllocation(len)
-            this.getMemory().set(bytes, start)
-            return id
-        },
-        writeArrayBufferToMemory: function(ab) {
-            const bytes = new Uint8Array(ab)
-            const len = bytes.length
-            const [id, start] = this.createAllocation(len)
-            this.getMemory().set(bytes, start)
-            return id
-        },
-        readUtf16FromMemory: function(start, len) {
-            const text = this.utf16dec.decode(this.getMemory().subarray(start, start + len))
-            return text
-        },
-        readUint8ArrayFromMemory (start, length) {
-            if (!this.module) throw new Error('module not set')
-            const b = this.getMemory().slice(start, start + length)
-            return new Uint8Array(b)
-        },
-        storeObject: function(obj) {
-            return store.allocate(obj)
-        },
-        getObject: function(handle) {
-            return store.retrieve(handle)
-        },
-        releaseObject: function(handle) {
-            // don't release our fixed references
-            if (handle <= 4n) return
-            store.deallocate(handle)
-        },
-        getMemory: function() {
-            if (!this.module) throw new Error('module not set')
-            return new Uint8Array(this.module.instance.exports.memory.buffer)
-        },
-        readParameters: function(start, length) {
-            //get bytes of parameters out of wasm module
-            const parameters = this.readUint8ArrayFromMemory(start, length)
-            //convert bytes to array of values  
-            //assuming each paramter is preceded by a 32 bit integer indicating its type
-            //0 = undefined
-            //1 = null
-            //2 = float-64
-            //3 = bigint
-            //4 = string (followed by 32-bit start and size of string in memory)
-            //5 = extern ref
-            //6 = array of float-64 (followed by 32-bit start and size of string in memory)
-            //7 = true
-            //8 = false
-            const values = []
-            let i = 0
-            while(i < parameters.length){
-                const type = parameters[i]
-                i++
-                switch(type){
-                    case 0:
-                        values.push(undefined)
-                        break
-                    case 1:
-                        values.push(null)
-                        break
-                    case 2:
-                        values.push(new DataView(parameters.buffer).getFloat64(i, true))
-                        i += 8
-                        break
-                    case 3:
-                        values.push(new DataView(parameters.buffer).getBigInt64(i, true))
-                        i += 8
-                        break
-                    case 4:
-                        {
-                            const start1 = new DataView(parameters.buffer).getInt32(i, true)
-                            i += 4
-                            const len = new DataView(parameters.buffer).getInt32(i, true)
-                            i += 4
-                            values.push(context.readUtf8FromMemory(start1, len))
-                            break
-                        }
-                    case 5:
-                        {
-                            const handle = new DataView(parameters.buffer).getBigInt64(i, true)
-                            values.push(context.getObject(handle))
-                            i += 8
-                            break
-                        }
-                    case 6:
-                        {
-                            const start2 = new DataView(parameters.buffer).getInt32(i, true)
-                            i += 4
-                            const len1 = new DataView(parameters.buffer).getInt32(i, true)
-                            i += 4
-                            const memory = context.getMemory()
-                            const slice = memory.buffer.slice(start2, start2 + len1 * 4)
-                            const array = new Float32Array(slice)
-                            values.push(array)
-                            break
-                        }
-                    case 7:
-                        values.push(true)
-                        break
-                    case 8:
-                        values.push(false)
-                        break
-                    case 9:
-                        {
-                            const start3 = new DataView(parameters.buffer).getInt32(i, true)
-                            i += 4
-                            const len2 = new DataView(parameters.buffer).getInt32(i, true)
-                            i += 4
-                            const memory1 = context.getMemory()
-                            const slice1 = memory1.buffer.slice(start3, start3 + len2 * 8)
-                            const array1 = new Float64Array(slice1)
-                            values.push(array1)
-                            break
-                        }
-                    case 10:
-                        {
-                            const start4 = new DataView(parameters.buffer).getInt32(i, true)
-                            i += 4
-                            const len3 = new DataView(parameters.buffer).getInt32(i, true)
-                            i += 4
-                            const memory2 = context.getMemory()
-                            const slice2 = memory2.buffer.slice(start4, start4 + len3 * 4)
-                            const array2 = new Uint32Array(slice2)
-                            values.push(array2)
-                            break
-                        }
-                    default:
-                        throw new Error('unknown parameter type')
-                }
-            }
-            return values
-        }
-    }
-    return [
-        {
-            abort () {
-                throw new Error('WebAssembly module aborted')
-            },
-            externref_drop (obj) {
-                context.releaseObject(obj)
-            },
-            js_register_function (start, len, utfByteLen) {
-                let functionBody
-                if (utfByteLen === 16) functionBody = context.readUtf16FromMemory(start, len)
-                else functionBody = context.readUtf8FromMemory(start, len)
-                const id = context.functions.length
-                context.functions.push(Function(`'use strict';return(${functionBody})`)())
-                return id
-            },
-            js_invoke_function (funcHandle, parametersStart, parametersLength) {
-                const values = context.readParameters(parametersStart, parametersLength)
-                return context.functions[funcHandle].call(context, ...values)
-            },
-            js_invoke_function_and_return_object (funcHandle, parametersStart, parametersLength) {
-                const values = context.readParameters(parametersStart, parametersLength)
-                const result = context.functions[funcHandle].call(context, ...values)
-                if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_object returned undefined or null while trying to return an object')
-                return context.storeObject(result)
-            },
-            js_invoke_function_and_return_bool (funcHandle, parametersStart, parametersLength) {
-                const values = context.readParameters(parametersStart, parametersLength)
-                const result = context.functions[funcHandle].call(context, ...values)
-                return result ? 1 : 0
-            },
-            js_invoke_function_and_return_bigint (funcHandle, parametersStart, parametersLength) {
-                const values = context.readParameters(parametersStart, parametersLength)
-                const result = context.functions[funcHandle].call(context, ...values)
-                return result
-            },
-            js_invoke_function_and_return_string (funcHandle, parametersStart, parametersLength) {
-                const values = context.readParameters(parametersStart, parametersLength)
-                const result = context.functions[funcHandle].call(context, ...values)
-                if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_string returned undefined or null while trying to retrieve string.')
-                return context.writeUtf8ToMemory(result)
-            },
-            js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {
-                const values = context.readParameters(parametersStart, parametersLength)
-                const result = context.functions[funcHandle].call(context, ...values)
-                if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_array_buffer returned undefined or null while trying to retrieve arraybuffer.')
-                return context.writeArrayBufferToMemory(result)
-            }
-        },
-        context
-    ]
-}
-const loadAndRunWasm = async  (wasmURL) => {
-    const context = await loadWasm(wasmURL)
-    context.module.instance.exports.main()
-}
-const loadWasm = async (wasmURL) => {
-    const [env, context] = createEnvironment()
+
+    const env = getWasmEnv()
     const response = await fetch(wasmURL)
     const bytes = await response.arrayBuffer()
     const module = await WebAssembly.instantiate(bytes, {
@@ -278,11 +277,14 @@ const loadWasm = async (wasmURL) => {
     return context
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const wasmScripts = document.querySelectorAll('script[type="application/wasm"]')
     for(let i = 0; i < wasmScripts.length; i++){
         const src = wasmScripts[i].src
-        if (src) loadAndRunWasm(src)
+        if (src) {
+            const context = await loadWasm(src)
+            context.module.instance.exports.main()
+        }
         else console.error('Script tag must have "src" property.')
     }
 })
