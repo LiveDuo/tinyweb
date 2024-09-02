@@ -1,7 +1,5 @@
 "use strict";
 
-var $7611355a66e759da$exports = {};
-
 const MAX_GENERATION = 0xfffffff0;
 class GenerationalArena {
     constructor(){
@@ -17,8 +15,7 @@ class GenerationalArena {
         const currentGeneration = this.generations[index];
         this.objects[index] = o;
         this.generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1;
-        // return handle as big integer that contains
-        // index in low 32 bits and generation in high 32 bits
+        // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
         const low = BigInt(index);
         const high = BigInt(this.generations[index]) << BigInt(32);
         const merged = low | high;
@@ -55,8 +52,9 @@ class ExternRef {
     }
 }
 
+var ExternRefOuter = {};
 
-Object.defineProperty($7611355a66e759da$exports, "ExternRef", {
+Object.defineProperty(ExternRefOuter, "ExternRef", {
     enumerable: true,
     get: function() {
         return ExternRef;
@@ -66,11 +64,11 @@ Object.defineProperty($7611355a66e759da$exports, "ExternRef", {
 
 const JsWasm = {
     createEnvironment () {
-        (0, $7611355a66e759da$exports.ExternRef).create(undefined);
-        (0, $7611355a66e759da$exports.ExternRef).create(null);
-        (0, $7611355a66e759da$exports.ExternRef).create(self);
-        (0, $7611355a66e759da$exports.ExternRef).create(typeof document != "undefined" ? document : null);
-        (0, $7611355a66e759da$exports.ExternRef).create(typeof document != "undefined" ? document.body : null);
+        (0, ExternRefOuter.ExternRef).create(undefined);
+        (0, ExternRefOuter.ExternRef).create(null);
+        (0, ExternRefOuter.ExternRef).create(self);
+        (0, ExternRefOuter.ExternRef).create(typeof document != "undefined" ? document : null);
+        (0, ExternRefOuter.ExternRef).create(typeof document != "undefined" ? document.body : null);
         // 0 is reserved for undefined
         // 1 is reserved for null
         // 2 is reserved for self
@@ -123,15 +121,15 @@ const JsWasm = {
                 return new Uint8Array(b);
             },
             storeObject: function(obj) {
-                return (0, $7611355a66e759da$exports.ExternRef).create(obj);
+                return (0, ExternRefOuter.ExternRef).create(obj);
             },
             getObject: function(handle) {
-                return (0, $7611355a66e759da$exports.ExternRef).load(handle);
+                return (0, ExternRefOuter.ExternRef).load(handle);
             },
             releaseObject: function(handle) {
                 // dont release our fixed references
                 if (handle <= 4n) return;
-                (0, $7611355a66e759da$exports.ExternRef).delete(handle);
+                (0, ExternRefOuter.ExternRef).delete(handle);
             },
             getMemory: function() {
                 if (!this.module) throw new Error("module not set");
@@ -311,6 +309,3 @@ document.addEventListener("DOMContentLoaded", function() {
         else console.error("Script tag must have 'src' property.");
     }
 });
-
-
-//# sourceMappingURL=js-wasm.js.map
