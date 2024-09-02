@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 const MAX_GENERATION = 0xfffffff0;
 class GenerationalArena {
@@ -28,13 +28,13 @@ class GenerationalArena {
         else if (generation === this.generations[index]) {
             this.generations[index] = -this.generations[index];
             this.freeList.push(index);
-        } else throw new Error("attempt to deallocate invalid handle");
+        } else throw new Error('attempt to deallocate invalid handle');
     }
     retrieve(handle) {
         const index = Number(handle & BigInt(0xffffffff));
         const generation = Number(handle >> BigInt(32));
         if (generation === this.generations[index]) return this.objects[index];
-        else throw new Error("attempt to retrieve invalid handle");
+        else throw new Error('attempt to retrieve invalid handle');
     }
 }
 
@@ -54,7 +54,7 @@ class ExternRef {
 
 var ExternRefOuter = {};
 
-Object.defineProperty(ExternRefOuter, "ExternRef", {
+Object.defineProperty(ExternRefOuter, 'ExternRef', {
     enumerable: true,
     get: function() {
         return ExternRef;
@@ -67,8 +67,8 @@ const JsWasm = {
         (0, ExternRefOuter.ExternRef).create(undefined);
         (0, ExternRefOuter.ExternRef).create(null);
         (0, ExternRefOuter.ExternRef).create(self);
-        (0, ExternRefOuter.ExternRef).create(typeof document != "undefined" ? document : null);
-        (0, ExternRefOuter.ExternRef).create(typeof document != "undefined" ? document.body : null);
+        (0, ExternRefOuter.ExternRef).create(typeof document != 'undefined' ? document : null);
+        (0, ExternRefOuter.ExternRef).create(typeof document != 'undefined' ? document.body : null);
         // 0 is reserved for undefined
         // 1 is reserved for null
         // 2 is reserved for self
@@ -81,15 +81,15 @@ const JsWasm = {
                     return 0;
                 }
             ],
-            utf8dec: new TextDecoder("utf-8"),
+            utf8dec: new TextDecoder('utf-8'),
             utf8enc: new TextEncoder(),
-            utf16dec: new TextDecoder("utf-16"),
+            utf16dec: new TextDecoder('utf-16'),
             readUtf8FromMemory: function(start, len) {
                 const text = this.utf8dec.decode(this.getMemory().subarray(start, start + len));
                 return text;
             },
             createAllocation: function(size) {
-                if (!this.module) throw new Error("module not set");
+                if (!this.module) throw new Error('module not set');
                 const allocationId = this.module.instance.exports.create_allocation(size);
                 const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId);
                 return [
@@ -116,7 +116,7 @@ const JsWasm = {
                 return text;
             },
             readUint8ArrayFromMemory (start, length) {
-                if (!this.module) throw new Error("module not set");
+                if (!this.module) throw new Error('module not set');
                 const b = this.getMemory().slice(start, start + length);
                 return new Uint8Array(b);
             },
@@ -132,7 +132,7 @@ const JsWasm = {
                 (0, ExternRefOuter.ExternRef).delete(handle);
             },
             getMemory: function() {
-                if (!this.module) throw new Error("module not set");
+                if (!this.module) throw new Error('module not set');
                 return new Uint8Array(this.module.instance.exports.memory.buffer);
             },
             readParameters: function(start, length) {
@@ -228,7 +228,7 @@ const JsWasm = {
                                 break;
                             }
                         default:
-                            throw new Error("unknown parameter type");
+                            throw new Error('unknown parameter type');
                     }
                 }
                 return values;
@@ -237,7 +237,7 @@ const JsWasm = {
         return [
             {
                 abort () {
-                    throw new Error("WebAssembly module aborted");
+                    throw new Error('WebAssembly module aborted');
                 },
                 externref_drop (obj) {
                     context.releaseObject(obj);
@@ -247,7 +247,7 @@ const JsWasm = {
                     if (utfByteLen === 16) functionBody = context.readUtf16FromMemory(start, len);
                     else functionBody = context.readUtf8FromMemory(start, len);
                     const id = context.functions.length;
-                    context.functions.push(Function(`"use strict";return(${functionBody})`)());
+                    context.functions.push(Function(`'use strict';return(${functionBody})`)());
                     return id;
                 },
                 js_invoke_function (funcHandle, parametersStart, parametersLength) {
@@ -257,7 +257,7 @@ const JsWasm = {
                 js_invoke_function_and_return_object (funcHandle, parametersStart, parametersLength) {
                     const values = context.readParameters(parametersStart, parametersLength);
                     const result = context.functions[funcHandle].call(context, ...values);
-                    if (result === undefined || result === null) throw new Error("js_invoke_function_and_return_object returned undefined or null while trying to return an object");
+                    if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_object returned undefined or null while trying to return an object');
                     return context.storeObject(result);
                 },
                 js_invoke_function_and_return_bool (funcHandle, parametersStart, parametersLength) {
@@ -273,13 +273,13 @@ const JsWasm = {
                 js_invoke_function_and_return_string (funcHandle, parametersStart, parametersLength) {
                     const values = context.readParameters(parametersStart, parametersLength);
                     const result = context.functions[funcHandle].call(context, ...values);
-                    if (result === undefined || result === null) throw new Error("js_invoke_function_and_return_string returned undefined or null while trying to retrieve string.");
+                    if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_string returned undefined or null while trying to retrieve string.');
                     return context.writeUtf8ToMemory(result);
                 },
                 js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {
                     const values = context.readParameters(parametersStart, parametersLength);
                     const result = context.functions[funcHandle].call(context, ...values);
-                    if (result === undefined || result === null) throw new Error("js_invoke_function_and_return_array_buffer returned undefined or null while trying to retrieve arraybuffer.");
+                    if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_array_buffer returned undefined or null while trying to retrieve arraybuffer.');
                     return context.writeArrayBufferToMemory(result);
                 }
             },
@@ -301,11 +301,12 @@ const JsWasm = {
         return context;
     }
 };
-document.addEventListener("DOMContentLoaded", function() {
-    const wasmScripts = document.querySelectorAll("script[type='application/wasm']");
+
+document.addEventListener('DOMContentLoaded', function() {
+    const wasmScripts = document.querySelectorAll('script[type="application/wasm"]');
     for(let i = 0; i < wasmScripts.length; i++){
         const src = wasmScripts[i].src;
         if (src) JsWasm.loadAndRunWasm(src);
-        else console.error("Script tag must have 'src' property.");
+        else console.error('Script tag must have "src" property.');
     }
 });
