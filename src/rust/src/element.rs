@@ -35,8 +35,8 @@ impl El {
         dom::append_child(&self, &child);
         self
     }
-    pub fn on_mount(self, cb: impl Fn() + Send + 'static) -> Self {
-        cb();
+    pub fn on_mount(self, cb: impl Fn(&Self) + Send + 'static) -> Self {
+        cb(&self);
         self
     }
     pub fn on_click(self, cb: impl FnMut(MouseEvent) + Send + 'static) -> Self {
