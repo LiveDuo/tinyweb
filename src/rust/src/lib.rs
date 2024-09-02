@@ -5,3 +5,4 @@ pub mod allocations;
 pub mod params;
 pub mod bindings;
 pub mod signals;
+pub mod element;
