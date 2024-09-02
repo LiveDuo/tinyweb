@@ -5,7 +5,7 @@ use crate::js::{JSFunction, ExternRef};
 use std::collections::HashMap;
 use core::future::Future;
 use std::cell::RefCell;
-use std::sync::Arc;
+use std::rc::Rc;
 
 thread_local! {
     pub static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> = Default::default();
@@ -193,7 +193,7 @@ pub fn fetch(options: FetchOptions) -> impl Future<Output = FetchResponse> {
     let headers = options.headers;
     let response_type = options.response_type;
     let action = options.action;
-    let request = Arc::new(XMLHttpRequest::new());
+    let request = Rc::new(XMLHttpRequest::new());
     let r2 = request.clone();
     let method_str = match action {
         HTTPMethod::GET => "GET",
