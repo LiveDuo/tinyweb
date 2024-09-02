@@ -181,6 +181,13 @@ mod tests {
         // call listener
         EVENT_HANDLER.call(0, ());
         assert_eq!(*has_run.lock().unwrap(), true);
+
+        // remove listener
+        EVENT_HANDLER.remove_listener(&function_handle.clone());
+        let count = EVENT_HANDLER.listeners.lock().map(|s| {
+            s.as_ref().map(|s| s.len()).unwrap_or(0)
+        }).unwrap();
+        assert_eq!(count, 0);
     }
 
 }
