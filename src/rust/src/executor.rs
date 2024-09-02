@@ -1,4 +1,5 @@
 use std::{
+    any::Any,
     collections::VecDeque,
     future::Future,
     mem::ManuallyDrop,
@@ -15,32 +16,28 @@ unsafe fn wake_by_ref_arc_raw<T>(_data: *const ()) { set_timeout(|| { DEFAULT_EX
 unsafe fn drop_arc_raw<T>(data: *const ()) { drop(Arc::<T>::from_raw(data as *const T)) }
 
 fn waker_vtable<W>() -> &'static RawWakerVTable {
-    &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw, wake_by_ref_arc_raw::<W>, drop_arc_raw::<W> )
+    &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw, wake_by_ref_arc_raw::<W>, drop_arc_raw::<W>)
 }
 
-type TasksList = VecDeque<Box<dyn Pendable + Send + Sync>>;
+type TasksList = VecDeque<Box<dyn Any + Send + Sync>>;
 
 pub struct Executor {
     tasks: Option<TasksList>,
-}
-
-trait Pendable {
-    fn is_pending(&self) -> bool;
 }
 
 struct Task<T> {
     future: Mutex<Pin<Box<dyn Future<Output = T> + Send + 'static>>>,
 }
 
-impl<T> Pendable for Arc<Task<T>> {
-    fn is_pending(&self) -> bool {
+impl<T: Send + 'static> Task<T> {
+    fn poll(&self) -> Poll<T> {
         let mut future = self.future.lock().unwrap();
 
-        let ptr = (&**self as *const Task<T>) as *const ();
+        let ptr = (self as *const Task<T>) as *const ();
         let waker =
             ManuallyDrop::new(unsafe { Waker::from_raw(RawWaker::new(ptr, waker_vtable::<Task<T>>())) });
         let context = &mut Context::from_waker(&*waker);
-        matches!(future.as_mut().poll(context), Poll::Pending)
+        future.as_mut().poll(context)
     }
 }
 
@@ -51,7 +48,7 @@ impl Executor {
     }
 
     fn add_task<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
-        let task = Arc::new(Task { future: Mutex::new(future), });
+        let task = Arc::new(Task { future: Mutex::new(future) });
         if self.tasks.is_none() {
             self.tasks = Some(TasksList::new());
         }
@@ -67,11 +64,14 @@ impl Executor {
         let tasks: &mut TasksList = self.tasks.as_mut().expect("tasks not initialized");
         if tasks.is_empty() { return; }
 
-        for _ in 0..tasks.len() {
+        let mut i = 0;
+        while i < tasks.len() {
             let task = tasks.pop_front().unwrap();
-            if task.is_pending() {
-                tasks.push_back(task);
+            let task = task.downcast_ref::<Arc<Task<()>>>().unwrap();
+            if task.poll().is_pending() {
+                tasks.push_back(Box::new(task.clone()));
             }
+            i += 1;
         }
     }
 }
