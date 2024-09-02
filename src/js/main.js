@@ -47,27 +47,18 @@ const store = new GenerationalArena()
 // 4 is reserved for document.body
 
 const context = {
-    functions: [
-        function() {
-            debugger
-            return 0
-        }
-    ],
+    functions: [function() { debugger; return 0 }],
     utf8dec: new TextDecoder('utf-8'),
     utf8enc: new TextEncoder(),
     utf16dec: new TextDecoder('utf-16'),
     readUtf8FromMemory: function(start, len) {
-        const text = this.utf8dec.decode(this.getMemory().subarray(start, start + len))
-        return text
+        return this.utf8dec.decode(this.getMemory().subarray(start, start + len))
     },
     createAllocation: function(size) {
         if (!this.module) throw new Error('module not set')
         const allocationId = this.module.instance.exports.create_allocation(size)
         const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId)
-        return [
-            allocationId,
-            allocationPtr
-        ]
+        return [allocationId, allocationPtr]
     },
     writeUtf8ToMemory: function(str) {
         const bytes = this.utf8enc.encode(str)
@@ -108,19 +99,19 @@ const context = {
         return new Uint8Array(this.module.instance.exports.memory.buffer)
     },
     readParameters: function(start, length) {
-        //get bytes of parameters out of wasm module
+        
+        // convert bytes to array of values parameters are preceded by a 32 bit integer indicating its type
+        // 0 = undefined
+        // 1 = null
+        // 2 = float-64
+        // 3 = bigint
+        // 4 = string (followed by 32-bit start and size of string in memory)
+        // 5 = extern ref
+        // 6 = array of float-64 (followed by 32-bit start and size of string in memory)
+        // 7 = true
+        // 8 = false
+
         const parameters = this.readUint8ArrayFromMemory(start, length)
-        //convert bytes to array of values  
-        //assuming each paramter is preceded by a 32 bit integer indicating its type
-        //0 = undefined
-        //1 = null
-        //2 = float-64
-        //3 = bigint
-        //4 = string (followed by 32-bit start and size of string in memory)
-        //5 = extern ref
-        //6 = array of float-64 (followed by 32-bit start and size of string in memory)
-        //7 = true
-        //8 = false
         const values = []
         let i = 0
         while(i < parameters.length){
@@ -231,7 +222,7 @@ const getWasmEnv = () => {
         js_invoke_function_and_return_object (funcHandle, parametersStart, parametersLength) {
             const values = context.readParameters(parametersStart, parametersLength)
             const result = context.functions[funcHandle].call(context, ...values)
-            if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_object returned undefined or null while trying to return an object')
+            if (result === undefined || result === null) throw new Error('undefined or null while trying to return an object')
             return context.storeObject(result)
         },
         js_invoke_function_and_return_bool (funcHandle, parametersStart, parametersLength) {
@@ -247,44 +238,40 @@ const getWasmEnv = () => {
         js_invoke_function_and_return_string (funcHandle, parametersStart, parametersLength) {
             const values = context.readParameters(parametersStart, parametersLength)
             const result = context.functions[funcHandle].call(context, ...values)
-            if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_string returned undefined or null while trying to retrieve string.')
+            if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve string.')
             return context.writeUtf8ToMemory(result)
         },
         js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {
             const values = context.readParameters(parametersStart, parametersLength)
             const result = context.functions[funcHandle].call(context, ...values)
-            if (result === undefined || result === null) throw new Error('js_invoke_function_and_return_array_buffer returned undefined or null while trying to retrieve arraybuffer.')
+            if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve arraybuffer.')
             return context.writeArrayBufferToMemory(result)
         }
     }
 }
 
-const loadWasm = async (wasmURL) => {
-
-    store.allocate(undefined);
-    store.allocate(null);
-    store.allocate(self);
-    store.allocate(typeof document != 'undefined' ? document : null);
-    store.allocate(typeof document != 'undefined' ? document.body : null);
-
-    const env = getWasmEnv()
-    const response = await fetch(wasmURL)
-    const bytes = await response.arrayBuffer()
-    const module = await WebAssembly.instantiate(bytes, {
-        env: env
-    })
-    context.module = module
-    return context
-}
-
 document.addEventListener('DOMContentLoaded', async function() {
     const wasmScripts = document.querySelectorAll('script[type="application/wasm"]')
-    for(let i = 0; i < wasmScripts.length; i++){
-        const src = wasmScripts[i].src
-        if (src) {
-            const context = await loadWasm(src)
-            context.module.instance.exports.main()
+    for (const wasmScript of wasmScripts) {
+        if (!wasmScript.src) {
+
+            console.error('Script tag must have "src" property')
+            return
         }
-        else console.error('Script tag must have "src" property.')
+        
+        store.allocate(undefined);
+        store.allocate(null);
+        store.allocate(self);
+        store.allocate(typeof document != 'undefined' ? document : null);
+        store.allocate(typeof document != 'undefined' ? document.body : null);
+
+        const env = getWasmEnv()
+        const response = await fetch(wasmScript.src)
+        const bytes = await response.arrayBuffer()
+        const module = await WebAssembly.instantiate(bytes, { env: env })
+        context.module = module
+
+        context.module.instance.exports.main()
+        
     }
 })
