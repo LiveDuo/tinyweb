@@ -4,3 +4,4 @@ pub mod js;
 pub mod allocations;
 pub mod params;
 pub mod bindings;
+pub mod signals;
