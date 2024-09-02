@@ -9,6 +9,7 @@ class GenerationalArena {
         this.freeList = []
         this.nextIndex = 0
     }
+    // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
     allocate(o) {
         let index
         if (this.freeList.length > 0) index = this.freeList.pop()
@@ -16,7 +17,6 @@ class GenerationalArena {
         const currentGeneration = this.generations[index]
         this.objects[index] = o
         this.generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
-        // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
         const low = BigInt(index)
         const high = BigInt(this.generations[index]) << BigInt(32)
         const merged = low | high
@@ -40,19 +40,14 @@ class GenerationalArena {
 }
 const store = new GenerationalArena()
 
-// 0 is reserved for undefined
-// 1 is reserved for null
-// 2 is reserved for self
-// 3 is reserved for document
-// 4 is reserved for document.body
+const utf8dec = new TextDecoder('utf-8')
+const utf8enc = new TextEncoder()
+const utf16dec = new TextDecoder('utf-16')
 
 const context = {
     functions: [function() { debugger; return 0 }],
-    utf8dec: new TextDecoder('utf-8'),
-    utf8enc: new TextEncoder(),
-    utf16dec: new TextDecoder('utf-16'),
     readUtf8FromMemory: function(start, len) {
-        return this.utf8dec.decode(this.getMemory().subarray(start, start + len))
+        return utf8dec.decode(this.getMemory().subarray(start, start + len))
     },
     createAllocation: function(size) {
         if (!this.module) throw new Error('module not set')
@@ -61,7 +56,7 @@ const context = {
         return [allocationId, allocationPtr]
     },
     writeUtf8ToMemory: function(str) {
-        const bytes = this.utf8enc.encode(str)
+        const bytes = utf8enc.encode(str)
         const len = bytes.length
         const [id, start] = this.createAllocation(len)
         this.getMemory().set(bytes, start)
@@ -75,7 +70,7 @@ const context = {
         return id
     },
     readUtf16FromMemory: function(start, len) {
-        const text = this.utf16dec.decode(this.getMemory().subarray(start, start + len))
+        const text = utf16dec.decode(this.getMemory().subarray(start, start + len))
         return text
     },
     readUint8ArrayFromMemory (start, length) {
@@ -191,7 +186,7 @@ const context = {
                         break
                     }
                 default:
-                    throw new Error('unknown parameter type')
+                    throw new Error('Unknown parameter type')
             }
         }
         return values
@@ -201,12 +196,6 @@ const context = {
 const getWasmEnv = () => {
     
     return {
-        abort () {
-            throw new Error('WebAssembly module aborted')
-        },
-        externref_drop (obj) {
-            context.releaseObject(obj)
-        },
         js_register_function (start, len, utfByteLen) {
             let functionBody
             if (utfByteLen === 16) functionBody = context.readUtf16FromMemory(start, len)
@@ -246,19 +235,17 @@ const getWasmEnv = () => {
             const result = context.functions[funcHandle].call(context, ...values)
             if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve arraybuffer.')
             return context.writeArrayBufferToMemory(result)
-        }
+        },
+        js_externref_drop (obj) {
+            context.releaseObject(obj)
+        },
     }
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
     const wasmScripts = document.querySelectorAll('script[type="application/wasm"]')
     for (const wasmScript of wasmScripts) {
-        if (!wasmScript.src) {
 
-            console.error('Script tag must have "src" property')
-            return
-        }
-        
         store.allocate(undefined);
         store.allocate(null);
         store.allocate(self);
