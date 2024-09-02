@@ -1,23 +1,11 @@
+"use strict";
+
 var $7611355a66e759da$exports = {};
-"use strict";
-Object.defineProperty($7611355a66e759da$exports, "__esModule", {
-    value: true
-});
-$7611355a66e759da$exports.ExternRef = void 0;
 var $3aa6042011fa5456$exports = {};
-"use strict";
-Object.defineProperty($3aa6042011fa5456$exports, "__esModule", {
-    value: true
-});
-$3aa6042011fa5456$exports.ExternRef = void 0;
 var $0f8dde742b5c8611$exports = {};
-"use strict";
-Object.defineProperty($0f8dde742b5c8611$exports, "__esModule", {
-    value: true
-});
-$0f8dde742b5c8611$exports.GenerationalArena = void 0;
-const $0f8dde742b5c8611$var$MAX_GENERATION = 0xfffffff0;
-class $0f8dde742b5c8611$var$GenerationalArena {
+
+const MAX_GENERATION = 0xfffffff0;
+class GenerationalArena {
     constructor(){
         this.objects = [];
         this.generations = [];
@@ -41,7 +29,7 @@ class $0f8dde742b5c8611$var$GenerationalArena {
     deallocate(handle) {
         const index = Number(handle & BigInt(0xffffffff));
         const generation = Number(handle >> BigInt(32));
-        if (generation >= $0f8dde742b5c8611$var$MAX_GENERATION) this.generations[index] = -this.generations[index];
+        if (generation >= MAX_GENERATION) this.generations[index] = -this.generations[index];
         else if (generation === this.generations[index]) {
             this.generations[index] = -this.generations[index];
             this.freeList.push(index);
@@ -54,22 +42,21 @@ class $0f8dde742b5c8611$var$GenerationalArena {
         else throw new Error("attempt to retrieve invalid handle");
     }
 }
-$0f8dde742b5c8611$exports.GenerationalArena = $0f8dde742b5c8611$var$GenerationalArena;
 
 
-const $3aa6042011fa5456$var$store = new $0f8dde742b5c8611$exports.GenerationalArena();
-class $3aa6042011fa5456$var$ExternRef {
+const store = new GenerationalArena();
+class ExternRef {
     static create(reference) {
-        return $3aa6042011fa5456$var$store.allocate(reference);
+        return store.allocate(reference);
     }
     static load(handle) {
-        return $3aa6042011fa5456$var$store.retrieve(handle);
+        return store.retrieve(handle);
     }
     static delete(handle) {
-        $3aa6042011fa5456$var$store.deallocate(handle);
+        store.deallocate(handle);
     }
 }
-$3aa6042011fa5456$exports.ExternRef = $3aa6042011fa5456$var$ExternRef;
+$3aa6042011fa5456$exports.ExternRef = ExternRef;
 
 
 Object.defineProperty($7611355a66e759da$exports, "ExternRef", {
@@ -80,7 +67,7 @@ Object.defineProperty($7611355a66e759da$exports, "ExternRef", {
 });
 
 
-const $569963205592bc01$var$JsWasm = {
+const JsWasm = {
     createEnvironment () {
         (0, $7611355a66e759da$exports.ExternRef).create(undefined);
         (0, $7611355a66e759da$exports.ExternRef).create(null);
@@ -309,7 +296,7 @@ const $569963205592bc01$var$JsWasm = {
         context.module.instance.exports.main();
     },
     async load (wasmURL) {
-        const [env, context] = $569963205592bc01$var$JsWasm.createEnvironment();
+        const [env, context] = JsWasm.createEnvironment();
         const response = await fetch(wasmURL);
         const bytes = await response.arrayBuffer();
         const module = await WebAssembly.instantiate(bytes, {
@@ -323,7 +310,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const wasmScripts = document.querySelectorAll("script[type='application/wasm']");
     for(let i = 0; i < wasmScripts.length; i++){
         const src = wasmScripts[i].src;
-        if (src) $569963205592bc01$var$JsWasm.loadAndRunWasm(src);
+        if (src) JsWasm.loadAndRunWasm(src);
         else console.error("Script tag must have 'src' property.");
     }
 });
