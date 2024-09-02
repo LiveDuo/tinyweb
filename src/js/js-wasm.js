@@ -1,8 +1,6 @@
 "use strict";
 
 var $7611355a66e759da$exports = {};
-var $3aa6042011fa5456$exports = {};
-var $0f8dde742b5c8611$exports = {};
 
 const MAX_GENERATION = 0xfffffff0;
 class GenerationalArena {
@@ -56,13 +54,12 @@ class ExternRef {
         store.deallocate(handle);
     }
 }
-$3aa6042011fa5456$exports.ExternRef = ExternRef;
 
 
 Object.defineProperty($7611355a66e759da$exports, "ExternRef", {
     enumerable: true,
     get: function() {
-        return $3aa6042011fa5456$exports.ExternRef;
+        return ExternRef;
     }
 });
 
