@@ -1,7 +1,6 @@
 use std::{
     collections::VecDeque,
     future::Future,
-    marker::PhantomData,
     mem::{self, ManuallyDrop},
     pin::Pin,
     sync::{Arc, Mutex},
@@ -9,9 +8,6 @@ use std::{
 };
 
 use crate::bindings::window::set_timeout;
-
-#[derive(Debug)]
-struct WakerRef<'a> { waker: ManuallyDrop<Waker>, _marker: PhantomData<&'a ()>, }
 
 trait Woke: Send + Sync {
     fn wake(self: Arc<Self>) {
@@ -51,15 +47,6 @@ fn waker_vtable<W: Woke>() -> &'static RawWakerVTable {
     )
 }
 
-#[inline]
-fn waker_ref<W: Woke>(wake: &Arc<W>) -> WakerRef<'_> {
-    
-    let ptr = (&**wake as *const W) as *const ();
-    let waker =
-        ManuallyDrop::new(unsafe { Waker::from_raw(RawWaker::new(ptr, waker_vtable::<W>())) });
-    WakerRef { waker, _marker: PhantomData, }
-}
-
 type TasksList = VecDeque<Box<dyn Pendable + Send + Sync>>;
 
 pub struct Executor {
@@ -89,8 +76,11 @@ impl<T> Woke for Task<T> {
 impl<T> Pendable for Arc<Task<T>> {
     fn is_pending(&self) -> bool {
         let mut future = self.future.lock().unwrap();
-        let waker = waker_ref(self);
-        let context = &mut Context::from_waker(&*waker.waker);
+
+        let ptr = (&**self as *const Task<T>) as *const ();
+        let waker =
+            ManuallyDrop::new(unsafe { Waker::from_raw(RawWaker::new(ptr, waker_vtable::<Task<T>>())) });
+        let context = &mut Context::from_waker(&*waker);
         matches!(future.as_mut().poll(context), Poll::Pending)
     }
 }
@@ -144,4 +134,23 @@ pub fn coroutine<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'st
         },
         0,
     );
+}
+
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_run() {
+        let has_run = Arc::new(Mutex::new(false));
+        let has_run_clone = has_run.clone();
+        let future = async move {
+            has_run_clone.lock().map(|mut s| { *s = true; }).unwrap();
+        };
+        DEFAULT_EXECUTOR.lock().unwrap().run(Box::pin(future));
+        assert_eq!(*has_run.lock().unwrap(), true);
+    }
+
 }
