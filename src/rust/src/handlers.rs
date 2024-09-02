@@ -152,3 +152,37 @@ impl <T: 'static + Sync + Send> EventHandlerFuture<T> {
         state_storage.wake_future(id, result);
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+
+    use std::sync::{Arc, Mutex};
+
+    use crate::js::ExternRef;
+
+    use super::EventHandler;
+
+    static EVENT_HANDLER: EventHandler<()> = EventHandler { listeners: Mutex::new(None), };
+
+    #[test]
+    fn test_run() {
+ 
+        let has_run = Arc::new(Mutex::new(false));
+        let has_run_clone = has_run.clone();
+
+        // add listener
+        let function_handle = Arc::new(ExternRef { value: 0, });
+        let handler = move |_| {
+            has_run_clone.lock().map(|mut s| { *s = true; }).unwrap();
+        };
+        EVENT_HANDLER.add_listener(function_handle.clone(), Box::new(handler));
+
+        // call listener
+        EVENT_HANDLER.call(0, ());
+        assert_eq!(*has_run.lock().unwrap(), true);
+    }
+
+}
+
+
