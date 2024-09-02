@@ -1,6 +1,7 @@
 'use strict'
 
 const MAX_GENERATION = 0xfffffff0
+
 class GenerationalArena {
     constructor(){
         this.objects = []
@@ -37,9 +38,8 @@ class GenerationalArena {
         else throw new Error('attempt to retrieve invalid handle')
     }
 }
-
-
 const store = new GenerationalArena()
+
 class ExternRef {
     static create(reference) {
         return store.allocate(reference)
@@ -52,23 +52,14 @@ class ExternRef {
     }
 }
 
-var ExternRefOuter = {}
-
-Object.defineProperty(ExternRefOuter, 'ExternRef', {
-    enumerable: true,
-    get: function() {
-        return ExternRef
-    }
-})
-
 
 const JsWasm = {
     createEnvironment () {
-        (0, ExternRefOuter.ExternRef).create(undefined);
-        (0, ExternRefOuter.ExternRef).create(null);
-        (0, ExternRefOuter.ExternRef).create(self);
-        (0, ExternRefOuter.ExternRef).create(typeof document != 'undefined' ? document : null);
-        (0, ExternRefOuter.ExternRef).create(typeof document != 'undefined' ? document.body : null);
+        ExternRef.create(undefined);
+        ExternRef.create(null);
+        ExternRef.create(self);
+        ExternRef.create(typeof document != 'undefined' ? document : null);
+        ExternRef.create(typeof document != 'undefined' ? document.body : null);
         // 0 is reserved for undefined
         // 1 is reserved for null
         // 2 is reserved for self
@@ -121,15 +112,15 @@ const JsWasm = {
                 return new Uint8Array(b)
             },
             storeObject: function(obj) {
-                return (0, ExternRefOuter.ExternRef).create(obj)
+                return ExternRef.create(obj)
             },
             getObject: function(handle) {
-                return (0, ExternRefOuter.ExternRef).load(handle)
+                return ExternRef.load(handle)
             },
             releaseObject: function(handle) {
-                // dont release our fixed references
+                // don't release our fixed references
                 if (handle <= 4n) return
-                (0, ExternRefOuter.ExternRef).delete(handle)
+                ExternRef.delete(handle)
             },
             getMemory: function() {
                 if (!this.module) throw new Error('module not set')
