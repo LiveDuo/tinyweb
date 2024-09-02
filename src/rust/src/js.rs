@@ -130,17 +130,17 @@ mod tests {
         
         // invoke and return string
         let text = "hello";
-        crate::allocations::ALLOCATIONS.lock().map(|mut s| {
+        crate::allocations::ALLOCATIONS.with_borrow_mut(|s| {
             *s = vec![Some(text.as_bytes().to_vec())];
-        }).unwrap();
+        });
         let result = func.invoke_and_return_string(&[]);
         assert_eq!(result, "hello".to_owned());
         
         // invoke and return array buffer
         let vec = vec![1, 2];
-        crate::allocations::ALLOCATIONS.lock().map(|mut s| {
+        crate::allocations::ALLOCATIONS.with_borrow_mut(|s| {
             *s = vec![Some(vec.clone())];
-        }).unwrap();
+        });
         let result = func.invoke_and_return_array_buffer(&[]);
         assert_eq!(result, vec);
         

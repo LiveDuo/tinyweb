@@ -39,7 +39,7 @@ impl<T: Clone + 'static> Signal<T> {
 #[cfg(test)]
 mod tests {
 
-    use std::sync::{Arc, Mutex};
+    use std::{cell::RefCell, rc::Rc};
 
     use crate::signals::Signal;
 
@@ -47,25 +47,21 @@ mod tests {
     fn test_signals() {
 
         // create signal
-        let logs = Arc::new(Mutex::new(vec![]));
+        let logs: Rc<RefCell<Vec<i32>>> = Default::default();
         let signal = Signal::new(10);
         
         // create effects
         let logs_clone = logs.clone();
-        signal.on(move |v| {
-            logs_clone.lock().map(|mut s| { s.push(v); }).unwrap();
-        });
+        signal.on(move |v| { logs_clone.borrow_mut().push(v); });
         let logs_clone = logs.clone();
-        signal.on(move |v| {
-            logs_clone.lock().map(|mut s| { s.push(v); }).unwrap();
-        });
+        signal.on(move |v| { logs_clone.borrow_mut().push(v); });
         
         // update signal
         signal.set(20);
         signal.set(30);
 
         // check logs
-        let received = logs.lock().map(|s| s.clone()).unwrap();
+        let received = logs.borrow().clone();
         assert_eq!(received, vec![10, 10, 20, 20, 30, 30]);
     }
 

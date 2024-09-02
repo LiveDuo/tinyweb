@@ -35,11 +35,11 @@ impl El {
         dom::append_child(&self, &child);
         self
     }
-    pub fn on_mount(self, cb: impl Fn(&Self) + Send + 'static) -> Self {
+    pub fn on_mount(self, cb: impl Fn(&Self) + 'static) -> Self {
         cb(&self);
         self
     }
-    pub fn on_click(self, cb: impl FnMut(MouseEvent) + Send + 'static) -> Self {
+    pub fn on_click(self, cb: impl FnMut(MouseEvent) + 'static) -> Self {
         dom::element_add_click_listener(&self, cb);
         self
     }

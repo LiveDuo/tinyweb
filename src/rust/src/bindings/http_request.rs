@@ -1,32 +1,36 @@
 
 use crate::handlers::EventHandlerFuture;
-use core::future::Future;
 use crate::js::{JSFunction, ExternRef};
+
 use std::collections::HashMap;
+use core::future::Future;
+use std::cell::RefCell;
 use std::sync::Arc;
-use std::sync::Mutex;
 
-static HTTP_LOAD_HANDLERS: Mutex<Option<HashMap<i64, Box<dyn FnMut() + Send + 'static>>>> =
-    Mutex::new(None);
+thread_local! {
+    pub static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> = Default::default();
+}
 
-fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + Send + 'static>) {
-    let mut h = HTTP_LOAD_HANDLERS.lock().unwrap();
-    if h.is_none() {
-        *h = Some(HashMap::new());
-    }
-    h.as_mut().unwrap().insert(function_handle, handler);
+fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + 'static>) {
+    HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
+        if h.is_none() {
+            *h = Some(HashMap::new());
+        }
+        h.as_mut().unwrap().insert(function_handle, handler);
+    });
 }
 
 #[no_mangle]
 pub extern "C" fn web_handle_http_load_event_handler(id: i64) {
     let mut c = None;
     {
-        let mut handlers = HTTP_LOAD_HANDLERS.lock().unwrap();
-        if let Some(h) = handlers.as_mut() {
-            if let Some(handler) = h.remove(&id) {
-                c = Some(handler);
+        HTTP_LOAD_HANDLERS.with_borrow_mut(|s| {
+            if let Some(h) = s {
+                if let Some(handler) = h.remove(&id) {
+                    c = Some(handler);
+                }
             }
-        }
+        });
     }
     if let Some(mut c) = c {
         c();
@@ -118,7 +122,7 @@ impl XMLHttpRequest {
         .invoke_and_return_string(&[(&(self.0)).into(), key.into()])
     }
 
-    pub fn set_on_load(&self, callback: impl FnMut() + Send + 'static) {
+    pub fn set_on_load(&self, callback: impl FnMut() + 'static) {
         let function_ref = JSFunction::register(r#"
             function(request){
                 const handler = () => {
