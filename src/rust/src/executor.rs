@@ -1,12 +1,5 @@
 use std::{
-    any::Any,
-    cell::RefCell,
-    collections::VecDeque,
-    future::Future,
-    mem::ManuallyDrop,
-    pin::Pin,
-    rc::Rc,
-    task::{Context, Poll, RawWaker, RawWakerVTable, Waker}
+    any::Any, cell::RefCell, collections::VecDeque, future::Future, mem::ManuallyDrop, pin::Pin, rc::Rc, task::{Context, Poll, RawWaker, RawWakerVTable, Waker}
 };
 
 use crate::bindings::window::set_timeout;
@@ -76,13 +69,12 @@ impl Executor {
         }
     }
 }
-
 thread_local! {
-    pub static DEFAULT_EXECUTOR: RefCell<Executor> = RefCell::new(Executor { tasks: None });
+    static DEFAULT_EXECUTOR: RefCell<Executor> = RefCell::new(Executor { tasks: None });
 }
 
 pub fn run<T: 'static>(future: impl Future<Output = T> + 'static) {
-    DEFAULT_EXECUTOR.with_borrow_mut(|s| s.run(Box::pin(future)))
+    DEFAULT_EXECUTOR.with_borrow_mut(|s| s.run(Box::pin(future)));
 }
 
 pub fn coroutine<T: 'static>(future: impl Future<Output = T> + 'static) {
@@ -91,7 +83,7 @@ pub fn coroutine<T: 'static>(future: impl Future<Output = T> + 'static) {
         move || {
             let b = a.take();
             if let Some(b) = b {
-                DEFAULT_EXECUTOR.with_borrow_mut(|s| s.run(b))
+                DEFAULT_EXECUTOR.with_borrow_mut(|s| s.run(b));
             }
         },
         0,

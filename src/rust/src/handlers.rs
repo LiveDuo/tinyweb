@@ -93,29 +93,31 @@ impl<T> SharedStateMap<T> {
     }
 }
 
-type Global = LinkedList<(TypeId, &'static RefCell<dyn Any>)>;
-
 thread_local! {
-    static GLOBALS_LIST: RefCell<Global> = RefCell::new(LinkedList::new());
+    static GLOBALS_LIST: RefCell<LinkedList<(TypeId, &'static RefCell<dyn Any>)>> = RefCell::new(LinkedList::new());
 }
 
 pub fn globals_get<T: Default + 'static>() -> RefMut<'static, T> {
-    
-    GLOBALS_LIST.with_borrow_mut(|g| {
-
-        let id = TypeId::of::<T>();
-        let p = g.iter().find(|&r| r.0 == id);
-        if let Some(v) = p {
-            let m = unsafe { &*(v.1 as *const RefCell<dyn Any> as *const RefCell<T>) };
-            return m.borrow_mut();
-        }
-        let v = Box::new(RefCell::new(T::default()));
-        let handle = Box::leak(v);
-        g.push_front((id, handle));
+    {
         
-        handle.borrow_mut()
-    })
+        let ref_mut_opt = GLOBALS_LIST.with_borrow_mut(|g| {
+            let id = TypeId::of::<T>();
+            let p = g.iter().find(|&r| r.0 == id);
+            if let Some(v) = p {
+                let m = unsafe { &*(v.1 as *const RefCell<dyn Any> as *const RefCell<T>) };
+                return Some(m.borrow_mut());
+            }
+            let v = Box::new(RefCell::new(T::default()));
+            let handle = Box::leak(v);
+            g.push_front((id, handle));
+            None
+        });
 
+        if let Some(ref_mut) = ref_mut_opt {
+            return ref_mut;
+        }
+    }
+    globals_get()
 }
 
 impl <T: 'static> EventHandlerFuture<T> {

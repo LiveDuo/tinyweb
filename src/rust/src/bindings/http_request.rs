@@ -1,17 +1,18 @@
 
 use crate::handlers::EventHandlerFuture;
-use crate::js::{JSFunction, ExternRef};
-
-use std::collections::HashMap;
 use core::future::Future;
 use std::cell::RefCell;
 use std::rc::Rc;
+use crate::js::{JSFunction, ExternRef};
+use std::collections::HashMap;
 
 thread_local! {
-    pub static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> = Default::default();
+    static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> =
+        RefCell::new(None);
 }
 
 fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + 'static>) {
+
     HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
         if h.is_none() {
             *h = Some(HashMap::new());
@@ -24,13 +25,14 @@ fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + 
 pub extern "C" fn web_handle_http_load_event_handler(id: i64) {
     let mut c = None;
     {
-        HTTP_LOAD_HANDLERS.with_borrow_mut(|s| {
-            if let Some(h) = s {
+        HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
+            if let Some(h) = h.as_mut() {
                 if let Some(handler) = h.remove(&id) {
                     c = Some(handler);
                 }
             }
         });
+        
     }
     if let Some(mut c) = c {
         c();

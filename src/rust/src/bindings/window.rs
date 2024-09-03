@@ -6,21 +6,20 @@ use crate::js::JSFunction;
 use crate::bindings::util::*;
 
 thread_local! {
-    pub static ANIMATION_FRAME_EVENT_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> = Default::default();
+    static ANIMATION_FRAME_EVENT_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> = RefCell::new(None);
 }
 
 #[no_mangle]
 pub extern "C" fn web_one_time_empty_handler(id: i64) {
     let mut c = None;
     {
-        ANIMATION_FRAME_EVENT_HANDLERS.with_borrow_mut(|s| {
-            if let Some(h) = s {
+        ANIMATION_FRAME_EVENT_HANDLERS.with_borrow_mut(|h| {
+            if let Some(h) = h.as_mut() {
                 if let Some(handler) = h.remove(&id) {
                     c = Some(handler);
                 }
             }
         });
-
     }
     if let Some(mut c) = c {
         c();
@@ -39,8 +38,6 @@ pub fn request_animation_frame(handler: impl FnMut() + 'static) {
             return id;
         }"#)
     .invoke_and_return_bigint(&[]);
-
-
     ANIMATION_FRAME_EVENT_HANDLERS.with_borrow_mut(|h| {
         if h.is_none() {
             *h = Some(HashMap::new());
@@ -49,7 +46,6 @@ pub fn request_animation_frame(handler: impl FnMut() + 'static) {
             .unwrap()
             .insert(function_handle, Box::new(handler));
     });
-    
 }
 
 pub fn set_timeout(
@@ -69,7 +65,6 @@ pub fn set_timeout(
     .invoke_and_return_object(&[ms.into().into()]);
     let function_handle = get_property_i64(&obj_handle, "id");
     let timer_handle = get_property_f64(&obj_handle, "handle");
-
     ANIMATION_FRAME_EVENT_HANDLERS.with_borrow_mut(|h| {
         if h.is_none() {
             *h = Some(HashMap::new());
