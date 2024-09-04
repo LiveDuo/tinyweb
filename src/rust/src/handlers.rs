@@ -3,7 +3,14 @@ use crate::bindings::util::random_i64;
 use crate::js::ExternRef;
 
 use std::{
-    any::{Any, TypeId}, cell::{RefCell, RefMut}, collections::{HashMap, LinkedList}, future::Future, pin::Pin, rc::Rc, task::{Context, Poll, Waker}
+    any::{Any, TypeId},
+    cell::RefCell,
+    collections::{HashMap, LinkedList},
+    future::Future,
+    pin::Pin,
+    rc::Rc,
+    sync::{Arc, Mutex, MutexGuard},
+    task::{Context, Poll, Waker}
 };
 
 pub struct EventHandler<T> {
@@ -42,7 +49,7 @@ impl<T> EventHandler<T> {
     }
 }
 
-pub struct EventHandlerFuture<T> { shared_state: Rc<RefCell<EventHandlerSharedState<T>>>, }
+pub struct EventHandlerFuture<T> { shared_state: Arc<Mutex<EventHandlerSharedState<T>>>, }
 
 pub struct EventHandlerSharedState<T> { completed: bool, waker: Option<Waker>, result: Option<T>, }
 
@@ -50,7 +57,7 @@ impl<T> Future for EventHandlerFuture<T> {
     type Output = T;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
-        let mut shared_state = self.shared_state.borrow_mut();
+        let mut shared_state = self.shared_state.lock().unwrap();
         if shared_state.completed && shared_state.result.is_some() {
             let r = shared_state.result.take();
             Poll::Ready(r.unwrap())
@@ -62,26 +69,26 @@ impl<T> Future for EventHandlerFuture<T> {
 }
 
 pub struct SharedStateMap<T> {
-    map: RefCell<HashMap<i64, Rc<RefCell<EventHandlerSharedState<T>>>>>,
+    map: Mutex<HashMap<i64, Arc<Mutex<EventHandlerSharedState<T>>>>>,
 }
 
 impl<T> Default for SharedStateMap<T> {
     fn default() -> Self {
-        Self { map: RefCell::new(HashMap::new()), }
+        Self { map: Mutex::new(HashMap::new()), }
     }
 }
 
 impl<T> SharedStateMap<T> {
-    pub fn add_shared_state(&self, id: i64, state: Rc<RefCell<EventHandlerSharedState<T>>>) {
-        let mut map = self.map.borrow_mut();
+    pub fn add_shared_state(&self, id: i64, state: Arc<Mutex<EventHandlerSharedState<T>>>) {
+        let mut map = self.map.lock().unwrap();
         map.insert(id, state);
     }
     pub fn wake_future(&self, id: i64, result: T) {
         let mut waker = None;
         {
-            let mut map = self.map.borrow_mut();
+            let mut map = self.map.lock().unwrap();
             if let Some(state) = map.remove(&id) {
-                let mut shared_state = state.borrow_mut();
+                let mut shared_state = state.lock().unwrap();
                 shared_state.completed = true;
                 shared_state.result = Some(result);
                 waker = shared_state.waker.take();
@@ -93,36 +100,28 @@ impl<T> SharedStateMap<T> {
     }
 }
 
-thread_local! {
-    static GLOBALS_LIST: RefCell<LinkedList<(TypeId, &'static RefCell<dyn Any>)>> = RefCell::new(LinkedList::new());
-}
+static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> =
+    Mutex::new(LinkedList::new());
 
-pub fn globals_get<T: Default + 'static>() -> RefMut<'static, T> {
+pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, T> {
     {
-        
-        let ref_mut_opt = GLOBALS_LIST.with_borrow_mut(|g| {
-            let id = TypeId::of::<T>();
-            let p = g.iter().find(|&r| r.0 == id);
-            if let Some(v) = p {
-                let m = unsafe { &*(v.1 as *const RefCell<dyn Any> as *const RefCell<T>) };
-                return Some(m.borrow_mut());
-            }
-            let v = Box::new(RefCell::new(T::default()));
-            let handle = Box::leak(v);
-            g.push_front((id, handle));
-            None
-        });
-
-        if let Some(ref_mut) = ref_mut_opt {
-            return ref_mut;
+        let mut globals = GLOBALS_LIST.lock().unwrap();
+        let id = TypeId::of::<T>();
+        let p = globals.iter().find(|&r| r.0 == id);
+        if let Some(v) = p {
+            let m = unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<T>) };
+            return m.lock().unwrap();
         }
+        let v = Box::new(Mutex::new(T::default()));
+        let handle = Box::leak(v);
+        globals.push_front((id, handle));
     }
     globals_get()
 }
 
-impl <T: 'static> EventHandlerFuture<T> {
+impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
     pub fn create_future_with_state_id() -> (Self, i64) {
-        let shared_state = Rc::new(RefCell::new(EventHandlerSharedState {
+        let shared_state = Arc::new(Mutex::new(EventHandlerSharedState {
             completed: false,
             waker: None,
             result: None,

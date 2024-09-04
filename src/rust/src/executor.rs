@@ -1,5 +1,5 @@
 use std::{
-    any::Any, cell::RefCell, collections::VecDeque, future::Future, mem::ManuallyDrop, pin::Pin, rc::Rc, task::{Context, Poll, RawWaker, RawWakerVTable, Waker}
+    any::Any, cell::RefCell, collections::VecDeque, future::Future, mem::ManuallyDrop, pin::Pin, rc::Rc, sync::Mutex, task::{Context, Poll, RawWaker, RawWakerVTable, Waker}
 };
 
 use crate::bindings::window::set_timeout;
@@ -20,12 +20,12 @@ pub struct Executor {
 }
 
 struct Task<T> {
-    future: RefCell<Pin<Box<dyn Future<Output = T> + 'static>>>,
+    future: Mutex<Pin<Box<dyn Future<Output = T> + 'static>>>,
 }
 
 impl<T: 'static> Task<T> {
     fn poll(&self) -> Poll<T> {
-        let mut future = self.future.borrow_mut();
+        let mut future = self.future.lock().unwrap();
 
         let ptr = (self as *const Task<T>) as *const ();
         let waker =
@@ -42,7 +42,7 @@ impl Executor {
     }
 
     fn add_task<T: 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static>>) {
-        let task = Rc::new(Task { future: RefCell::new(future) });
+        let task = Rc::new(Task { future: Mutex::new(future) });
         if self.tasks.is_none() {
             self.tasks = Some(TasksList::new());
         }
