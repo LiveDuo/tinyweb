@@ -1,48 +1,98 @@
 use std::{
-    any::Any, cell::RefCell, collections::VecDeque, future::Future, mem::ManuallyDrop, pin::Pin, rc::Rc, sync::Mutex, task::{Context, Poll, RawWaker, RawWakerVTable, Waker}
+    collections::VecDeque,
+    future::Future,
+    mem::{self, ManuallyDrop},
+    pin::Pin,
+    sync::{Arc, Mutex},
+    task::{Context, Poll, RawWaker, RawWakerVTable, Waker}
 };
 
 use crate::bindings::window::set_timeout;
 
-unsafe fn clone_arc_raw<T>(data: *const ()) -> RawWaker { RawWaker::new(data, waker_vtable::<T>()) }
-unsafe fn wake_arc_raw(_data: *const ()) { set_timeout(|| { DEFAULT_EXECUTOR.with_borrow_mut(|s| s.poll_tasks()); }, 0); }
-unsafe fn wake_by_ref_arc_raw<T>(_data: *const ()) { set_timeout(|| { DEFAULT_EXECUTOR.with_borrow_mut(|s| s.poll_tasks()); }, 0); }
-unsafe fn drop_arc_raw<T>(data: *const ()) { drop(Rc::<T>::from_raw(data as *const T)) }
+trait Woke: Send + Sync {
+    fn wake(self: Arc<Self>) {
+        Self::wake_by_ref(&self)
+    }
 
-fn waker_vtable<W>() -> &'static RawWakerVTable {
-    &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw, wake_by_ref_arc_raw::<W>, drop_arc_raw::<W>)
+    fn wake_by_ref(arc_self: &Arc<Self>);
 }
 
-type TasksList = VecDeque<Box<dyn Any>>;
+unsafe fn clone_arc_raw<T: Woke>(data: *const ()) -> RawWaker {
+    let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data as *const T));
+    let _arc_clone: mem::ManuallyDrop<_> = arc.clone();
+    RawWaker::new(data, waker_vtable::<T>())
+}
+
+unsafe fn wake_arc_raw<T: Woke>(data: *const ()) {
+    let arc: Arc<T> = Arc::from_raw(data as *const T);
+    Woke::wake(arc);
+}
+
+// retain Arc, but don't touch refcount by wrapping in ManuallyDrop
+unsafe fn wake_by_ref_arc_raw<T: Woke>(data: *const ()) {
+    let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data as *const T));
+    Woke::wake_by_ref(&arc);
+}
+
+unsafe fn drop_arc_raw<T>(data: *const ()) {
+    drop(Arc::<T>::from_raw(data as *const T))
+}
+
+fn waker_vtable<W: Woke>() -> &'static RawWakerVTable {
+    &RawWakerVTable::new(
+        clone_arc_raw::<W>,
+        wake_arc_raw::<W>,
+        wake_by_ref_arc_raw::<W>,
+        drop_arc_raw::<W>
+    )
+}
+
+type TasksList = VecDeque<Box<dyn Pendable + Send + Sync>>;
 
 pub struct Executor {
     tasks: Option<TasksList>,
 }
 
-struct Task<T> {
-    future: Mutex<Pin<Box<dyn Future<Output = T> + 'static>>>,
+trait Pendable {
+    fn is_pending(&self) -> bool;
 }
 
-impl<T: 'static> Task<T> {
-    fn poll(&self) -> Poll<T> {
+struct Task<T> {
+    future: Mutex<Pin<Box<dyn Future<Output = T> + Send + 'static>>>,
+}
+
+impl<T> Woke for Task<T> {
+    // tell the executor to poll for new things again but not recursively
+    fn wake_by_ref(_: &Arc<Self>) {
+        set_timeout(
+            || {
+                DEFAULT_EXECUTOR.lock().unwrap().poll_tasks();
+            },
+            0,
+        );
+    }
+}
+
+impl<T> Pendable for Arc<Task<T>> {
+    fn is_pending(&self) -> bool {
         let mut future = self.future.lock().unwrap();
 
-        let ptr = (self as *const Task<T>) as *const ();
+        let ptr = (&**self as *const Task<T>) as *const ();
         let waker =
             ManuallyDrop::new(unsafe { Waker::from_raw(RawWaker::new(ptr, waker_vtable::<Task<T>>())) });
         let context = &mut Context::from_waker(&*waker);
-        future.as_mut().poll(context)
+        matches!(future.as_mut().poll(context), Poll::Pending)
     }
 }
 
 impl Executor {
-    fn run<T: 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static>>) {
+    fn run<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
         self.add_task(future);
         self.poll_tasks();
     }
 
-    fn add_task<T: 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static>>) {
-        let task = Rc::new(Task { future: Mutex::new(future) });
+    fn add_task<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
+        let task = Arc::new(Task { future: Mutex::new(future), });
         if self.tasks.is_none() {
             self.tasks = Some(TasksList::new());
         }
@@ -58,32 +108,28 @@ impl Executor {
         let tasks: &mut TasksList = self.tasks.as_mut().expect("tasks not initialized");
         if tasks.is_empty() { return; }
 
-        let mut i = 0;
-        while i < tasks.len() {
+        for _ in 0..tasks.len() {
             let task = tasks.pop_front().unwrap();
-            let task = task.downcast_ref::<Rc<Task<()>>>().unwrap();
-            if task.poll().is_pending() {
-                tasks.push_back(Box::new(task.clone()));
+            if task.is_pending() {
+                tasks.push_back(task);
             }
-            i += 1;
         }
     }
 }
-thread_local! {
-    static DEFAULT_EXECUTOR: RefCell<Executor> = RefCell::new(Executor { tasks: None });
+
+static DEFAULT_EXECUTOR: Mutex<Executor> = Mutex::new(Executor { tasks: None });
+
+pub fn run<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
+    DEFAULT_EXECUTOR.lock().unwrap().run(Box::pin(future))
 }
 
-pub fn run<T: 'static>(future: impl Future<Output = T> + 'static) {
-    DEFAULT_EXECUTOR.with_borrow_mut(|s| s.run(Box::pin(future)));
-}
-
-pub fn coroutine<T: 'static>(future: impl Future<Output = T> + 'static) {
+pub fn coroutine<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
     let mut a = Some(Box::pin(future));
     set_timeout(
         move || {
             let b = a.take();
             if let Some(b) = b {
-                DEFAULT_EXECUTOR.with_borrow_mut(|s| s.run(b));
+                DEFAULT_EXECUTOR.lock().unwrap().run(b);
             }
         },
         0,
@@ -98,13 +144,13 @@ mod tests {
 
     #[test]
     fn test_run() {
-        let has_run = Rc::new(RefCell::new(false));
+        let has_run = Arc::new(Mutex::new(false));
         let has_run_clone = has_run.clone();
         let future = async move {
-            *has_run_clone.borrow_mut() = true;
+            has_run_clone.lock().map(|mut s| { *s = true; }).unwrap();
         };
-        DEFAULT_EXECUTOR.with_borrow_mut(|s| { s.run(Box::pin(future)); });
-        assert_eq!(*has_run.borrow(), true);
+        DEFAULT_EXECUTOR.lock().unwrap().run(Box::pin(future));
+        assert_eq!(*has_run.lock().unwrap(), true);
     }
 
 }
