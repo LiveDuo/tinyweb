@@ -32,14 +32,14 @@ fn waker_vtable<W: Send + Sync>() -> &'static RawWakerVTable {
     &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw::<W>, wake_by_ref_arc_raw::<W>, drop_arc_raw::<W>)
 }
 
+trait Pendable {
+    fn is_pending(&self) -> bool;
+}
+
 type TasksList = VecDeque<Box<dyn Pendable + Send + Sync>>;
 
 pub struct Executor {
     tasks: Option<TasksList>,
-}
-
-trait Pendable {
-    fn is_pending(&self) -> bool;
 }
 
 struct Task<T> {
