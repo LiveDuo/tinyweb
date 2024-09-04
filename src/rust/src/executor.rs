@@ -9,42 +9,27 @@ use std::{
 
 use crate::bindings::window::set_timeout;
 
-trait Woke: Send + Sync {
-    fn wake(self: Arc<Self>) {
-        Self::wake_by_ref(&self)
-    }
-
-    fn wake_by_ref(arc_self: &Arc<Self>);
-}
-
-unsafe fn clone_arc_raw<T: Woke>(data: *const ()) -> RawWaker {
+unsafe fn clone_arc_raw<T: Send + Sync>(data: *const ()) -> RawWaker {
     let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data as *const T));
     let _arc_clone: mem::ManuallyDrop<_> = arc.clone();
     RawWaker::new(data, waker_vtable::<T>())
 }
 
-unsafe fn wake_arc_raw<T: Woke>(data: *const ()) {
-    let arc: Arc<T> = Arc::from_raw(data as *const T);
-    Woke::wake(arc);
+unsafe fn wake_arc_raw<T: Send + Sync>(_data: *const ()) {
+    set_timeout(|| { DEFAULT_EXECUTOR.lock().unwrap().poll_tasks(); }, 0);
 }
 
 // retain Arc, but don't touch refcount by wrapping in ManuallyDrop
-unsafe fn wake_by_ref_arc_raw<T: Woke>(data: *const ()) {
-    let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data as *const T));
-    Woke::wake_by_ref(&arc);
+unsafe fn wake_by_ref_arc_raw<T: Send + Sync>(_data: *const ()) {
+    set_timeout(|| { DEFAULT_EXECUTOR.lock().unwrap().poll_tasks(); }, 0);
 }
 
 unsafe fn drop_arc_raw<T>(data: *const ()) {
     drop(Arc::<T>::from_raw(data as *const T))
 }
 
-fn waker_vtable<W: Woke>() -> &'static RawWakerVTable {
-    &RawWakerVTable::new(
-        clone_arc_raw::<W>,
-        wake_arc_raw::<W>,
-        wake_by_ref_arc_raw::<W>,
-        drop_arc_raw::<W>
-    )
+fn waker_vtable<W: Send + Sync>() -> &'static RawWakerVTable {
+    &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw::<W>, wake_by_ref_arc_raw::<W>, drop_arc_raw::<W>)
 }
 
 type TasksList = VecDeque<Box<dyn Pendable + Send + Sync>>;
@@ -59,18 +44,6 @@ trait Pendable {
 
 struct Task<T> {
     future: Mutex<Pin<Box<dyn Future<Output = T> + Send + 'static>>>,
-}
-
-impl<T> Woke for Task<T> {
-    // tell the executor to poll for new things again but not recursively
-    fn wake_by_ref(_: &Arc<Self>) {
-        set_timeout(
-            || {
-                DEFAULT_EXECUTOR.lock().unwrap().poll_tasks();
-            },
-            0,
-        );
-    }
 }
 
 impl<T> Pendable for Arc<Task<T>> {
