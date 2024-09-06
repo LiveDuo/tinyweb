@@ -154,6 +154,12 @@ const context = {
         const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId)
         return [allocationId, allocationPtr]
     },
+    storeObject: function(obj) {
+        return allocations.allocate(obj)
+    },
+    releaseObject: function(handle) {
+        return allocations.deallocate(handle)
+    },
     readUtf8FromMemory: function(start, len) {
         return utf8dec.decode(this.getMemory().subarray(start, start + len))
     },
