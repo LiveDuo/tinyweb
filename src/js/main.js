@@ -57,7 +57,8 @@ const readParameters = function(context, start, length) {
     // 7 = true
     // 8 = false
 
-    const parameters = this.readUint8ArrayFromMemory(start, length)
+    const memorySlice = context.getMemory().slice(start, start + length)
+    const parameters = new Uint8Array(memorySlice)
     const values = []
     let i = 0
     while (i < parameters.length) {
@@ -170,10 +171,6 @@ const context = {
     readUtf16FromMemory: function(start, len) {
         const text = utf16dec.decode(this.getMemory().subarray(start, start + len))
         return text
-    },
-    readUint8ArrayFromMemory (start, length) {
-        const b = this.getMemory().slice(start, start + length)
-        return new Uint8Array(b)
     },
     storeObject: function(obj) {
         return store.allocate(obj)
