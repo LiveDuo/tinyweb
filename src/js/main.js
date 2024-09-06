@@ -1,11 +1,17 @@
 'use strict'
 
 const MAX_GENERATION = 0xfffffff0
+const INDEX_MASK = 0xffffffff
 
 const this_objects = []
 const this_generations = []
 const this_freeList = []
+
 let this_nextIndex = 0
+
+const utf8dec = new TextDecoder('utf-8')
+const utf8enc = new TextEncoder()
+const utf16dec = new TextDecoder('utf-16')
 
 const store = {
     // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
@@ -22,7 +28,7 @@ const store = {
         return merged
     },
     deallocate: function(handle) {
-        const index = Number(handle & BigInt(0xffffffff))
+        const index = Number(handle & BigInt(INDEX_MASK))
         const generation = Number(handle >> BigInt(32))
         if (generation >= MAX_GENERATION) this_generations[index] = -this_generations[index]
         else if (generation === this_generations[index]) {
@@ -31,16 +37,12 @@ const store = {
         } else throw new Error('attempt to deallocate invalid handle')
     },
     retrieve: function(handle) {
-        const index = Number(handle & BigInt(0xffffffff))
+        const index = Number(handle & BigInt(INDEX_MASK))
         const generation = Number(handle >> BigInt(32))
         if (generation === this_generations[index]) return this_objects[index]
         else throw new Error('attempt to retrieve invalid handle')
     }
 }
-
-const utf8dec = new TextDecoder('utf-8')
-const utf8enc = new TextEncoder()
-const utf16dec = new TextDecoder('utf-16')
 
 const context = {
     functions: [function() { debugger; return 0 }],
@@ -48,7 +50,6 @@ const context = {
         return utf8dec.decode(this.getMemory().subarray(start, start + len))
     },
     createAllocation: function(size) {
-        if (!this.module) throw new Error('module not set')
         const allocationId = this.module.instance.exports.create_allocation(size)
         const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId)
         return [allocationId, allocationPtr]
@@ -72,7 +73,6 @@ const context = {
         return text
     },
     readUint8ArrayFromMemory (start, length) {
-        if (!this.module) throw new Error('module not set')
         const b = this.getMemory().slice(start, start + length)
         return new Uint8Array(b)
     },
@@ -83,12 +83,9 @@ const context = {
         return store.retrieve(handle)
     },
     releaseObject: function(handle) {
-        // don't release our fixed references
-        if (handle <= 4n) return
         store.deallocate(handle)
     },
     getMemory: function() {
-        if (!this.module) throw new Error('module not set')
         return new Uint8Array(this.module.instance.exports.memory.buffer)
     },
     readParameters: function(start, length) {
@@ -107,7 +104,7 @@ const context = {
         const parameters = this.readUint8ArrayFromMemory(start, length)
         const values = []
         let i = 0
-        while(i < parameters.length){
+        while (i < parameters.length) {
             const type = parameters[i]
             i++
             switch(type){
@@ -191,9 +188,9 @@ const context = {
     }
 }
 
-const getWasmEnv = () => {
+const getWasmImports = () => {
     
-    return {
+    const env = {
         js_register_function (start, len, utfByteLen) {
             let functionBody
             if (utfByteLen === 16) functionBody = context.readUtf16FromMemory(start, len)
@@ -204,7 +201,8 @@ const getWasmEnv = () => {
         },
         js_invoke_function (funcHandle, parametersStart, parametersLength) {
             const values = context.readParameters(parametersStart, parametersLength)
-            return context.functions[funcHandle].call(context, ...values)
+            const result = context.functions[funcHandle].call(context, ...values)
+            return result
         },
         js_invoke_function_and_return_object (funcHandle, parametersStart, parametersLength) {
             const values = context.readParameters(parametersStart, parametersLength)
@@ -238,22 +236,16 @@ const getWasmEnv = () => {
             context.releaseObject(obj)
         },
     }
+    return { env }
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
     const wasmScripts = document.querySelectorAll('script[type="application/wasm"]')
     for (const wasmScript of wasmScripts) {
 
-        store.allocate(undefined);
-        store.allocate(null);
-        store.allocate(self);
-        store.allocate(typeof document != 'undefined' ? document : null);
-        store.allocate(typeof document != 'undefined' ? document.body : null);
-
-        const env = getWasmEnv()
-        const response = await fetch(wasmScript.src)
-        const bytes = await response.arrayBuffer()
-        const module = await WebAssembly.instantiate(bytes, { env: env })
+        const imports = getWasmImports()
+        const wasmBuffer = await fetch(wasmScript.src).then(r => r.arrayBuffer())
+        const module = await WebAssembly.instantiate(wasmBuffer, imports)
         context.module = module
 
         context.module.instance.exports.main()
