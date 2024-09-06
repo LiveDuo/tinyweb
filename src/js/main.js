@@ -2,43 +2,41 @@
 
 const MAX_GENERATION = 0xfffffff0
 
-class GenerationalArena {
-    constructor(){
-        this.objects = []
-        this.generations = []
-        this.freeList = []
-        this.nextIndex = 0
-    }
+const this_objects = []
+const this_generations = []
+const this_freeList = []
+let this_nextIndex = 0
+
+const store = {
     // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
-    allocate(o) {
+    allocate: function(o) {
         let index
-        if (this.freeList.length > 0) index = this.freeList.pop()
-        else index = this.nextIndex++
-        const currentGeneration = this.generations[index]
-        this.objects[index] = o
-        this.generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
+        if (this_freeList.length > 0) index = this_freeList.pop()
+        else index = this_nextIndex++
+        const currentGeneration = this_generations[index]
+        this_objects[index] = o
+        this_generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
         const low = BigInt(index)
-        const high = BigInt(this.generations[index]) << BigInt(32)
+        const high = BigInt(this_generations[index]) << BigInt(32)
         const merged = low | high
         return merged
-    }
-    deallocate(handle) {
+    },
+    deallocate: function(handle) {
         const index = Number(handle & BigInt(0xffffffff))
         const generation = Number(handle >> BigInt(32))
-        if (generation >= MAX_GENERATION) this.generations[index] = -this.generations[index]
-        else if (generation === this.generations[index]) {
-            this.generations[index] = -this.generations[index]
-            this.freeList.push(index)
+        if (generation >= MAX_GENERATION) this_generations[index] = -this_generations[index]
+        else if (generation === this_generations[index]) {
+            this_generations[index] = -this_generations[index]
+            this_freeList.push(index)
         } else throw new Error('attempt to deallocate invalid handle')
-    }
-    retrieve(handle) {
+    },
+    retrieve: function(handle) {
         const index = Number(handle & BigInt(0xffffffff))
         const generation = Number(handle >> BigInt(32))
-        if (generation === this.generations[index]) return this.objects[index]
+        if (generation === this_generations[index]) return this_objects[index]
         else throw new Error('attempt to retrieve invalid handle')
     }
 }
-const store = new GenerationalArena()
 
 const utf8dec = new TextDecoder('utf-8')
 const utf8enc = new TextEncoder()
