@@ -11,14 +11,20 @@ const _functions = []
 let _wasmModule = null
 let _nextIndex = 0
 
-// return handle as big integer that contains index in low 32 bits and generation in high 32 bits
+// return index (big integer) in low 32 bits and generation in high 32 bits
 const allocate = (o) => {
+
+    // get index
     let index
     if (_freeList.length > 0) index = _freeList.pop()
     else index = _nextIndex++
+
+    // update variables
     const currentGeneration = _generations[index]
     _objects[index] = o
     _generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
+
+    // get merged
     const low = BigInt(index)
     const high = BigInt(_generations[index]) << BigInt(32)
     const merged = low | high
@@ -40,7 +46,7 @@ const deallocate = (handle) => {
         _generations[index] = -_generations[index]
         _freeList.push(index)
     } else {
-        throw new Error('deallocate invalid handle')
+        throw new Error('Invalid deallocate handle')
     }
 }
 
@@ -48,7 +54,7 @@ const retrieve = (handle) => {
     const index = Number(handle & BigInt(INDEX_MASK))
     const generation = Number(handle >> BigInt(32))
     if (generation === _generations[index]) return _objects[index]
-    else throw new Error('retrieve invalid handle')
+    else throw new Error('Invalid retrieve handle')
 }
 
 const getMemory = () => new Uint8Array(_wasmModule.instance.exports.memory.buffer)
@@ -169,7 +175,7 @@ const getWasmImports = () => {
         js_invoke_function_and_return_object (funcHandle, parametersStart, parametersLength) {
             const values = readParameters(parametersStart, parametersLength)
             const result = _functions[funcHandle].call({}, ...values)
-            if (result === undefined || result === null) throw new Error('undefined or null while trying to return an object')
+            if (result === undefined || result === null) throw new Error('Invalid return object')
             return allocate(result)
         },
         js_invoke_function_and_return_bool (funcHandle, parametersStart, parametersLength) {
@@ -185,7 +191,7 @@ const getWasmImports = () => {
         js_invoke_function_and_return_string (funcHandle, parametersStart, parametersLength) {
             const values = readParameters(parametersStart, parametersLength)
             const result = _functions[funcHandle].call({}, ...values)
-            if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve string.')
+            if (result === undefined || result === null) throw new Error('Invalid return string')
 
             const bytes = (new TextEncoder()).encode(result)
             const [id, start] = allocateLinker(bytes.length)
@@ -195,7 +201,7 @@ const getWasmImports = () => {
         js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {
             const values = readParameters(parametersStart, parametersLength)
             const result = _functions[funcHandle].call({}, ...values)
-            if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve arraybuffer.')
+            if (result === undefined || result === null) throw new Error('Invalid return arraybuffer')
 
             const bytes = new Uint8Array(result)
             const [id, start] = allocateLinker(bytes.length)
