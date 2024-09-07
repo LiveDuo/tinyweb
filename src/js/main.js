@@ -8,7 +8,7 @@ const _generations = []
 const _freeList = []
 const _functions = []
 
-let wasmModule = null
+let _wasmModule = null
 let _nextIndex = 0
 
 // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
@@ -25,6 +25,12 @@ const allocate = (o) => {
     return merged
 }
 
+const allocateLinker = (size) => {
+    const id = _wasmModule.instance.exports.create_allocation(size)
+    const ptr = _wasmModule.instance.exports.allocation_ptr(id)
+    return [id, ptr]
+}
+
 const deallocate = (handle) => {
     const index = Number(handle & BigInt(INDEX_MASK))
     const generation = Number(handle >> BigInt(32))
@@ -34,7 +40,7 @@ const deallocate = (handle) => {
         _generations[index] = -_generations[index]
         _freeList.push(index)
     } else {
-        throw new Error('attempt to deallocate invalid handle')
+        throw new Error('deallocate invalid handle')
     }
 }
 
@@ -42,20 +48,14 @@ const retrieve = (handle) => {
     const index = Number(handle & BigInt(INDEX_MASK))
     const generation = Number(handle >> BigInt(32))
     if (generation === _generations[index]) return _objects[index]
-    else throw new Error('attempt to retrieve invalid handle')
+    else throw new Error('retrieve invalid handle')
 }
 
-const createAllocation = (size) => {
-    const id = wasmModule.instance.exports.create_allocation(size)
-    const ptr = wasmModule.instance.exports.allocation_ptr(id)
-    return [id, ptr]
-}
-
-const getMemory = () => new Uint8Array(wasmModule.instance.exports.memory.buffer)
+const getMemory = () => new Uint8Array(_wasmModule.instance.exports.memory.buffer)
 
 const writeUtf8ToMemory = (str) => {
     const bytes = (new TextEncoder()).encode(str)
-    const [id, start] = createAllocation(bytes.length)
+    const [id, start] = allocateLinker(bytes.length)
     getMemory().set(bytes, start)
     return id
 }
@@ -188,7 +188,7 @@ const getWasmImports = () => {
             if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve string.')
 
             const bytes = (new TextEncoder()).encode(result)
-            const [id, start] = createAllocation(bytes.length)
+            const [id, start] = allocateLinker(bytes.length)
             getMemory().set(bytes, start)
             return id
         },
@@ -198,7 +198,7 @@ const getWasmImports = () => {
             if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve arraybuffer.')
 
             const bytes = new Uint8Array(result)
-            const [id, start] = createAllocation(bytes.length)
+            const [id, start] = allocateLinker(bytes.length)
             getMemory().set(bytes, start)
             return id
         },
@@ -213,6 +213,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const imports = getWasmImports()
     const wasmScript = document.querySelector('script[type="application/wasm"]')
     const wasmBuffer = await fetch(wasmScript.src).then(r => r.arrayBuffer())
-    wasmModule = await WebAssembly.instantiate(wasmBuffer, imports)
-    wasmModule.instance.exports.main()
+    _wasmModule = await WebAssembly.instantiate(wasmBuffer, imports)
+    _wasmModule.instance.exports.main()
 })
