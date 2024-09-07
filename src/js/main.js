@@ -11,7 +11,7 @@ const _functions = []
 let _wasmModule = null
 let _nextIndex = 0
 
-// return index (big integer) in low 32 bits and generation in high 32 bits
+// returns index as bigint in low 32-bits and generation in high 32-bits
 const allocate = (o) => {
 
     // get index
@@ -31,12 +31,6 @@ const allocate = (o) => {
     return merged
 }
 
-const allocateLinker = (size) => {
-    const id = _wasmModule.instance.exports.create_allocation(size)
-    const ptr = _wasmModule.instance.exports.allocation_ptr(id)
-    return [id, ptr]
-}
-
 const deallocate = (handle) => {
     const index = Number(handle & BigInt(INDEX_MASK))
     const generation = Number(handle >> BigInt(32))
@@ -50,105 +44,72 @@ const deallocate = (handle) => {
     }
 }
 
-const retrieve = (handle) => {
-    const index = Number(handle & BigInt(INDEX_MASK))
-    const generation = Number(handle >> BigInt(32))
-    if (generation === _generations[index]) return _objects[index]
-    else throw new Error('Invalid retrieve handle')
-}
-
-const getMemory = () => new Uint8Array(_wasmModule.instance.exports.memory.buffer)
-
 const writeUtf8ToMemory = (str) => {
     const bytes = (new TextEncoder()).encode(str)
-    const [id, start] = allocateLinker(bytes.length)
-    getMemory().set(bytes, start)
+    const id = _wasmModule.instance.exports.create_allocation(bytes.length)
+    const start = _wasmModule.instance.exports.allocation_ptr(id)
+    const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
+    memory.set(bytes, start)
     return id
 }
 
 const readParameters = (start, length) => {
-        
-    // convert bytes to array of values parameters are preceded by a 32 bit integer indicating its type
-    // 0 = undefined
-    // 1 = null
-    // 2 = float-64
-    // 3 = bigint
-    // 4 = string (followed by 32-bit start and size of string in memory)
-    // 5 = extern ref
-    // 6 = array of float-64 (followed by 32-bit start and size of string in memory)
-    // 7 = true
-    // 8 = false
+    
+    // parameters are preceded by a 32-bit integer indicating their type
+    // 0 = undefined, 1 = null, 2 = float-64, 3 = bigint, 4 = string, 5 = extern ref, 6 = array of float-64, 7 = true, 8 = false
 
-    const memory = getMemory()
-
-    const memorySlice = memory.slice(start, start + length)
-    const parameters = new Uint8Array(memorySlice)
+    const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
+    const parameters = new Uint8Array(memory.slice(start, start + length))
     const values = []
     let i = 0
     while (i < parameters.length) {
         const type = parameters[i]
         i++
-        switch(type){
-            case 0: {
-                values.push(undefined)
-                break
-            } case 1: {
-                values.push(null)
-                break
-            } case 2: {
-                values.push(new DataView(parameters.buffer).getFloat64(i, true))
-                i += 8
-                break
-            } case 3: {
-                values.push(new DataView(parameters.buffer).getBigInt64(i, true))
-                i += 8
-                break
-            } case 4: {
-                const start = new DataView(parameters.buffer).getInt32(i, true)
-                i += 4
-                const len = new DataView(parameters.buffer).getInt32(i, true)
-                i += 4
-                const value = (new TextDecoder('utf-8')).decode(memory.subarray(start, start + len))
-                values.push(value)
-                break
-            } case 5: {
-                const handle = new DataView(parameters.buffer).getBigInt64(i, true)
-                values.push(retrieve(handle))
-                i += 8
-                break
-            } case 6: {
-                const start = new DataView(parameters.buffer).getInt32(i, true)
-                i += 4
-                const len = new DataView(parameters.buffer).getInt32(i, true)
-                i += 4
-                const slice = memory.buffer.slice(start, start + len * 4)
-                values.push(new Float32Array(slice))
-                break
-            } case 7: {
-                values.push(true)
-                break
-            } case 8: {
-                values.push(false)
-                break
-            } case 9: {
-                const start = new DataView(parameters.buffer).getInt32(i, true)
-                i += 4
-                const len = new DataView(parameters.buffer).getInt32(i, true)
-                i += 4
-                const slice = memory.buffer.slice(start, start + len * 8)
-                values.push(new Float64Array(slice))
-                break
-            } case 10: {
-                const start = new DataView(parameters.buffer).getInt32(i, true)
-                i += 4
-                const len = new DataView(parameters.buffer).getInt32(i, true)
-                i += 4
-                const slice = memory.buffer.slice(start, start + len * 4)
-                values.push(new Uint32Array(slice))
-                break
-            }
-            default:
-                throw new Error('Invalid parameter type')
+        if (type === 0) {
+            values.push(undefined)
+        } else if (type === 1) {
+            values.push(null)
+        } else if (type === 2) {
+            values.push(new DataView(parameters.buffer).getFloat64(i, true))
+            i += 8
+        } else if (type === 3) {
+            values.push(new DataView(parameters.buffer).getBigInt64(i, true))
+            i += 8
+        } else if (type === 4) {
+            const start = new DataView(parameters.buffer).getInt32(i, true)
+            i += 4
+            const len = new DataView(parameters.buffer).getInt32(i, true)
+            i += 4
+            values.push((new TextDecoder('utf-8')).decode(memory.subarray(start, start + len)))
+        } else if (type === 5) {
+            const handle = new DataView(parameters.buffer).getBigInt64(i, true)
+            const index = Number(handle & BigInt(INDEX_MASK))
+            values.push(_objects[index])
+            i += 8
+        } else if (type === 6) {
+            const start = new DataView(parameters.buffer).getInt32(i, true)
+            i += 4
+            const len = new DataView(parameters.buffer).getInt32(i, true)
+            i += 4
+            values.push(new Float32Array(memory.buffer.slice(start, start + len * 4)))
+        } else if (type === 7) {
+            values.push(true)
+        } else if (type === 8) {
+            values.push(false)
+        } else if (type === 9) {
+            const start = new DataView(parameters.buffer).getInt32(i, true)
+            i += 4
+            const len = new DataView(parameters.buffer).getInt32(i, true)
+            i += 4
+            values.push(new Float64Array(memory.buffer.slice(start, start + len * 8)))
+        } else if (type === 10) {
+            const start = new DataView(parameters.buffer).getInt32(i, true)
+            i += 4
+            const len = new DataView(parameters.buffer).getInt32(i, true)
+            i += 4
+            values.push(new Uint32Array(memory.buffer.slice(start, start + len * 4)))
+        } else {
+            throw new Error('Invalid parameter type')
         }
     }
     return values
@@ -159,7 +120,8 @@ const getWasmImports = () => {
     const env = {
         js_register_function (start, len, utfByteLen) {
             const decoder = (utfByteLen === 16) ? new TextDecoder('utf-16') : new TextDecoder('utf-8')
-            const functionBody = decoder.decode(getMemory().subarray(start, start + len))
+            const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
+            const functionBody = decoder.decode(memory.subarray(start, start + len))
             const id = _functions.length
             _functions.push(Function(`'use strict';return(${functionBody})`)())
             return id
@@ -191,8 +153,10 @@ const getWasmImports = () => {
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
             const bytes = (new TextEncoder()).encode(result)
-            const [id, start] = allocateLinker(bytes.length)
-            getMemory().set(bytes, start)
+            const id = _wasmModule.instance.exports.create_allocation(bytes.length)
+            const start = _wasmModule.instance.exports.allocation_ptr(id)
+            const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
+            memory.set(bytes, start)
             return id
         },
         js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {
@@ -201,8 +165,10 @@ const getWasmImports = () => {
             if (result === undefined || result === null) throw new Error('Invalid return arraybuffer')
 
             const bytes = new Uint8Array(result)
-            const [id, start] = allocateLinker(bytes.length)
-            getMemory().set(bytes, start)
+            const id = _wasmModule.instance.exports.create_allocation(bytes.length)
+            const start = _wasmModule.instance.exports.allocation_ptr(id)
+            const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
+            memory.set(bytes, start)
             return id
         },
         js_externref_drop (obj) {
