@@ -104,11 +104,11 @@ const readParameters = (start, length) => {
                 i += 8
                 break
             } case 4: {
-                const start1 = new DataView(parameters.buffer).getInt32(i, true)
+                const start = new DataView(parameters.buffer).getInt32(i, true)
                 i += 4
                 const len = new DataView(parameters.buffer).getInt32(i, true)
                 i += 4
-                const value = (new TextDecoder('utf-8')).decode(memory.subarray(start1, start1 + len))
+                const value = (new TextDecoder('utf-8')).decode(memory.subarray(start, start + len))
                 values.push(value)
                 break
             } case 5: {
@@ -117,13 +117,12 @@ const readParameters = (start, length) => {
                 i += 8
                 break
             } case 6: {
-                const start2 = new DataView(parameters.buffer).getInt32(i, true)
+                const start = new DataView(parameters.buffer).getInt32(i, true)
                 i += 4
-                const len1 = new DataView(parameters.buffer).getInt32(i, true)
+                const len = new DataView(parameters.buffer).getInt32(i, true)
                 i += 4
-                const slice = memory.buffer.slice(start2, start2 + len1 * 4)
-                const array = new Float32Array(slice)
-                values.push(array)
+                const slice = memory.buffer.slice(start, start + len * 4)
+                values.push(new Float32Array(slice))
                 break
             } case 7: {
                 values.push(true)
@@ -137,8 +136,7 @@ const readParameters = (start, length) => {
                 const len = new DataView(parameters.buffer).getInt32(i, true)
                 i += 4
                 const slice = memory.buffer.slice(start, start + len * 8)
-                const array = new Float64Array(slice)
-                values.push(array)
+                values.push(new Float64Array(slice))
                 break
             } case 10: {
                 const start = new DataView(parameters.buffer).getInt32(i, true)
@@ -146,8 +144,7 @@ const readParameters = (start, length) => {
                 const len = new DataView(parameters.buffer).getInt32(i, true)
                 i += 4
                 const slice = memory.buffer.slice(start, start + len * 4)
-                const array = new Uint32Array(slice)
-                values.push(array)
+                values.push(new Uint32Array(slice))
                 break
             }
             default:
