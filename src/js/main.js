@@ -7,6 +7,8 @@ const this_objects = []
 const this_generations = []
 const this_freeList = []
 
+const functions = []
+
 let this_nextIndex = 0
 
 const utf8enc = new TextEncoder()
@@ -14,58 +16,48 @@ const utf8enc = new TextEncoder()
 const utf8dec = new TextDecoder('utf-8')
 const utf16dec = new TextDecoder('utf-16')
 
+// return handle as big integer that contains index in low 32 bits and generation in high 32 bits
+const allocate = function(o) {
+    let index
+    if (this_freeList.length > 0) index = this_freeList.pop()
+    else index = this_nextIndex++
+    const currentGeneration = this_generations[index]
+    this_objects[index] = o
+    this_generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
+    const low = BigInt(index)
+    const high = BigInt(this_generations[index]) << BigInt(32)
+    const merged = low | high
+    return merged
+}
+
+const deallocate = function(handle) {
+    const index = Number(handle & BigInt(INDEX_MASK))
+    const generation = Number(handle >> BigInt(32))
+    if (generation >= MAX_GENERATION) this_generations[index] = -this_generations[index]
+    else if (generation === this_generations[index]) {
+        this_generations[index] = -this_generations[index]
+        this_freeList.push(index)
+    } else throw new Error('attempt to deallocate invalid handle')
+}
+
+const retrieve = function(handle) {
+    const index = Number(handle & BigInt(INDEX_MASK))
+    const generation = Number(handle >> BigInt(32))
+    if (generation === this_generations[index]) return this_objects[index]
+    else throw new Error('attempt to retrieve invalid handle')
+}
+
 const context = {
-    functions: [],
-    // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
-    allocate: function(o) {
-        let index
-        if (this_freeList.length > 0) index = this_freeList.pop()
-        else index = this_nextIndex++
-        const currentGeneration = this_generations[index]
-        this_objects[index] = o
-        this_generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
-        const low = BigInt(index)
-        const high = BigInt(this_generations[index]) << BigInt(32)
-        const merged = low | high
-        return merged
-    },
-    deallocate: function(handle) {
-        const index = Number(handle & BigInt(INDEX_MASK))
-        const generation = Number(handle >> BigInt(32))
-        if (generation >= MAX_GENERATION) this_generations[index] = -this_generations[index]
-        else if (generation === this_generations[index]) {
-            this_generations[index] = -this_generations[index]
-            this_freeList.push(index)
-        } else throw new Error('attempt to deallocate invalid handle')
-    },
-    retrieve: function(handle) {
-        const index = Number(handle & BigInt(INDEX_MASK))
-        const generation = Number(handle >> BigInt(32))
-        if (generation === this_generations[index]) return this_objects[index]
-        else throw new Error('attempt to retrieve invalid handle')
-    },
     createAllocation: function(size) {
         const allocationId = this.module.instance.exports.create_allocation(size)
         const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId)
         return [allocationId, allocationPtr]
     },
-    writeUtf8ToMemory: function(str) {
-        const bytes = utf8enc.encode(str)
-        const [id, start] = this.createAllocation(bytes.length)
-        this.getMemory().set(bytes, start)
-        return id
-    },
-    writeArrayBufferToMemory: function(ab) {
-        const bytes = new Uint8Array(ab)
-        const [id, start] = this.createAllocation(bytes.length)
-        this.getMemory().set(bytes, start)
-        return id
-    },
     storeObject: function(obj) {
-        return this.allocate(obj)
+        return allocate(obj)
     },
     releaseObject: function(handle) {
-        this.deallocate(handle)
+        deallocate(handle)
     },
     getMemory: function() {
         return new Uint8Array(this.module.instance.exports.memory.buffer)
@@ -120,7 +112,7 @@ const readParameters = function(context, start, length) {
             case 5:
                 {
                     const handle = new DataView(parameters.buffer).getBigInt64(i, true)
-                    values.push(context.retrieve(handle))
+                    values.push(retrieve(handle))
                     i += 8
                     break
                 }
@@ -180,42 +172,50 @@ const getWasmImports = () => {
             let functionBody
             if (utfByteLen === 16) functionBody = utf16dec.decode(context.getMemory().subarray(start, start + len))
             else functionBody = utf8dec.decode(context.getMemory().subarray(start, start + len))
-            const id = context.functions.length
-            context.functions.push(Function(`'use strict';return(${functionBody})`)())
+            const id = functions.length
+            functions.push(Function(`'use strict';return(${functionBody})`)())
             return id
         },
         js_invoke_function (funcHandle, parametersStart, parametersLength) {
             const values = readParameters(context, parametersStart, parametersLength)
-            const result = context.functions[funcHandle].call(context, ...values)
+            const result = functions[funcHandle].call(context, ...values)
             return result
         },
         js_invoke_function_and_return_object (funcHandle, parametersStart, parametersLength) {
             const values = readParameters(context, parametersStart, parametersLength)
-            const result = context.functions[funcHandle].call(context, ...values)
+            const result = functions[funcHandle].call(context, ...values)
             if (result === undefined || result === null) throw new Error('undefined or null while trying to return an object')
             return context.storeObject(result)
         },
         js_invoke_function_and_return_bool (funcHandle, parametersStart, parametersLength) {
             const values = readParameters(context, parametersStart, parametersLength)
-            const result = context.functions[funcHandle].call(context, ...values)
+            const result = functions[funcHandle].call(context, ...values)
             return result ? 1 : 0
         },
         js_invoke_function_and_return_bigint (funcHandle, parametersStart, parametersLength) {
             const values = readParameters(context, parametersStart, parametersLength)
-            const result = context.functions[funcHandle].call(context, ...values)
+            const result = functions[funcHandle].call(context, ...values)
             return result
         },
         js_invoke_function_and_return_string (funcHandle, parametersStart, parametersLength) {
             const values = readParameters(context, parametersStart, parametersLength)
-            const result = context.functions[funcHandle].call(context, ...values)
+            const result = functions[funcHandle].call(context, ...values)
             if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve string.')
-            return context.writeUtf8ToMemory(result)
+
+            const bytes = utf8enc.encode(result)
+            const [id, start] = this.createAllocation(bytes.length)
+            this.getMemory().set(bytes, start)
+            return id
         },
         js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {
             const values = readParameters(context, parametersStart, parametersLength)
-            const result = context.functions[funcHandle].call(context, ...values)
+            const result = functions[funcHandle].call(context, ...values)
             if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve arraybuffer.')
-            return context.writeArrayBufferToMemory(result)
+
+            const bytes = new Uint8Array(result)
+            const [id, start] = this.createAllocation(bytes.length)
+            this.getMemory().set(bytes, start)
+            return id
         },
         js_externref_drop (obj) {
             context.releaseObject(obj)
