@@ -85,13 +85,14 @@ const readParameters = function(context, start, length) {
                     i += 4
                     const len = new DataView(parameters.buffer).getInt32(i, true)
                     i += 4
-                    values.push(context.readUtf8FromMemory(start1, len))
+                    const value = utf8dec.decode(context.getMemory().subarray(start1, start1 + len))
+                    values.push(value)
                     break
                 }
             case 5:
                 {
                     const handle = new DataView(parameters.buffer).getBigInt64(i, true)
-                    values.push(context.getObject(handle))
+                    values.push(store.retrieve(handle))
                     i += 8
                     break
                 }
@@ -145,38 +146,26 @@ const readParameters = function(context, start, length) {
 }
 
 const context = {
-    functions: [function() { debugger; return 0 }],
+    functions: [],
     createAllocation: function(size) {
         const allocationId = this.module.instance.exports.create_allocation(size)
         const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId)
         return [allocationId, allocationPtr]
     },
-    readUtf8FromMemory: function(start, len) {
-        return utf8dec.decode(this.getMemory().subarray(start, start + len))
-    },
     writeUtf8ToMemory: function(str) {
         const bytes = utf8enc.encode(str)
-        const len = bytes.length
-        const [id, start] = this.createAllocation(len)
+        const [id, start] = this.createAllocation(bytes.length)
         this.getMemory().set(bytes, start)
         return id
     },
     writeArrayBufferToMemory: function(ab) {
         const bytes = new Uint8Array(ab)
-        const len = bytes.length
-        const [id, start] = this.createAllocation(len)
+        const [id, start] = this.createAllocation(bytes.length)
         this.getMemory().set(bytes, start)
         return id
     },
-    readUtf16FromMemory: function(start, len) {
-        const text = utf16dec.decode(this.getMemory().subarray(start, start + len))
-        return text
-    },
     storeObject: function(obj) {
         return store.allocate(obj)
-    },
-    getObject: function(handle) {
-        return store.retrieve(handle)
     },
     releaseObject: function(handle) {
         store.deallocate(handle)
@@ -191,8 +180,8 @@ const getWasmImports = () => {
     const env = {
         js_register_function (start, len, utfByteLen) {
             let functionBody
-            if (utfByteLen === 16) functionBody = context.readUtf16FromMemory(start, len)
-            else functionBody = context.readUtf8FromMemory(start, len)
+            if (utfByteLen === 16) functionBody = utf16dec.decode(context.getMemory().subarray(start, start + len))
+            else functionBody = utf8dec.decode(context.getMemory().subarray(start, start + len))
             const id = context.functions.length
             context.functions.push(Function(`'use strict';return(${functionBody})`)())
             return id
