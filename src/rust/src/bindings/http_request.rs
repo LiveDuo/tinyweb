@@ -128,7 +128,7 @@ impl XMLHttpRequest {
         let function_ref = JSFunction::register(r#"
             function(request){
                 const handler = () => {
-                    wasmModule.instance.exports.web_handle_http_load_event_handler(id);
+                    _wasmModule.instance.exports.web_handle_http_load_event_handler(id);
                     deallocate(id);
                 };
                 const id = allocate(handler);

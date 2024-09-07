@@ -171,7 +171,7 @@ pub fn add_history_pop_state_event_listener(
     let function_ref = JSFunction::register(r#"
         function(){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_history_pop_state_event(id);
+                _wasmModule.instance.exports.web_handle_history_pop_state_event(id);
             };
             const id = allocate(handler);
             window.addEventListener("popstate",handler);

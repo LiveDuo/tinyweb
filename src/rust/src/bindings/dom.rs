@@ -150,7 +150,7 @@ pub fn add_change_event_listener(
             const handler = (e) => {
                 const value = e.target.value;
                 const allocationId = writeUtf8ToMemory(value);
-                wasmModule.instance.exports.web_handle_change_event_handler(id, allocationId);
+                _wasmModule.instance.exports.web_handle_change_event_handler(id, allocationId);
             };
             const id = allocate(handler);
             element.addEventListener("change",handler);
@@ -195,7 +195,7 @@ pub fn element_add_click_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                _wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
             };
             const id = allocate(handler);
             element.addEventListener("click",handler);
@@ -227,7 +227,7 @@ pub fn element_add_mouse_move_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                _wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
             };
             const id = allocate(handler);
             element.addEventListener("mousemove",handler);
@@ -261,7 +261,7 @@ pub fn element_add_mouse_down_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                _wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
             };
             const id = allocate(handler);
             element.addEventListener("mousedown",handler);
@@ -295,7 +295,7 @@ pub fn element_add_mouse_up_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                _wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
             };
             const id = allocate(handler);
             element.addEventListener("mouseup",handler);
@@ -373,7 +373,7 @@ pub fn element_add_key_down_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
+                _wasmModule.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
             };
             const id = allocate(handler);
             element.addEventListener("keydown",handler);
@@ -404,7 +404,7 @@ pub fn element_add_key_up_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
+                _wasmModule.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
             };
             const id = allocate(handler);
             element.addEventListener("keyup",handler);

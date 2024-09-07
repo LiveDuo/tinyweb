@@ -30,7 +30,7 @@ pub fn request_animation_frame(handler: impl FnMut() + 'static) {
     let function_handle = JSFunction::register(r#"
         function(){
             const handler = () => {
-                wasmModule.instance.exports.web_one_time_empty_handler(id);
+                _wasmModule.instance.exports.web_one_time_empty_handler(id);
                 deallocate(id);
             };
             const id = allocate(handler);
@@ -55,7 +55,7 @@ pub fn set_timeout(
     let obj_handle = JSFunction::register(r#"
         function(ms){
             const handler = () => {
-                wasmModule.instance.exports.web_one_time_empty_handler(id);
+                _wasmModule.instance.exports.web_one_time_empty_handler(id);
                 deallocate(id);
             };
             const id = allocate(handler);
