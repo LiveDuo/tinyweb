@@ -13,37 +13,6 @@ const utf8dec = new TextDecoder('utf-8')
 const utf8enc = new TextEncoder()
 const utf16dec = new TextDecoder('utf-16')
 
-const store = {
-    // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
-    allocate: function(o) {
-        let index
-        if (this_freeList.length > 0) index = this_freeList.pop()
-        else index = this_nextIndex++
-        const currentGeneration = this_generations[index]
-        this_objects[index] = o
-        this_generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
-        const low = BigInt(index)
-        const high = BigInt(this_generations[index]) << BigInt(32)
-        const merged = low | high
-        return merged
-    },
-    deallocate: function(handle) {
-        const index = Number(handle & BigInt(INDEX_MASK))
-        const generation = Number(handle >> BigInt(32))
-        if (generation >= MAX_GENERATION) this_generations[index] = -this_generations[index]
-        else if (generation === this_generations[index]) {
-            this_generations[index] = -this_generations[index]
-            this_freeList.push(index)
-        } else throw new Error('attempt to deallocate invalid handle')
-    },
-    retrieve: function(handle) {
-        const index = Number(handle & BigInt(INDEX_MASK))
-        const generation = Number(handle >> BigInt(32))
-        if (generation === this_generations[index]) return this_objects[index]
-        else throw new Error('attempt to retrieve invalid handle')
-    }
-}
-
 const readParameters = function(context, start, length) {
         
     // convert bytes to array of values parameters are preceded by a 32 bit integer indicating its type
@@ -92,7 +61,7 @@ const readParameters = function(context, start, length) {
             case 5:
                 {
                     const handle = new DataView(parameters.buffer).getBigInt64(i, true)
-                    values.push(store.retrieve(handle))
+                    values.push(context.retrieve(handle))
                     i += 8
                     break
                 }
@@ -147,6 +116,34 @@ const readParameters = function(context, start, length) {
 
 const context = {
     functions: [],
+    // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
+    allocate: function(o) {
+        let index
+        if (this_freeList.length > 0) index = this_freeList.pop()
+        else index = this_nextIndex++
+        const currentGeneration = this_generations[index]
+        this_objects[index] = o
+        this_generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
+        const low = BigInt(index)
+        const high = BigInt(this_generations[index]) << BigInt(32)
+        const merged = low | high
+        return merged
+    },
+    deallocate: function(handle) {
+        const index = Number(handle & BigInt(INDEX_MASK))
+        const generation = Number(handle >> BigInt(32))
+        if (generation >= MAX_GENERATION) this_generations[index] = -this_generations[index]
+        else if (generation === this_generations[index]) {
+            this_generations[index] = -this_generations[index]
+            this_freeList.push(index)
+        } else throw new Error('attempt to deallocate invalid handle')
+    },
+    retrieve: function(handle) {
+        const index = Number(handle & BigInt(INDEX_MASK))
+        const generation = Number(handle >> BigInt(32))
+        if (generation === this_generations[index]) return this_objects[index]
+        else throw new Error('attempt to retrieve invalid handle')
+    },
     createAllocation: function(size) {
         const allocationId = this.module.instance.exports.create_allocation(size)
         const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId)
@@ -165,10 +162,10 @@ const context = {
         return id
     },
     storeObject: function(obj) {
-        return store.allocate(obj)
+        return this.allocate(obj)
     },
     releaseObject: function(handle) {
-        store.deallocate(handle)
+        this.deallocate(handle)
     },
     getMemory: function() {
         return new Uint8Array(this.module.instance.exports.memory.buffer)
