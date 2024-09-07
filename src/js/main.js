@@ -44,7 +44,7 @@ const deallocate = (handle) => {
     }
 }
 
-const writeUtf8ToMemory = (str) => {
+const writeStringToMemory = (str) => {
     const bytes = (new TextEncoder()).encode(str)
     const id = _wasmModule.instance.exports.create_allocation(bytes.length)
     const start = _wasmModule.instance.exports.allocation_ptr(id)
@@ -152,11 +152,7 @@ const getWasmImports = () => {
             const result = _functions[funcHandle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
-            const bytes = (new TextEncoder()).encode(result)
-            const id = _wasmModule.instance.exports.create_allocation(bytes.length)
-            const start = _wasmModule.instance.exports.allocation_ptr(id)
-            const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
-            memory.set(bytes, start)
+            const id = writeStringToMemory(result)
             return id
         },
         js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {

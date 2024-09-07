@@ -149,7 +149,7 @@ pub fn add_change_event_listener(
         function(element ){
             const handler = (e) => {
                 const value = e.target.value;
-                const allocationId = writeUtf8ToMemory(value);
+                const allocationId = writeStringToMemory(value);
                 _wasmModule.instance.exports.web_handle_change_event_handler(id, allocationId);
             };
             const id = allocate(handler);
