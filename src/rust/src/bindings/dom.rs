@@ -149,10 +149,10 @@ pub fn add_change_event_listener(
         function(element ){
             const handler = (e) => {
                 const value = e.target.value;
-                const allocationId = this.writeUtf8ToMemory(value);
-                this.module.instance.exports.web_handle_change_event_handler(id, allocationId);
+                const allocationId = writeUtf8ToMemory(value);
+                wasmModule.instance.exports.web_handle_change_event_handler(id, allocationId);
             };
-            const id = this.storeObject(handler);
+            const id = allocate(handler);
             element.addEventListener("change",handler);
             return id;
         }"#)
@@ -195,9 +195,9 @@ pub fn element_add_click_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                this.module.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
             };
-            const id = this.storeObject(handler);
+            const id = allocate(handler);
             element.addEventListener("click",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
@@ -227,9 +227,9 @@ pub fn element_add_mouse_move_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                this.module.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
             };
-            const id = this.storeObject(handler);
+            const id = allocate(handler);
             element.addEventListener("mousemove",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
@@ -261,9 +261,9 @@ pub fn element_add_mouse_down_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                this.module.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
             };
-            const id = this.storeObject(handler);
+            const id = allocate(handler);
             element.addEventListener("mousedown",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
@@ -295,9 +295,9 @@ pub fn element_add_mouse_up_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                this.module.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
             };
-            const id = this.storeObject(handler);
+            const id = allocate(handler);
             element.addEventListener("mouseup",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
@@ -373,9 +373,9 @@ pub fn element_add_key_down_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                this.module.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
+                wasmModule.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
             };
-            const id = this.storeObject(handler);
+            const id = allocate(handler);
             element.addEventListener("keydown",handler);
             return id;
         }"#)
@@ -404,9 +404,9 @@ pub fn element_add_key_up_listener(
     let function_ref = JSFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                this.module.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
+                wasmModule.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
             };
-            const id = this.storeObject(handler);
+            const id = allocate(handler);
             element.addEventListener("keyup",handler);
             return id;
         }"#)

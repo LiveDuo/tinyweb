@@ -3,13 +3,14 @@
 const MAX_GENERATION = 0xfffffff0
 const INDEX_MASK = 0xffffffff
 
-const this_objects = []
-const this_generations = []
-const this_freeList = []
+const _objects = []
+const _generations = []
+const _freeList = []
 
 const functions = []
 
-let this_nextIndex = 0
+let wasmModule = null
+let _nextIndex = 0
 
 const utf8enc = new TextEncoder()
 
@@ -19,13 +20,13 @@ const utf16dec = new TextDecoder('utf-16')
 // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
 const allocate = function(o) {
     let index
-    if (this_freeList.length > 0) index = this_freeList.pop()
-    else index = this_nextIndex++
-    const currentGeneration = this_generations[index]
-    this_objects[index] = o
-    this_generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
+    if (_freeList.length > 0) index = _freeList.pop()
+    else index = _nextIndex++
+    const currentGeneration = _generations[index]
+    _objects[index] = o
+    _generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
     const low = BigInt(index)
-    const high = BigInt(this_generations[index]) << BigInt(32)
+    const high = BigInt(_generations[index]) << BigInt(32)
     const merged = low | high
     return merged
 }
@@ -33,38 +34,36 @@ const allocate = function(o) {
 const deallocate = function(handle) {
     const index = Number(handle & BigInt(INDEX_MASK))
     const generation = Number(handle >> BigInt(32))
-    if (generation >= MAX_GENERATION) this_generations[index] = -this_generations[index]
-    else if (generation === this_generations[index]) {
-        this_generations[index] = -this_generations[index]
-        this_freeList.push(index)
+    if (generation >= MAX_GENERATION) _generations[index] = -_generations[index]
+    else if (generation === _generations[index]) {
+        _generations[index] = -_generations[index]
+        _freeList.push(index)
     } else throw new Error('attempt to deallocate invalid handle')
 }
 
 const retrieve = function(handle) {
     const index = Number(handle & BigInt(INDEX_MASK))
     const generation = Number(handle >> BigInt(32))
-    if (generation === this_generations[index]) return this_objects[index]
+    if (generation === _generations[index]) return _objects[index]
     else throw new Error('attempt to retrieve invalid handle')
 }
 
-const context = {
-    createAllocation: function(size) {
-        const allocationId = this.module.instance.exports.create_allocation(size)
-        const allocationPtr = this.module.instance.exports.allocation_ptr(allocationId)
-        return [allocationId, allocationPtr]
-    },
-    storeObject: function(obj) {
-        return allocate(obj)
-    },
-    releaseObject: function(handle) {
-        deallocate(handle)
-    },
-    getMemory: function() {
-        return new Uint8Array(this.module.instance.exports.memory.buffer)
-    },
+const createAllocation = (size) => {
+    const allocationId = wasmModule.instance.exports.create_allocation(size)
+    const allocationPtr = wasmModule.instance.exports.allocation_ptr(allocationId)
+    return [allocationId, allocationPtr]
 }
 
-const readParameters = function(context, start, length) {
+const getMemory = () => new Uint8Array(wasmModule.instance.exports.memory.buffer)
+
+const writeUtf8ToMemory = (str) => {
+    const bytes = utf8enc.encode(str)
+    const [id, start] = createAllocation(bytes.length)
+    getMemory().set(bytes, start)
+    return id
+}
+
+const readParameters = function(start, length) {
         
     // convert bytes to array of values parameters are preceded by a 32 bit integer indicating its type
     // 0 = undefined
@@ -77,7 +76,7 @@ const readParameters = function(context, start, length) {
     // 7 = true
     // 8 = false
 
-    const memorySlice = context.getMemory().slice(start, start + length)
+    const memorySlice = getMemory().slice(start, start + length)
     const parameters = new Uint8Array(memorySlice)
     const values = []
     let i = 0
@@ -105,7 +104,7 @@ const readParameters = function(context, start, length) {
                     i += 4
                     const len = new DataView(parameters.buffer).getInt32(i, true)
                     i += 4
-                    const value = utf8dec.decode(context.getMemory().subarray(start1, start1 + len))
+                    const value = utf8dec.decode(getMemory().subarray(start1, start1 + len))
                     values.push(value)
                     break
                 }
@@ -122,7 +121,7 @@ const readParameters = function(context, start, length) {
                     i += 4
                     const len1 = new DataView(parameters.buffer).getInt32(i, true)
                     i += 4
-                    const memory = context.getMemory()
+                    const memory = getMemory()
                     const slice = memory.buffer.slice(start2, start2 + len1 * 4)
                     const array = new Float32Array(slice)
                     values.push(array)
@@ -140,7 +139,7 @@ const readParameters = function(context, start, length) {
                     i += 4
                     const len2 = new DataView(parameters.buffer).getInt32(i, true)
                     i += 4
-                    const memory1 = context.getMemory()
+                    const memory1 = getMemory()
                     const slice1 = memory1.buffer.slice(start3, start3 + len2 * 8)
                     const array1 = new Float64Array(slice1)
                     values.push(array1)
@@ -152,7 +151,7 @@ const readParameters = function(context, start, length) {
                     i += 4
                     const len3 = new DataView(parameters.buffer).getInt32(i, true)
                     i += 4
-                    const memory2 = context.getMemory()
+                    const memory2 = getMemory()
                     const slice2 = memory2.buffer.slice(start4, start4 + len3 * 4)
                     const array2 = new Uint32Array(slice2)
                     values.push(array2)
@@ -170,70 +169,64 @@ const getWasmImports = () => {
     const env = {
         js_register_function (start, len, utfByteLen) {
             let functionBody
-            if (utfByteLen === 16) functionBody = utf16dec.decode(context.getMemory().subarray(start, start + len))
-            else functionBody = utf8dec.decode(context.getMemory().subarray(start, start + len))
+            if (utfByteLen === 16) functionBody = utf16dec.decode(getMemory().subarray(start, start + len))
+            else functionBody = utf8dec.decode(getMemory().subarray(start, start + len))
             const id = functions.length
             functions.push(Function(`'use strict';return(${functionBody})`)())
             return id
         },
         js_invoke_function (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(context, parametersStart, parametersLength)
-            const result = functions[funcHandle].call(context, ...values)
+            const values = readParameters(parametersStart, parametersLength)
+            const result = functions[funcHandle].call({}, ...values)
             return result
         },
         js_invoke_function_and_return_object (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(context, parametersStart, parametersLength)
-            const result = functions[funcHandle].call(context, ...values)
+            const values = readParameters(parametersStart, parametersLength)
+            const result = functions[funcHandle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('undefined or null while trying to return an object')
-            return context.storeObject(result)
+            return allocate(result)
         },
         js_invoke_function_and_return_bool (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(context, parametersStart, parametersLength)
-            const result = functions[funcHandle].call(context, ...values)
+            const values = readParameters(parametersStart, parametersLength)
+            const result = functions[funcHandle].call({}, ...values)
             return result ? 1 : 0
         },
         js_invoke_function_and_return_bigint (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(context, parametersStart, parametersLength)
-            const result = functions[funcHandle].call(context, ...values)
+            const values = readParameters(parametersStart, parametersLength)
+            const result = functions[funcHandle].call({}, ...values)
             return result
         },
         js_invoke_function_and_return_string (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(context, parametersStart, parametersLength)
-            const result = functions[funcHandle].call(context, ...values)
+            const values = readParameters(parametersStart, parametersLength)
+            const result = functions[funcHandle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve string.')
 
             const bytes = utf8enc.encode(result)
-            const [id, start] = this.createAllocation(bytes.length)
-            this.getMemory().set(bytes, start)
+            const [id, start] = createAllocation(bytes.length)
+            getMemory().set(bytes, start)
             return id
         },
         js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(context, parametersStart, parametersLength)
-            const result = functions[funcHandle].call(context, ...values)
+            const values = readParameters(parametersStart, parametersLength)
+            const result = functions[funcHandle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('undefined or null while trying to retrieve arraybuffer.')
 
             const bytes = new Uint8Array(result)
-            const [id, start] = this.createAllocation(bytes.length)
-            this.getMemory().set(bytes, start)
+            const [id, start] = createAllocation(bytes.length)
+            getMemory().set(bytes, start)
             return id
         },
         js_externref_drop (obj) {
-            context.releaseObject(obj)
+            deallocate(obj)
         },
     }
     return { env }
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
-    const wasmScripts = document.querySelectorAll('script[type="application/wasm"]')
-    for (const wasmScript of wasmScripts) {
-
-        const imports = getWasmImports()
-        const wasmBuffer = await fetch(wasmScript.src).then(r => r.arrayBuffer())
-        const module = await WebAssembly.instantiate(wasmBuffer, imports)
-        context.module = module
-
-        context.module.instance.exports.main()
-        
-    }
+document.addEventListener('DOMContentLoaded', async () => {
+    const imports = getWasmImports()
+    const wasmScript = document.querySelector('script[type="application/wasm"]')
+    const wasmBuffer = await fetch(wasmScript.src).then(r => r.arrayBuffer())
+    wasmModule = await WebAssembly.instantiate(wasmBuffer, imports)
+    wasmModule.instance.exports.main()
 })

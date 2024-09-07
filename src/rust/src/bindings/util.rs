@@ -72,7 +72,7 @@ pub fn get_property_string(element: &ExternRef, property: &str) -> String {
     let get_property = JSFunction::register(r#"
         function(element, property){
             const text = element[property];
-            const allocationId = this.writeUtf8ToMemory(text);
+            const allocationId = writeUtf8ToMemory(text);
             return allocationId;
         }"#);
     let text_allocation_id = get_property.invoke(&[element.into(), property.into()]);
@@ -97,7 +97,7 @@ pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
     let sleep = JSFunction::register(r#"
         function(ms, state_id){
             window.setTimeout(()=>{
-                this.module.instance.exports.web_handle_empty_callback(state_id);
+                wasmModule.instance.exports.web_handle_empty_callback(state_id);
             }, ms);
         }"#);
     let ms = ms.into();
@@ -110,7 +110,7 @@ pub fn wait_til_animation_frame() -> impl Future<Output = ()> {
     let wait_til_animation_frame = JSFunction::register(r#"
         function(state_id){
             window.requestAnimationFrame(()=>{
-                this.module.instance.exports.web_handle_empty_callback(state_id);
+                wasmModule.instance.exports.web_handle_empty_callback(state_id);
             });
         }"#);
     let (future, state_id) = EventHandlerFuture::<()>::create_future_with_state_id();

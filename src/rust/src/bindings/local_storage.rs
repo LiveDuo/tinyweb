@@ -25,7 +25,7 @@ pub fn local_storage_get(key: &str) -> Option<String> {
             if(text === null){
                 return 0;
             }
-            const allocationId = this.writeUtf8ToMemory(text);
+            const allocationId = writeUtf8ToMemory(text);
             return allocationId;
         }"#);
     let text_allocation_id = local_storage_get.invoke(&[key.into()]);

@@ -128,10 +128,10 @@ impl XMLHttpRequest {
         let function_ref = JSFunction::register(r#"
             function(request){
                 const handler = () => {
-                    this.module.instance.exports.web_handle_http_load_event_handler(id);
-                    this.releaseObject(id);
+                    wasmModule.instance.exports.web_handle_http_load_event_handler(id);
+                    deallocate(id);
                 };
-                const id = this.storeObject(handler);
+                const id = allocate(handler);
                 request.onload = handler;
                 return id;
             }"#)
