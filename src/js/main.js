@@ -18,7 +18,7 @@ const utf8dec = new TextDecoder('utf-8')
 const utf16dec = new TextDecoder('utf-16')
 
 // return handle as big integer that contains index in low 32 bits and generation in high 32 bits
-const allocate = function(o) {
+const allocate = (o) => {
     let index
     if (_freeList.length > 0) index = _freeList.pop()
     else index = _nextIndex++
@@ -31,7 +31,7 @@ const allocate = function(o) {
     return merged
 }
 
-const deallocate = function(handle) {
+const deallocate = (handle) => {
     const index = Number(handle & BigInt(INDEX_MASK))
     const generation = Number(handle >> BigInt(32))
     if (generation >= MAX_GENERATION) _generations[index] = -_generations[index]
@@ -41,7 +41,7 @@ const deallocate = function(handle) {
     } else throw new Error('attempt to deallocate invalid handle')
 }
 
-const retrieve = function(handle) {
+const retrieve = (handle) => {
     const index = Number(handle & BigInt(INDEX_MASK))
     const generation = Number(handle >> BigInt(32))
     if (generation === _generations[index]) return _objects[index]
@@ -63,7 +63,7 @@ const writeUtf8ToMemory = (str) => {
     return id
 }
 
-const readParameters = function(start, length) {
+const readParameters = (start, length) => {
         
     // convert bytes to array of values parameters are preceded by a 32 bit integer indicating its type
     // 0 = undefined
