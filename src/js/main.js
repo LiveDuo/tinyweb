@@ -102,7 +102,7 @@ const readParameters = (start, length) => {
                 i += 4
                 const len = new DataView(parameters.buffer).getInt32(i, true)
                 i += 4
-                const value = (new TextDecoder('utf-8')).decode(getMemory().subarray(start1, start1 + len))
+                const value = (new TextDecoder('utf-8')).decode(memory.subarray(start1, start1 + len))
                 values.push(value)
                 break
             } case 5: {
