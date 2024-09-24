@@ -44,13 +44,12 @@ const deallocate = (handle) => {
     }
 }
 
+// 0 = undefined, 1 = null, 2 = f64, 3 = bigint, 4 = string, 5 = extern ref, 6 = array of f64, 7 = true, 8 = false
 const readParams = (start, length) => {
     
-    // parameters are preceded by a 32-bit integer indicating their type
-    // 0 = undefined, 1 = null, 2 = float-64, 3 = bigint, 4 = string, 5 = extern ref, 6 = array of float-64, 7 = true, 8 = false
-
     const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
     const parameters = new Uint8Array(memory.slice(start, start + length))
+    const dataView = new DataView(parameters.buffer)
     const values = []
     let i = 0
     while (i < parameters.length) {
@@ -61,24 +60,24 @@ const readParams = (start, length) => {
         } else if (type === 1) {
             values.push(null)
         } else if (type === 2) {
-            values.push(new DataView(parameters.buffer).getFloat64(i, true))
+            values.push(dataView.getFloat64(i, true))
             i += 8
         } else if (type === 3) {
-            values.push(new DataView(parameters.buffer).getBigInt64(i, true))
+            values.push(dataView.getBigInt64(i, true))
             i += 8
         } else if (type === 4) {
-            const start = new DataView(parameters.buffer).getInt32(i, true)
-            const len = new DataView(parameters.buffer).getInt32(i + 4, true)
+            const start = dataView.getInt32(i, true)
+            const len = dataView.getInt32(i + 4, true)
             values.push((new TextDecoder('utf-8')).decode(memory.subarray(start, start + len)))
             i += 4 + 4
         } else if (type === 5) {
-            const handle = new DataView(parameters.buffer).getBigInt64(i, true)
+            const handle = dataView.getBigInt64(i, true)
             const index = Number(handle & BigInt(INDEX_MASK))
             values.push(_objects[index])
             i += 8
         } else if (type === 6) {
-            const start = new DataView(parameters.buffer).getInt32(i, true)
-            const len = new DataView(parameters.buffer).getInt32(i + 4, true)
+            const start = dataView.getInt32(i, true)
+            const len = dataView.getInt32(i + 4, true)
             values.push(new Float32Array(memory.buffer.slice(start, start + len * 4)))
             i += 4 + 4
         } else if (type === 7) {
@@ -86,13 +85,13 @@ const readParams = (start, length) => {
         } else if (type === 8) {
             values.push(false)
         } else if (type === 9) {
-            const start = new DataView(parameters.buffer).getInt32(i, true)
-            const len = new DataView(parameters.buffer).getInt32(i + 4, true)
+            const start = dataView.getInt32(i, true)
+            const len = dataView.getInt32(i + 4, true)
             values.push(new Float64Array(memory.buffer.slice(start, start + len * 8)))
             i += 4 + 4
         } else if (type === 10) {
-            const start = new DataView(parameters.buffer).getInt32(i, true)
-            const len = new DataView(parameters.buffer).getInt32(i + 4, true)
+            const start = dataView.getInt32(i, true)
+            const len = dataView.getInt32(i + 4, true)
             values.push(new Uint32Array(memory.buffer.slice(start, start + len * 4)))
             i += 4 + 4
         } else {
