@@ -114,49 +114,49 @@ const getWasmImports = () => {
             _functions.push(Function(`'use strict';return(${functionBody})`)())
             return id
         },
-        js_invoke_function (funcHandle, parametersStart, parametersLength) {
-            const values = readParams(parametersStart, parametersLength)
-            const result = _functions[funcHandle].call({}, ...values)
+        js_invoke_function (handle, start, len) {
+            const values = readParams(start, len)
+            const result = _functions[handle].call({}, ...values)
             return result
         },
-        js_invoke_function_and_return_object (funcHandle, parametersStart, parametersLength) {
-            const values = readParams(parametersStart, parametersLength)
-            const result = _functions[funcHandle].call({}, ...values)
+        js_invoke_function_and_return_object (handle, start, len) {
+            const values = readParams(start, len)
+            const result = _functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return object')
             return allocate(result)
         },
-        js_invoke_function_and_return_bool (funcHandle, parametersStart, parametersLength) {
-            const values = readParams(parametersStart, parametersLength)
-            const result = _functions[funcHandle].call({}, ...values)
+        js_invoke_function_and_return_bool (handle, start, len) {
+            const values = readParams(start, len)
+            const result = _functions[handle].call({}, ...values)
             return result ? 1 : 0
         },
-        js_invoke_function_and_return_bigint (funcHandle, parametersStart, parametersLength) {
-            const values = readParams(parametersStart, parametersLength)
-            const result = _functions[funcHandle].call({}, ...values)
+        js_invoke_function_and_return_bigint (handle, start, len) {
+            const values = readParams(start, len)
+            const result = _functions[handle].call({}, ...values)
             return result
         },
-        js_invoke_function_and_return_string (funcHandle, parametersStart, parametersLength) {
-            const values = readParams(parametersStart, parametersLength)
-            const result = _functions[funcHandle].call({}, ...values)
+        js_invoke_function_and_return_string (handle, start, len) {
+            const values = readParams(start, len)
+            const result = _functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
             const bytes = (new TextEncoder()).encode(str)
             const id = _wasmModule.instance.exports.create_allocation(bytes.length)
-            const start = _wasmModule.instance.exports.allocation_ptr(id)
+            const ptr = _wasmModule.instance.exports.allocation_ptr(id)
             const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
-            memory.set(bytes, start)
+            memory.set(bytes, ptr)
             return id
         },
-        js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {
-            const values = readParams(parametersStart, parametersLength)
-            const result = _functions[funcHandle].call({}, ...values)
+        js_invoke_function_and_return_array_buffer (handle, start, len) {
+            const values = readParams(start, len)
+            const result = _functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return arraybuffer')
 
             const bytes = new Uint8Array(result)
             const id = _wasmModule.instance.exports.create_allocation(bytes.length)
-            const start = _wasmModule.instance.exports.allocation_ptr(id)
+            const ptr = _wasmModule.instance.exports.allocation_ptr(id)
             const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
-            memory.set(bytes, start)
+            memory.set(bytes, ptr)
             return id
         },
         js_externref_drop (obj) {
