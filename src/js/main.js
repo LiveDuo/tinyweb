@@ -44,16 +44,7 @@ const deallocate = (handle) => {
     }
 }
 
-const writeStringToMemory = (str) => {
-    const bytes = (new TextEncoder()).encode(str)
-    const id = _wasmModule.instance.exports.create_allocation(bytes.length)
-    const start = _wasmModule.instance.exports.allocation_ptr(id)
-    const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
-    memory.set(bytes, start)
-    return id
-}
-
-const readParameters = (start, length) => {
+const readParams = (start, length) => {
     
     // parameters are preceded by a 32-bit integer indicating their type
     // 0 = undefined, 1 = null, 2 = float-64, 3 = bigint, 4 = string, 5 = extern ref, 6 = array of float-64, 7 = true, 8 = false
@@ -127,36 +118,40 @@ const getWasmImports = () => {
             return id
         },
         js_invoke_function (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(parametersStart, parametersLength)
+            const values = readParams(parametersStart, parametersLength)
             const result = _functions[funcHandle].call({}, ...values)
             return result
         },
         js_invoke_function_and_return_object (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(parametersStart, parametersLength)
+            const values = readParams(parametersStart, parametersLength)
             const result = _functions[funcHandle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return object')
             return allocate(result)
         },
         js_invoke_function_and_return_bool (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(parametersStart, parametersLength)
+            const values = readParams(parametersStart, parametersLength)
             const result = _functions[funcHandle].call({}, ...values)
             return result ? 1 : 0
         },
         js_invoke_function_and_return_bigint (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(parametersStart, parametersLength)
+            const values = readParams(parametersStart, parametersLength)
             const result = _functions[funcHandle].call({}, ...values)
             return result
         },
         js_invoke_function_and_return_string (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(parametersStart, parametersLength)
+            const values = readParams(parametersStart, parametersLength)
             const result = _functions[funcHandle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
-            const id = writeStringToMemory(result)
+            const bytes = (new TextEncoder()).encode(str)
+            const id = _wasmModule.instance.exports.create_allocation(bytes.length)
+            const start = _wasmModule.instance.exports.allocation_ptr(id)
+            const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
+            memory.set(bytes, start)
             return id
         },
         js_invoke_function_and_return_array_buffer (funcHandle, parametersStart, parametersLength) {
-            const values = readParameters(parametersStart, parametersLength)
+            const values = readParams(parametersStart, parametersLength)
             const result = _functions[funcHandle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return arraybuffer')
 
@@ -186,8 +181,7 @@ const loadExports = () => {
     exports._wasmModule = _wasmModule
     exports.allocate = allocate
     exports.deallocate = deallocate
-    exports.writeStringToMemory = writeStringToMemory
-    exports.readParameters = readParameters
+    exports.readParams = readParams
 }
 
 if (typeof window !== 'undefined') { // load wasm (browser)
