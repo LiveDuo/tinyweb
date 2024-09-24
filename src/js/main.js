@@ -8,7 +8,7 @@ const _generations = []
 const _freeList = []
 const _functions = []
 
-let _wasmModule = null
+let _wasmModule = {}
 let _nextIndex = 0
 
 // returns index as bigint in low 32-bits and generation in high 32-bits
@@ -174,10 +174,24 @@ const getWasmImports = () => {
     return { env }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+const loadWasm = async () => {
     const imports = getWasmImports()
     const wasmScript = document.querySelector('script[type="application/wasm"]')
     const wasmBuffer = await fetch(wasmScript.src).then(r => r.arrayBuffer())
     _wasmModule = await WebAssembly.instantiate(wasmBuffer, imports)
     _wasmModule.instance.exports.main()
-})
+}
+
+const loadExports = () => {
+    exports._wasmModule = _wasmModule
+    exports.allocate = allocate
+    exports.deallocate = deallocate
+    exports.writeStringToMemory = writeStringToMemory
+    exports.readParameters = readParameters
+}
+
+if (typeof window !== 'undefined') { // load wasm (browser)
+    document.addEventListener('DOMContentLoaded', loadWasm)
+} else { // load exports (nodejs)
+    loadExports()
+}

@@ -29,5 +29,9 @@ jobs:
       - run: export PATH=~/.cargo/bin:/usr/local/bin/:$PATH
       - run: rustup target add wasm32-unknown-unknown
 
-      # run test
+      # run rust tests
       - run: cargo test
+
+      # run js tests
+      - run: node src/js/main.test.js
+      
