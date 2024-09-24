@@ -1,5 +1,5 @@
 [package]
-name = "minimal"
+name = "features"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,4 +9,5 @@ test = false
 
 [dependencies]
 tinyweb = { path = "../../src/rust" }
+json = "0.12.4"
 
