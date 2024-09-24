@@ -53,46 +53,45 @@ const readParams = (start, length) => {
     const values = []
     let i = 0
     while (i < parameters.length) {
-        const type = parameters[i]
-        if (type === 0) {
+        if (parameters[i] === 0) {
             values.push(undefined)
             i += 1
-        } else if (type === 1) {
+        } else if (parameters[i] === 1) {
             values.push(null)
             i += 1
-        } else if (type === 2) {
+        } else if (parameters[i] === 2) {
             values.push(dataView.getFloat64(i + 1, true))
             i += 1 + 8
-        } else if (type === 3) {
+        } else if (parameters[i] === 3) {
             values.push(dataView.getBigInt64(i + 1, true))
             i += 1 + 8
-        } else if (type === 4) {
+        } else if (parameters[i] === 4) {
             const start = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push((new TextDecoder('utf-8')).decode(memory.subarray(start, start + len)))
             i += 1 + 4 + 4
-        } else if (type === 5) {
+        } else if (parameters[i] === 5) {
             const handle = dataView.getBigInt64(i + 1, true)
             const index = Number(handle & BigInt(INDEX_MASK))
             values.push(_objects[index])
             i += 1 + 8
-        } else if (type === 6) {
+        } else if (parameters[i] === 6) {
             const start = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(new Float32Array(memory.buffer.slice(start, start + len * 4)))
             i += 1 + 4 + 4
-        } else if (type === 7) {
+        } else if (parameters[i] === 7) {
             values.push(true)
             i += 1
-        } else if (type === 8) {
+        } else if (parameters[i] === 8) {
             values.push(false)
             i += 1
-        } else if (type === 9) {
+        } else if (parameters[i] === 9) {
             const start = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(new Float64Array(memory.buffer.slice(start, start + len * 8)))
             i += 1 + 4 + 4
-        } else if (type === 10) {
+        } else if (parameters[i] === 10) {
             const start = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(new Uint32Array(memory.buffer.slice(start, start + len * 4)))
