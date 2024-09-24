@@ -23,11 +23,11 @@ fn setup_temp_project() -> PathBuf {
     let project_path = cwd.parent().unwrap().parent().unwrap();
 
     // build wasm
-    let p = Command::new("cargo").args(["build", "-p", "example", "--target", WASM_TRIPLET]).output().unwrap();
+    let p = Command::new("cargo").args(["build", "-p", "minimal", "--target", WASM_TRIPLET]).output().unwrap();
     assert!(p.status.success());
 
     // copy wasm
-    let wasm_path = project_path.join("target").join(WASM_TRIPLET).join("debug").join("example.wasm");
+    let wasm_path = project_path.join("target").join(WASM_TRIPLET).join("debug").join("minimal.wasm");
     std::fs::copy(wasm_path, temp_dir.join("client.wasm")).unwrap();
 
     // copy js

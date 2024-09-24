@@ -2,7 +2,7 @@
 resolver = "2"
 members = [
     "src/rust",
-    "src/example",
+    "examples/minimal",
 ]
 default-members = [
     "src/rust",
