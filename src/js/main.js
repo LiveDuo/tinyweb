@@ -68,10 +68,9 @@ const readParams = (start, length) => {
             i += 8
         } else if (type === 4) {
             const start = new DataView(parameters.buffer).getInt32(i, true)
-            i += 4
-            const len = new DataView(parameters.buffer).getInt32(i, true)
-            i += 4
+            const len = new DataView(parameters.buffer).getInt32(i + 4, true)
             values.push((new TextDecoder('utf-8')).decode(memory.subarray(start, start + len)))
+            i += 4 + 4
         } else if (type === 5) {
             const handle = new DataView(parameters.buffer).getBigInt64(i, true)
             const index = Number(handle & BigInt(INDEX_MASK))
@@ -79,26 +78,23 @@ const readParams = (start, length) => {
             i += 8
         } else if (type === 6) {
             const start = new DataView(parameters.buffer).getInt32(i, true)
-            i += 4
-            const len = new DataView(parameters.buffer).getInt32(i, true)
-            i += 4
+            const len = new DataView(parameters.buffer).getInt32(i + 4, true)
             values.push(new Float32Array(memory.buffer.slice(start, start + len * 4)))
+            i += 4 + 4
         } else if (type === 7) {
             values.push(true)
         } else if (type === 8) {
             values.push(false)
         } else if (type === 9) {
             const start = new DataView(parameters.buffer).getInt32(i, true)
-            i += 4
-            const len = new DataView(parameters.buffer).getInt32(i, true)
-            i += 4
+            const len = new DataView(parameters.buffer).getInt32(i + 4, true)
             values.push(new Float64Array(memory.buffer.slice(start, start + len * 8)))
+            i += 4 + 4
         } else if (type === 10) {
             const start = new DataView(parameters.buffer).getInt32(i, true)
-            i += 4
-            const len = new DataView(parameters.buffer).getInt32(i, true)
-            i += 4
+            const len = new DataView(parameters.buffer).getInt32(i + 4, true)
             values.push(new Uint32Array(memory.buffer.slice(start, start + len * 4)))
+            i += 4 + 4
         } else {
             throw new Error('Invalid parameter type')
         }
