@@ -12,7 +12,7 @@ let _wasmModule = {}
 let _nextIndex = 0
 
 // returns index as bigint in low 32-bits and generation in high 32-bits
-const allocate = (o) => {
+const allocate = (object) => {
 
     // get index
     let index
@@ -21,7 +21,7 @@ const allocate = (o) => {
 
     // update variables
     const currentGeneration = _generations[index]
-    _objects[index] = o
+    _objects[index] = object
     _generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
 
     // get merged
