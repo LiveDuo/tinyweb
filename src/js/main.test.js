@@ -12,10 +12,9 @@ test('check read params', () => {
     ]
     for (const testCase of testCases) {
         _wasmModule.instance = { exports: { memory: { buffer: testCase.buffer } } }
-    
+        
         const result = readParams(0, testCase.buffer.length)
         assert.deepStrictEqual(result, testCase.result)
-
     }
 })
 
