@@ -134,9 +134,8 @@ pub fn main() {
     page1.mount(&body);
     
     // set runtime
-    let pages_iter = [("page1".to_owned(), page1), ("page2".to_owned(), page2)];
-    let pages = HashMap::<String, El>::from_iter(pages_iter);
-    let runtime = Runtime { pages, root: Some(body) };
+    let pages = [("page1".to_owned(), page1), ("page2".to_owned(), page2)];
+    let runtime = Runtime { pages: HashMap::from_iter(pages), root: Some(body) };
     RUNTIME.with(|s| { *s.borrow_mut() = runtime; });
 
 }
