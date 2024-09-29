@@ -9,8 +9,8 @@ extern "C" {
     fn js_invoke_function(fn_handle: f64, ptr: *const u8, len: usize) -> f64;
     fn js_invoke_function_and_return_object(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
     fn js_invoke_function_and_return_bigint(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
-    fn js_invoke_function_and_return_string(fn_handle: f64, ptr: *const u8, len: usize) -> usize;
-    fn js_invoke_function_and_return_array_buffer(fn_handle: f64, ptr: *const u8, len: usize) -> usize;
+    fn js_invoke_function_and_return_string(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
+    fn js_invoke_function_and_return_array_buffer(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
     fn js_invoke_function_and_return_bool(fn_handle: f64, ptr: *const u8, len: usize) -> f64;
 }
 
@@ -23,9 +23,9 @@ fn js_invoke_function_and_return_object(_fn_handle: f64, _ptr: *const u8, _len: 
 #[cfg(test)]
 fn js_invoke_function_and_return_bigint(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
 #[cfg(test)]
-fn js_invoke_function_and_return_string(_fn_handle: f64, _ptr: *const u8, _len: usize) -> usize { 0 }
+fn js_invoke_function_and_return_string(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
 #[cfg(test)]
-fn js_invoke_function_and_return_array_buffer(_fn_handle: f64, _ptr: *const u8, _len: usize) -> usize { 0 }
+fn js_invoke_function_and_return_array_buffer(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
 #[cfg(test)]
 fn js_invoke_function_and_return_bool(_fn_handle: f64, _ptr: *const u8, _len: usize) -> f64 { 0.0 }
 
@@ -65,7 +65,7 @@ impl JSFunction {
         let mut me = ManuallyDrop::new(param_bytes);
         let allocation_id =
             unsafe { js_invoke_function_and_return_string(self.fn_handle, me.as_mut_ptr(), me.len()) };
-        crate::allocations::get_string_from_allocation(allocation_id)
+        crate::allocations::get_string_from_allocation(allocation_id as usize)
     }
 
     pub fn invoke_and_return_array_buffer(&self, params: &[InvokeParam]) -> Vec<u8> {
@@ -73,7 +73,7 @@ impl JSFunction {
         let mut me = ManuallyDrop::new(param_bytes);
         let allocation_id =
             unsafe { js_invoke_function_and_return_array_buffer(self.fn_handle, me.as_mut_ptr(), me.len()) };
-        crate::allocations::get_vec_from_allocation(allocation_id)
+        crate::allocations::get_vec_from_allocation(allocation_id as usize)
     }
 
     pub fn invoke_and_return_bool(&self, params: &[InvokeParam]) -> bool {
