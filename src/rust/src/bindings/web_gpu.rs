@@ -9,7 +9,7 @@ use crate::js::JSFunction;
 pub struct WebGPU;
 
 #[no_mangle]
-pub extern "C" fn web_extern_ref_callback(id: i64, value: i64) {
+pub extern "C" fn web_extern_ref_callback(id: i64, value: u64) {
     EventHandlerFuture::<ExternRef>::wake_future_with_state_id(id, ExternRef { value });
 }
 

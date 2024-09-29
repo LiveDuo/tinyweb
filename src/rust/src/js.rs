@@ -51,7 +51,7 @@ impl JSFunction {
         let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let handle = unsafe { js_invoke_function_and_return_object(self.fn_handle, me.as_mut_ptr(), me.len()) };
-        ExternRef { value: handle }
+        ExternRef { value: handle as u64 }
     }
 
     pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> i64 {

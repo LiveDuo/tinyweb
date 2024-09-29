@@ -2,7 +2,7 @@
 use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone)]
-pub struct ExternRef { pub value: i64, }
+pub struct ExternRef { pub value: u64, }
 
 impl PartialEq for ExternRef {
     fn eq(&self, other: &Self) -> bool {

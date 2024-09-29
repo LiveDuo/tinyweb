@@ -36,7 +36,7 @@ impl<T> EventHandler<T> {
         }
     }
 
-    pub fn call(&self, id: i64, event: T) {
+    pub fn call(&self, id: u64, event: T) {
         let mut handlers = self.listeners.borrow_mut();
         if let Some(h) = handlers.as_mut() {
             for (key, handler) in h.iter_mut() {
