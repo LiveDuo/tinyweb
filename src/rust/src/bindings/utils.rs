@@ -20,12 +20,13 @@ pub fn random_i64() -> i64 {
     (r * i64 as f64) as i64
 }
 
+// TODO need new linker function
 pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
     let get_property = JSFunction::register(r#"
         function(element, property){
             return element[property];
         }"#);
-    get_property.invoke_and_return_bigint(&[element.into(), property.into()])
+    get_property.invoke_and_return_bigint(&[element.into(), property.into()]) as i64
 }
 
 pub fn set_property_i64(element: &ExternRef, property: &str, value: i64) {

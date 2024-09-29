@@ -7,11 +7,11 @@ use crate::params::*;
 extern "C" {
     fn js_register_function(ptr: f64, len: f64) -> f64;
     fn js_invoke_function(fn_handle: f64, ptr: *const u8, len: usize) -> f64;
-    fn js_invoke_function_and_return_object(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
-    fn js_invoke_function_and_return_bigint(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
-    fn js_invoke_function_and_return_string(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
-    fn js_invoke_function_and_return_array_buffer(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
-    fn js_invoke_function_and_return_bool(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
+    fn js_invoke_function_and_return_object(fn_handle: f64, ptr: *const u8, len: usize) -> u64;
+    fn js_invoke_function_and_return_bigint(fn_handle: f64, ptr: *const u8, len: usize) -> u64;
+    fn js_invoke_function_and_return_string(fn_handle: f64, ptr: *const u8, len: usize) -> u64;
+    fn js_invoke_function_and_return_array_buffer(fn_handle: f64, ptr: *const u8, len: usize) -> u64;
+    fn js_invoke_function_and_return_bool(fn_handle: f64, ptr: *const u8, len: usize) -> u64;
 }
 
 #[cfg(test)]
@@ -19,15 +19,15 @@ fn js_register_function(_ptr: f64, _len: f64) -> f64 { 0.0 }
 #[cfg(test)]
 fn js_invoke_function(_fn_handle: f64, _ptr: *const u8, _len: usize) -> f64 { 0.0 }
 #[cfg(test)]
-fn js_invoke_function_and_return_object(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
+fn js_invoke_function_and_return_object(_fn_handle: f64, _ptr: *const u8, _len: usize) -> u64 { 0 }
 #[cfg(test)]
-fn js_invoke_function_and_return_bigint(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
+fn js_invoke_function_and_return_bigint(_fn_handle: f64, _ptr: *const u8, _len: usize) -> u64 { 0 }
 #[cfg(test)]
-fn js_invoke_function_and_return_string(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
+fn js_invoke_function_and_return_string(_fn_handle: f64, _ptr: *const u8, _len: usize) -> u64 { 0 }
 #[cfg(test)]
-fn js_invoke_function_and_return_array_buffer(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
+fn js_invoke_function_and_return_array_buffer(_fn_handle: f64, _ptr: *const u8, _len: usize) -> u64 { 0 }
 #[cfg(test)]
-fn js_invoke_function_and_return_bool(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
+fn js_invoke_function_and_return_bool(_fn_handle: f64, _ptr: *const u8, _len: usize) -> u64 { 0 }
 
 #[derive(Copy, Clone)]
 pub struct JSFunction {
@@ -54,7 +54,7 @@ impl JSFunction {
         ExternRef { value: handle as u64 }
     }
 
-    pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> i64 {
+    pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> u64 {
         let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         unsafe { js_invoke_function_and_return_bigint(self.fn_handle, me.as_mut_ptr(), me.len()) }

@@ -6,11 +6,11 @@ use crate::js::JSFunction;
 use crate::bindings::utils::*;
 
 thread_local! {
-    static ANIMATION_FRAME_EVENT_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> = RefCell::new(None);
+    static ANIMATION_FRAME_EVENT_HANDLERS: RefCell<Option<HashMap<u64, Box<dyn FnMut() + 'static>>>> = RefCell::new(None);
 }
 
 #[no_mangle]
-pub extern "C" fn web_one_time_empty_handler(id: i64) {
+pub extern "C" fn web_one_time_empty_handler(id: u64) {
     let mut c = None;
     {
         ANIMATION_FRAME_EVENT_HANDLERS.with_borrow_mut(|h| {
@@ -71,7 +71,7 @@ pub fn set_timeout(
         }
         h.as_mut()
             .unwrap()
-            .insert(function_handle, Box::new(handler));
+            .insert(function_handle as u64, Box::new(handler));
     });
     timer_handle
 }
