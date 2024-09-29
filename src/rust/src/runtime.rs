@@ -16,12 +16,12 @@ unsafe fn clone_arc_raw<T: Send + Sync>(data: *const ()) -> RawWaker {
 }
 
 unsafe fn wake_arc_raw<T: Send + Sync>(_data: *const ()) {
-    set_timeout(|| { DEFAULT_EXECUTOR.lock().unwrap().poll_tasks(); }, 0);
+    set_timeout(|| { DEFAULT_RUNTIME.lock().unwrap().poll_tasks(); }, 0);
 }
 
 // retain Arc, but don't touch refcount by wrapping in ManuallyDrop
 unsafe fn wake_by_ref_arc_raw<T: Send + Sync>(_data: *const ()) {
-    set_timeout(|| { DEFAULT_EXECUTOR.lock().unwrap().poll_tasks(); }, 0);
+    set_timeout(|| { DEFAULT_RUNTIME.lock().unwrap().poll_tasks(); }, 0);
 }
 
 unsafe fn drop_arc_raw<T>(data: *const ()) {
@@ -38,7 +38,7 @@ trait Pendable {
 
 type TasksList = VecDeque<Box<dyn Pendable + Send + Sync>>;
 
-pub struct Executor {
+pub struct Runtime {
     tasks: Option<TasksList>,
 }
 
@@ -58,7 +58,7 @@ impl<T> Pendable for Arc<Task<T>> {
     }
 }
 
-impl Executor {
+impl Runtime {
     fn run<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
         self.add_task(future);
         self.poll_tasks();
@@ -90,10 +90,10 @@ impl Executor {
     }
 }
 
-static DEFAULT_EXECUTOR: Mutex<Executor> = Mutex::new(Executor { tasks: None });
+static DEFAULT_RUNTIME: Mutex<Runtime> = Mutex::new(Runtime { tasks: None });
 
 pub fn run<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
-    DEFAULT_EXECUTOR.lock().unwrap().run(Box::pin(future))
+    DEFAULT_RUNTIME.lock().unwrap().run(Box::pin(future))
 }
 
 pub fn coroutine<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
@@ -102,7 +102,7 @@ pub fn coroutine<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'st
         move || {
             let b = a.take();
             if let Some(b) = b {
-                DEFAULT_EXECUTOR.lock().unwrap().run(b);
+                DEFAULT_RUNTIME.lock().unwrap().run(b);
             }
         },
         0,
@@ -122,7 +122,7 @@ mod tests {
         let future = async move {
             has_run_clone.lock().map(|mut s| { *s = true; }).unwrap();
         };
-        DEFAULT_EXECUTOR.lock().unwrap().run(Box::pin(future));
+        DEFAULT_RUNTIME.lock().unwrap().run(Box::pin(future));
         assert_eq!(*has_run.lock().unwrap(), true);
     }
 

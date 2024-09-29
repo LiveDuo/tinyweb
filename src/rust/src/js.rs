@@ -60,26 +60,26 @@ impl JSFunction {
     }
 
     pub fn invoke(&self, params: &[InvokeParam]) -> f64 {
-        let param_bytes = param_to_bytes(params);
+        let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         unsafe { js_invoke_function(self.fn_handle, me.as_mut_ptr(), me.len()) }
     }
 
     pub fn invoke_and_return_object(&self, params: &[InvokeParam]) -> ExternRef {
-        let param_bytes = param_to_bytes(params);
+        let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let handle = unsafe { js_invoke_function_and_return_object(self.fn_handle, me.as_mut_ptr(), me.len()) };
         ExternRef { value: handle }
     }
 
     pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> i64 {
-        let param_bytes = param_to_bytes(params);
+        let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         unsafe { js_invoke_function_and_return_bigint(self.fn_handle, me.as_mut_ptr(), me.len()) }
     }
 
     pub fn invoke_and_return_string(&self, params: &[InvokeParam]) -> String {
-        let param_bytes = param_to_bytes(params);
+        let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let allocation_id =
             unsafe { js_invoke_function_and_return_string(self.fn_handle, me.as_mut_ptr(), me.len()) };
@@ -87,7 +87,7 @@ impl JSFunction {
     }
 
     pub fn invoke_and_return_array_buffer(&self, params: &[InvokeParam]) -> Vec<u8> {
-        let param_bytes = param_to_bytes(params);
+        let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let allocation_id =
             unsafe { js_invoke_function_and_return_array_buffer(self.fn_handle, me.as_mut_ptr(), me.len()) };
@@ -95,7 +95,7 @@ impl JSFunction {
     }
 
     pub fn invoke_and_return_bool(&self, params: &[InvokeParam]) -> bool {
-        let param_bytes = param_to_bytes(params);
+        let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let ret = unsafe { js_invoke_function_and_return_bool(self.fn_handle, me.as_mut_ptr(), me.len()) };
         ret != 0.0

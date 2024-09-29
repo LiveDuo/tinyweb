@@ -42,7 +42,7 @@ async fn fetch_array_buffer(url: &str) -> Result<Vec<u8>, String> {
 }
 
 fn get_pokemon() {
-    tinyweb::executor::run(async move {
+    tinyweb::runtime::run(async move {
         let result = fetch_array_buffer("https://pokeapi.co/api/v2/pokemon/1").await.unwrap();
         let string = String::from_utf8(result).unwrap();
         let value = json::parse(&string).unwrap();
@@ -78,7 +78,7 @@ fn page1() -> El {
 
             // start timer
             let signal_time_clone = signal_time_clone.clone();
-            tinyweb::executor::coroutine(async move {
+            tinyweb::runtime::coroutine(async move {
                 loop {
                     signal_time_clone.set("⏰ tik");
                     tinyweb::bindings::util::sleep(1_000).await;
