@@ -1,4 +1,5 @@
 
+use std::hash::{Hash, Hasher};
 use std::mem::ManuallyDrop;
 
 #[cfg(not(test))]
@@ -29,8 +30,6 @@ fn js_invoke_function_and_return_bool(_fn_handle: u64, _ptr: *const u8, _len: us
 
 
 
-
-use std::hash::{Hash, Hasher};
 
 #[derive(Debug, Clone)]
 pub struct ExternRef { pub value: u64, }
