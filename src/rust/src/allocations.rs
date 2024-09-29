@@ -5,7 +5,7 @@ thread_local! {
     pub(crate) static ALLOCATIONS: RefCell<Vec<Option<Vec<u8>>>> = RefCell::new(Vec::new());
 }
 
-pub fn extract_string_from_memory(allocation_id: usize) -> String {
+pub fn get_string_from_allocation(allocation_id: usize) -> String {
     ALLOCATIONS.with_borrow(|s| {
         let allocation = s.get(allocation_id).unwrap();
         let vec = allocation.as_ref().unwrap();
@@ -13,7 +13,7 @@ pub fn extract_string_from_memory(allocation_id: usize) -> String {
     })
 }
 
-pub fn extract_vec_from_memory(allocation_id: usize) -> Vec<u8> {
+pub fn get_vec_from_allocation(allocation_id: usize) -> Vec<u8> {
     ALLOCATIONS.with_borrow(|s| {
         let allocation = s.get(allocation_id).unwrap();
         let vec = allocation.as_ref().unwrap();
@@ -98,7 +98,7 @@ mod tests {
             s[id] = Some(text.as_bytes().to_vec());
         });
         
-        let memory_text = extract_string_from_memory(id);
+        let memory_text = get_string_from_allocation(id);
         assert_eq!(memory_text, text);
         
         // test vec
@@ -109,7 +109,7 @@ mod tests {
             s[id] = Some(vec.clone());
         });
         
-        let memory_vec = extract_vec_from_memory(id);
+        let memory_vec = get_vec_from_allocation(id);
         assert_eq!(memory_vec, vec);
     }
 }

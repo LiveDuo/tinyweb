@@ -65,7 +65,7 @@ impl JSFunction {
         let mut me = ManuallyDrop::new(param_bytes);
         let allocation_id =
             unsafe { js_invoke_function_and_return_string(self.fn_handle, me.as_mut_ptr(), me.len()) };
-        crate::allocations::extract_string_from_memory(allocation_id)
+        crate::allocations::get_string_from_allocation(allocation_id)
     }
 
     pub fn invoke_and_return_array_buffer(&self, params: &[InvokeParam]) -> Vec<u8> {
@@ -73,7 +73,7 @@ impl JSFunction {
         let mut me = ManuallyDrop::new(param_bytes);
         let allocation_id =
             unsafe { js_invoke_function_and_return_array_buffer(self.fn_handle, me.as_mut_ptr(), me.len()) };
-        crate::allocations::extract_vec_from_memory(allocation_id)
+        crate::allocations::get_vec_from_allocation(allocation_id)
     }
 
     pub fn invoke_and_return_bool(&self, params: &[InvokeParam]) -> bool {

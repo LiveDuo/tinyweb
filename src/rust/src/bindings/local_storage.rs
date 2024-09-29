@@ -1,6 +1,6 @@
 
 use crate::js::JSFunction;
-use crate::allocations::extract_string_from_memory;
+use crate::allocations::get_string_from_allocation;
 
 pub fn local_storage_set(key: &str, value: &str) {
     let local_storage_set = JSFunction::register(r#"
@@ -32,7 +32,7 @@ pub fn local_storage_get(key: &str) -> Option<String> {
     if text_allocation_id == 0.0 {
         return None;
     }
-    let text = extract_string_from_memory(text_allocation_id as usize);
+    let text = get_string_from_allocation(text_allocation_id as usize);
     Some(text)
 }
 

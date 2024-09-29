@@ -1,5 +1,5 @@
 
-use crate::allocations::extract_string_from_memory;
+use crate::allocations::get_string_from_allocation;
 use crate::params::{ExternRef, InvokeParam};
 use crate::handlers::EventHandler;
 use crate::js::JSFunction;
@@ -134,7 +134,7 @@ pub extern "C" fn web_handle_change_event(id: i64, allocation_id: usize) {
         if let Some(h) = s.as_mut() {
             for (key, handler) in h.iter_mut() {
                 if key.value == id {
-                    let value = extract_string_from_memory(allocation_id);
+                    let value = get_string_from_allocation(allocation_id);
                     handler(ChangeEvent { value });
                 }
             }

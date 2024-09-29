@@ -1,7 +1,7 @@
 
 use core::future::Future;
 
-use crate::allocations::extract_string_from_memory;
+use crate::allocations::get_string_from_allocation;
 use crate::handlers::EventHandlerFuture;
 use crate::params::ExternRef;
 use crate::js::JSFunction;
@@ -77,7 +77,7 @@ pub fn get_property_string(element: &ExternRef, property: &str) -> String {
             return allocationId;
         }"#);
     let text_allocation_id = get_property.invoke(&[element.into(), property.into()]);
-    let text = extract_string_from_memory(text_allocation_id as usize);
+    let text = get_string_from_allocation(text_allocation_id as usize);
     text
 }
 
