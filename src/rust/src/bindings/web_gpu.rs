@@ -1,5 +1,5 @@
 use crate::bindings::console::console_error;
-use crate::bindings::util::*;
+use crate::bindings::utils::*;
 
 use crate::handlers::EventHandlerFuture;
 use crate::params::ExternRef;

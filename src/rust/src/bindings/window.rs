@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use crate::js::JSFunction;
-use crate::bindings::util::*;
+use crate::bindings::utils::*;
 
 thread_local! {
     static ANIMATION_FRAME_EVENT_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> = RefCell::new(None);

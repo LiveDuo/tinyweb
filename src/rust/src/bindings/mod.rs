@@ -6,4 +6,4 @@ pub mod dom;
 pub mod window;
 pub mod web_gpu;
 pub mod console;
-pub mod util;
+pub mod utils;

@@ -1,5 +1,5 @@
 
-use crate::bindings::util::random_i64;
+use crate::bindings::utils::random_i64;
 use crate::params::ExternRef;
 
 use std::{

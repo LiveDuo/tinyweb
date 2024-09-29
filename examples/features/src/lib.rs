@@ -81,9 +81,9 @@ fn page1() -> El {
             tinyweb::runtime::coroutine(async move {
                 loop {
                     signal_time_clone.set("⏰ tik");
-                    tinyweb::bindings::util::sleep(1_000).await;
+                    tinyweb::bindings::utils::sleep(1_000).await;
                     signal_time_clone.set("⏰ tok");
-                    tinyweb::bindings::util::sleep(1_000).await;
+                    tinyweb::bindings::utils::sleep(1_000).await;
                 }
             });
 
