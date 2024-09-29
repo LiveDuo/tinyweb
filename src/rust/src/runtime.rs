@@ -1,7 +1,7 @@
 use std::{
     collections::VecDeque,
     future::Future,
-    mem::{self, ManuallyDrop},
+    mem::ManuallyDrop,
     pin::Pin,
     sync::{Arc, Mutex},
     task::{Context, Poll, RawWaker, RawWakerVTable, Waker}
@@ -10,26 +10,17 @@ use std::{
 use crate::bindings::window::set_timeout;
 
 unsafe fn clone_arc_raw<T: Send + Sync>(data: *const ()) -> RawWaker {
-    let arc = mem::ManuallyDrop::new(Arc::<T>::from_raw(data as *const T));
-    let _arc_clone: mem::ManuallyDrop<_> = arc.clone();
     RawWaker::new(data, waker_vtable::<T>())
 }
-
 unsafe fn wake_arc_raw<T: Send + Sync>(_data: *const ()) {
     set_timeout(|| { DEFAULT_RUNTIME.lock().unwrap().poll_tasks(); }, 0);
 }
-
-// retain Arc, but don't touch refcount by wrapping in ManuallyDrop
-unsafe fn wake_by_ref_arc_raw<T: Send + Sync>(_data: *const ()) {
-    set_timeout(|| { DEFAULT_RUNTIME.lock().unwrap().poll_tasks(); }, 0);
-}
-
 unsafe fn drop_arc_raw<T>(data: *const ()) {
     drop(Arc::<T>::from_raw(data as *const T))
 }
 
 fn waker_vtable<W: Send + Sync>() -> &'static RawWakerVTable {
-    &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw::<W>, wake_by_ref_arc_raw::<W>, drop_arc_raw::<W>)
+    &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw::<W>, wake_arc_raw::<W>, drop_arc_raw::<W>)
 }
 
 trait Pendable {
