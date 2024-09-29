@@ -100,15 +100,13 @@ impl<T> SharedStateMap<T> {
     }
 }
 
-static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> =
-    Mutex::new(LinkedList::new());
+static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> = Mutex::new(LinkedList::new());
 
 pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, T> {
     {
         let mut globals = GLOBALS_LIST.lock().unwrap();
         let id = TypeId::of::<T>();
-        let p = globals.iter().find(|&r| r.0 == id);
-        if let Some(v) = p {
+        if let Some(v) = globals.iter().find(|&r| r.0 == id) {
             let m = unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<T>) };
             return m.lock().unwrap();
         }
@@ -121,20 +119,14 @@ pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, 
 
 impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
     pub fn create_future_with_state_id() -> (Self, i64) {
-        let shared_state = Arc::new(Mutex::new(EventHandlerSharedState {
-            completed: false,
-            waker: None,
-            result: None,
-        }));
+        let state = EventHandlerSharedState { completed: false, waker: None, result: None, };
+        let shared_state = Arc::new(Mutex::new(state));
 
         let id = random_i64();
         let state_storage = globals_get::<SharedStateMap<T>>();
         state_storage.add_shared_state(id, shared_state.clone());
 
-        (
-            EventHandlerFuture { shared_state: shared_state.clone(), },
-            id,
-        )
+        (EventHandlerFuture { shared_state: shared_state.clone(), }, id)
     }
 
     pub fn wake_future_with_state_id(id: i64, result: T) {
