@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use tinyweb::element::El;
-use tinyweb::params::ExternRef;
+use tinyweb::js::ExternRef;
 use tinyweb::signals::{Signal, SignalAsync};
 
 use tinyweb::bindings::{console, dom, history, http_request};

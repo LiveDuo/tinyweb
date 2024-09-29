@@ -1,8 +1,7 @@
 
+use crate::js::{ExternRef, JSFunction, InvokeParam};
 use crate::allocations::get_string_from_allocation;
-use crate::params::{ExternRef, InvokeParam};
 use crate::handlers::EventHandler;
-use crate::js::JSFunction;
 
 use std::collections::HashMap;
 use std::cell::RefCell;

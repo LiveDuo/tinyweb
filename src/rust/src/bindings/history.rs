@@ -1,6 +1,5 @@
 
-use crate::params::{ExternRef, InvokeParam};
-use crate::js::JSFunction;
+use crate::js::{ExternRef, InvokeParam, JSFunction};
 
 use std::collections::HashMap;
 use std::cell::RefCell;

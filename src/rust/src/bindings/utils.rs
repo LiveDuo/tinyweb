@@ -3,8 +3,7 @@ use core::future::Future;
 
 use crate::allocations::get_string_from_allocation;
 use crate::handlers::EventHandlerFuture;
-use crate::params::ExternRef;
-use crate::js::JSFunction;
+use crate::js::{ExternRef, JSFunction};
 
 pub fn random() -> f64 {
     let random = JSFunction::register(r#"

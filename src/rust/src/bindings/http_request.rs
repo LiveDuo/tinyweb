@@ -1,7 +1,6 @@
 
 use crate::handlers::EventHandlerFuture;
-use crate::params::ExternRef;
-use crate::js::JSFunction;
+use crate::js::{ExternRef, JSFunction};
 
 use std::collections::HashMap;
 use std::future::Future;
