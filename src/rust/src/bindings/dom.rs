@@ -1,10 +1,11 @@
 
-use crate::handlers::EventHandler;
 use crate::allocations::extract_string_from_memory;
-use crate::js::{ExternRef, JSFunction};
-use crate::params::InvokeParam;
-use std::cell::RefCell;
+use crate::params::{ExternRef, InvokeParam};
+use crate::handlers::EventHandler;
+use crate::js::JSFunction;
+
 use std::collections::HashMap;
+use std::cell::RefCell;
 use std::rc::Rc;
 
 pub fn create_element(tag: &str) -> ExternRef {

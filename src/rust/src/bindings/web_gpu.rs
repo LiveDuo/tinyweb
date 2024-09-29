@@ -1,8 +1,9 @@
 use crate::bindings::console::console_error;
 use crate::bindings::util::*;
 
-use crate::js::{ExternRef, JSFunction};
 use crate::handlers::EventHandlerFuture;
+use crate::params::ExternRef;
+use crate::js::JSFunction;
 
 
 pub struct WebGPU;

@@ -1,10 +1,12 @@
 
 use crate::handlers::EventHandlerFuture;
-use core::future::Future;
+use crate::params::ExternRef;
+use crate::js::JSFunction;
+
+use std::collections::HashMap;
+use std::future::Future;
 use std::cell::RefCell;
 use std::rc::Rc;
-use crate::js::{JSFunction, ExternRef};
-use std::collections::HashMap;
 
 thread_local! {
     static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> =

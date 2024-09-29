@@ -1,6 +1,6 @@
 
 use crate::bindings::util::random_i64;
-use crate::js::ExternRef;
+use crate::params::ExternRef;
 
 use std::{
     any::{Any, TypeId},
@@ -147,7 +147,7 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
 #[cfg(test)]
 mod tests {
 
-    use crate::js::ExternRef;
+    use crate::params::ExternRef;
 
     use super::*;
 

@@ -2,7 +2,7 @@
 use std::ops::Deref;
 
 use crate::bindings::dom::{self, MouseEvent};
-use crate::js::ExternRef;
+use crate::params::ExternRef;
 
 #[derive(Debug, Clone)]
 pub struct El(ExternRef);

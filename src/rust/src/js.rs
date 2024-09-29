@@ -1,6 +1,5 @@
 
 use std::mem::ManuallyDrop;
-use std::hash::{Hash, Hasher};
 
 use crate::params::*;
 
@@ -29,23 +28,6 @@ fn js_invoke_function_and_return_string(_fn_handle: f64, _ptr: *const u8, _len: 
 fn js_invoke_function_and_return_array_buffer(_fn_handle: f64, _ptr: *const u8, _len: usize) -> usize { 0 }
 #[cfg(test)]
 fn js_invoke_function_and_return_bool(_fn_handle: f64, _ptr: *const u8, _len: usize) -> f64 { 0.0 }
-
-#[derive(Debug, Clone)]
-pub struct ExternRef { pub value: i64, }
-
-impl PartialEq for ExternRef {
-    fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
-    }
-}
-
-impl Eq for ExternRef {}
-
-impl Hash for ExternRef {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.value.hash(state);
-    }
-}
 
 #[derive(Copy, Clone)]
 pub struct JSFunction {
