@@ -2,37 +2,11 @@
 use std::hash::{Hash, Hasher};
 use std::mem::ManuallyDrop;
 
-#[cfg(not(test))]
-extern "C" {
-    fn js_register_function(ptr: *const u8, len: usize) -> f64;
-    fn js_invoke_function(fn_handle: u64, ptr: *const u8, len: usize) -> f64;
-    fn js_invoke_function_and_return_object(fn_handle: u64, ptr: *const u8, len: usize) -> u64;
-    fn js_invoke_function_and_return_bigint(fn_handle: u64, ptr: *const u8, len: usize) -> u64;
-    fn js_invoke_function_and_return_string(fn_handle: u64, ptr: *const u8, len: usize) -> u64;
-    fn js_invoke_function_and_return_array_buffer(fn_handle: u64, ptr: *const u8, len: usize) -> u64;
-    fn js_invoke_function_and_return_bool(fn_handle: u64, ptr: *const u8, len: usize) -> u64;
-}
-
-#[cfg(test)]
-fn js_register_function(_ptr: *const u8, _len: usize) -> f64 { 0.0 }
-#[cfg(test)]
-fn js_invoke_function(_fn_handle: u64, _ptr: *const u8, _len: usize) -> f64 { 0.0 }
-#[cfg(test)]
-fn js_invoke_function_and_return_object(_fn_handle: u64, _ptr: *const u8, _len: usize) -> u64 { 0 }
-#[cfg(test)]
-fn js_invoke_function_and_return_bigint(_fn_handle: u64, _ptr: *const u8, _len: usize) -> u64 { 0 }
-#[cfg(test)]
-fn js_invoke_function_and_return_string(_fn_handle: u64, _ptr: *const u8, _len: usize) -> u64 { 0 }
-#[cfg(test)]
-fn js_invoke_function_and_return_array_buffer(_fn_handle: u64, _ptr: *const u8, _len: usize) -> u64 { 0 }
-#[cfg(test)]
-fn js_invoke_function_and_return_bool(_fn_handle: u64, _ptr: *const u8, _len: usize) -> u64 { 0 }
-
 
 
 
 #[derive(Debug, Clone)]
-pub struct ExternRef { pub value: u64, }
+pub struct ExternRef { pub value: i64, }
 
 impl PartialEq for ExternRef {
     fn eq(&self, other: &Self) -> bool {
@@ -164,17 +138,42 @@ pub fn serialize(params: &[InvokeParam]) -> Vec<u8> {
     param_bytes
 }
 
+#[cfg(not(test))]
+extern "C" {
+    fn js_register_function(ptr: f64, len: f64) -> f64;
+    fn js_invoke_function(fn_handle: f64, ptr: *const u8, len: usize) -> f64;
+    fn js_invoke_function_and_return_object(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
+    fn js_invoke_function_and_return_bigint(fn_handle: f64, ptr: *const u8, len: usize) -> i64;
+    fn js_invoke_function_and_return_string(fn_handle: f64, ptr: *const u8, len: usize) -> usize;
+    fn js_invoke_function_and_return_array_buffer(fn_handle: f64, ptr: *const u8, len: usize) -> usize;
+    fn js_invoke_function_and_return_bool(fn_handle: f64, ptr: *const u8, len: usize) -> f64;
+}
+
+#[cfg(test)]
+fn js_register_function(_ptr: f64, _len: f64) -> f64 { 0.0 }
+#[cfg(test)]
+fn js_invoke_function(_fn_handle: f64, _ptr: *const u8, _len: usize) -> f64 { 0.0 }
+#[cfg(test)]
+fn js_invoke_function_and_return_object(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
+#[cfg(test)]
+fn js_invoke_function_and_return_bigint(_fn_handle: f64, _ptr: *const u8, _len: usize) -> i64 { 0 }
+#[cfg(test)]
+fn js_invoke_function_and_return_string(_fn_handle: f64, _ptr: *const u8, _len: usize) -> usize { 0 }
+#[cfg(test)]
+fn js_invoke_function_and_return_array_buffer(_fn_handle: f64, _ptr: *const u8, _len: usize) -> usize { 0 }
+#[cfg(test)]
+fn js_invoke_function_and_return_bool(_fn_handle: f64, _ptr: *const u8, _len: usize) -> f64 { 0.0 }
 
 #[derive(Copy, Clone)]
 pub struct JSFunction {
-    pub fn_handle: u64,
+    pub fn_handle: f64,
 }
 
 #[allow(unused_unsafe)]
 impl JSFunction {
 
     pub fn register(code: &str) -> JSFunction {
-        JSFunction { fn_handle: unsafe { js_register_function(code.as_ptr(), code.len()) } as u64 }
+        JSFunction { fn_handle: unsafe { js_register_function(code.as_ptr() as usize as f64, code.len() as f64) } }
     }
 
     pub fn invoke(&self, params: &[InvokeParam]) -> f64 {
@@ -190,7 +189,7 @@ impl JSFunction {
         ExternRef { value: handle }
     }
 
-    pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> u64 {
+    pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> i64 {
         let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         unsafe { js_invoke_function_and_return_bigint(self.fn_handle, me.as_mut_ptr(), me.len()) }
@@ -199,22 +198,24 @@ impl JSFunction {
     pub fn invoke_and_return_string(&self, params: &[InvokeParam]) -> String {
         let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
-        let allocation_id = unsafe { js_invoke_function_and_return_string(self.fn_handle, me.as_mut_ptr(), me.len()) };
-        crate::allocations::get_string_from_allocation(allocation_id as usize)
+        let allocation_id =
+            unsafe { js_invoke_function_and_return_string(self.fn_handle, me.as_mut_ptr(), me.len()) };
+        crate::allocations::get_string_from_allocation(allocation_id)
     }
 
     pub fn invoke_and_return_array_buffer(&self, params: &[InvokeParam]) -> Vec<u8> {
         let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
-        let allocation_id = unsafe { js_invoke_function_and_return_array_buffer(self.fn_handle, me.as_mut_ptr(), me.len()) };
-        crate::allocations::get_vec_from_allocation(allocation_id as usize)
+        let allocation_id =
+            unsafe { js_invoke_function_and_return_array_buffer(self.fn_handle, me.as_mut_ptr(), me.len()) };
+        crate::allocations::get_vec_from_allocation(allocation_id)
     }
 
     pub fn invoke_and_return_bool(&self, params: &[InvokeParam]) -> bool {
         let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let ret = unsafe { js_invoke_function_and_return_bool(self.fn_handle, me.as_mut_ptr(), me.len()) };
-        ret != 0
+        ret != 0.0
     }
 }
 

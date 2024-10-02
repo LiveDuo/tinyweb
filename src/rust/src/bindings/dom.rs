@@ -128,7 +128,7 @@ fn remove_change_event_handler(id: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_change_event(id: u64, allocation_id: usize) {
+pub extern "C" fn web_handle_change_event(id: i64, allocation_id: usize) {
     CHANGE_EVENT_HANDLERS.with_borrow_mut(|s| {
         if let Some(h) = s.as_mut() {
             for (key, handler) in h.iter_mut() {
@@ -157,7 +157,7 @@ pub fn add_change_event_listener(
             return id;
         }"#)
     .invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u64, });
+    let function_handle = Rc::new(ExternRef { value: function_ref, });
     add_change_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }
@@ -181,7 +181,7 @@ thread_local! {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_mouse_event_handler(id: u64, x: f64, y: f64) {
+pub extern "C" fn web_handle_mouse_event_handler(id: i64, x: f64, y: f64) {
 
     MOUSE_EVENT_HANDLER.with(|s| {
         s.call(id, MouseEvent { offset_x: x, offset_y: y });
@@ -201,7 +201,7 @@ pub fn element_add_click_listener(
             element.addEventListener("click",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u64, });
+    let function_handle = Rc::new(ExternRef { value: function_ref, });
 
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
@@ -233,7 +233,7 @@ pub fn element_add_mouse_move_listener(
             element.addEventListener("mousemove",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u64, });
+    let function_handle = Rc::new(ExternRef { value: function_ref, });
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
     });
@@ -267,7 +267,7 @@ pub fn element_add_mouse_down_listener(
             element.addEventListener("mousedown",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u64, });
+    let function_handle = Rc::new(ExternRef { value: function_ref, });
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
     });
@@ -301,7 +301,7 @@ pub fn element_add_mouse_up_listener(
             element.addEventListener("mouseup",handler);
             return id;
         }"#).invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u64, });
+    let function_handle = Rc::new(ExternRef { value: function_ref, });
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
     });
@@ -353,7 +353,7 @@ fn remove_keyboard_event_handler(function_handle: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_keyboard_event_handler(id: u64, key_code: f64) {
+pub extern "C" fn web_handle_keyboard_event_handler(id: i64, key_code: f64) {
 
     KEYBOARD_EVENT_HANDLERS.with_borrow_mut(|s| {
         if let Some(h) = s.as_mut() {
@@ -380,7 +380,7 @@ pub fn element_add_key_down_listener(
             return id;
         }"#)
     .invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u64, });
+    let function_handle = Rc::new(ExternRef { value: function_ref, });
     add_keyboard_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }
@@ -411,7 +411,7 @@ pub fn element_add_key_up_listener(
             return id;
         }"#)
     .invoke_and_return_bigint(&[element.into()]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u64, });
+    let function_handle = Rc::new(ExternRef { value: function_ref, });
     add_keyboard_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }

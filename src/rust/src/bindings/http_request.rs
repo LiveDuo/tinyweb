@@ -8,11 +8,11 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 thread_local! {
-    static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<u64, Box<dyn FnMut() + 'static>>>> =
+    static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> =
         RefCell::new(None);
 }
 
-fn add_http_load_event_handler(function_handle: u64, handler: Box<dyn FnMut() + 'static>) {
+fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + 'static>) {
 
     HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
         if h.is_none() {
@@ -23,7 +23,7 @@ fn add_http_load_event_handler(function_handle: u64, handler: Box<dyn FnMut() + 
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_http_load_event_handler(id: u64) {
+pub extern "C" fn web_handle_http_load_event_handler(id: i64) {
     let mut c = None;
     {
         HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
@@ -137,7 +137,7 @@ impl XMLHttpRequest {
                 return id;
             }"#)
         .invoke_and_return_bigint(&[(&(self.0)).into()]);
-        add_http_load_event_handler(function_ref as u64, Box::new(callback));
+        add_http_load_event_handler(function_ref, Box::new(callback));
     }
 
     pub fn set_response_type(&self, response_type: &str) {
