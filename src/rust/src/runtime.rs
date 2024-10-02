@@ -71,15 +71,7 @@ pub fn run<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) 
 
 pub fn coroutine<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) {
     let mut a = Some(Box::pin(future));
-    set_timeout(
-        move || {
-            let b = a.take();
-            if let Some(b) = b {
-                run(b);
-            }
-        },
-        0,
-    );
+    set_timeout(move || { if let Some(b) = a.take() { run(b); } }, 0);
 }
 
 
