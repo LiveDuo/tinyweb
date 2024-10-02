@@ -279,7 +279,7 @@ mod tests {
         
         // register
         let func = JSFunction::register("");
-        assert_eq!(func.fn_handle, 0);
+        assert_eq!(func.fn_handle, 0.0);
 
         // invoke
         let result = func.invoke(&[]);
