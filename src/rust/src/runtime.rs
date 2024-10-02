@@ -13,10 +13,8 @@ trait Pendable {
     fn is_pending(&self) -> bool;
 }
 
-type TasksList = VecDeque<Box<dyn Pendable + Send + Sync>>;
-
 pub struct Runtime {
-    tasks: Option<TasksList>,
+    tasks: VecDeque<Box<dyn Pendable + Send + Sync>>,
 }
 
 struct Task<T> {
@@ -52,31 +50,29 @@ impl Runtime {
 
     fn add_task<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
         let task = Arc::new(Task { future: Mutex::new(future), });
-        if self.tasks.is_none() {
-            self.tasks = Some(VecDeque::new());
+        if self.tasks.is_empty() {
+            self.tasks = VecDeque::new();
         }
-        let tasks = self.tasks.as_mut().unwrap();
-        tasks.push_back(Box::new(task));
+        self.tasks.push_back(Box::new(task));
     }
 
     fn poll_tasks(&mut self) {
-        if self.tasks.is_none() {
-            self.tasks = Some(VecDeque::new());
+        if self.tasks.is_empty() {
+            self.tasks = VecDeque::new();
         }
 
-        let tasks = self.tasks.as_mut().unwrap();
-        if tasks.is_empty() { return; }
+        if self.tasks.is_empty() { return; }
 
-        for _ in 0..tasks.len() {
-            let task = tasks.pop_front().unwrap();
+        for _ in 0..self.tasks.len() {
+            let task = self.tasks.pop_front().unwrap();
             if task.is_pending() {
-                tasks.push_back(task);
+                self.tasks.push_back(task);
             }
         }
     }
 }
 
-static DEFAULT_RUNTIME: Mutex<Runtime> = Mutex::new(Runtime { tasks: None });
+static DEFAULT_RUNTIME: Mutex<Runtime> = Mutex::new(Runtime { tasks: VecDeque::new() });
 
 pub fn run<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
     DEFAULT_RUNTIME.lock().map(|mut s| {
