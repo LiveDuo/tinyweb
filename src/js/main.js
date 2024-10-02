@@ -1,8 +1,8 @@
 'use strict'
 
-const _objects = []
-const _freeList = []
-const _functions = []
+const objects = []
+const freeList = []
+const functions = []
 
 let _wasmModule = {}
 let _nextIndex = 0
@@ -11,11 +11,11 @@ const allocate = (object) => {
 
     // get index
     let index
-    if (_freeList.length > 0) index = _freeList.pop()
+    if (freeList.length > 0) index = freeList.pop()
     else index = _nextIndex++
 
     // update variables
-    _objects[index] = object
+    objects[index] = object
 
     // get merged
     return BigInt(index)
@@ -23,7 +23,7 @@ const allocate = (object) => {
 
 const deallocate = (handle) => {
     if (!handle) {
-        _freeList.push(Number(handle))
+        freeList.push(Number(handle))
     } else {
         throw new Error('Invalid deallocate handle')
     }
@@ -58,7 +58,7 @@ const readParams = (start, length) => {
         } else if (parameters[i] === 5) {
             const handle = dataView.getBigInt64(i + 1, true)
             const index = Number(handle)
-            values.push(_objects[index])
+            values.push(objects[index])
             i += 1 + 8
         } else if (parameters[i] === 6) {
             const start = dataView.getInt32(i + 1, true)
@@ -95,34 +95,34 @@ const getWasmImports = () => {
             const decoder = (utfByteLen === 16) ? new TextDecoder('utf-16') : new TextDecoder('utf-8')
             const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
             const functionBody = decoder.decode(memory.subarray(start, start + len))
-            const id = _functions.length
-            _functions.push(Function(`'use strict';return(${functionBody})`)())
+            const id = functions.length
+            functions.push(Function(`'use strict';return(${functionBody})`)())
             return id
         },
         js_invoke_function (handle, start, len) {
             const values = readParams(start, len)
-            const result = _functions[handle].call({}, ...values)
+            const result = functions[handle].call({}, ...values)
             return result
         },
         js_invoke_function_and_return_object (handle, start, len) {
             const values = readParams(start, len)
-            const result = _functions[handle].call({}, ...values)
+            const result = functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return object')
             return allocate(result)
         },
         js_invoke_function_and_return_bool (handle, start, len) {
             const values = readParams(start, len)
-            const result = _functions[handle].call({}, ...values)
+            const result = functions[handle].call({}, ...values)
             return result ? 1 : 0
         },
         js_invoke_function_and_return_bigint (handle, start, len) {
             const values = readParams(start, len)
-            const result = _functions[handle].call({}, ...values)
+            const result = functions[handle].call({}, ...values)
             return result
         },
         js_invoke_function_and_return_string (handle, start, len) {
             const values = readParams(start, len)
-            const result = _functions[handle].call({}, ...values)
+            const result = functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
             const bytes = (new TextEncoder()).encode(str)
@@ -134,7 +134,7 @@ const getWasmImports = () => {
         },
         js_invoke_function_and_return_array_buffer (handle, start, len) {
             const values = readParams(start, len)
-            const result = _functions[handle].call({}, ...values)
+            const result = functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return arraybuffer')
 
             const bytes = new Uint8Array(result)
