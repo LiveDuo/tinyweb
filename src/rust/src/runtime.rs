@@ -78,18 +78,7 @@ pub fn run<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static +
 
 pub fn coroutine<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
     let mut a = Some(Box::pin(future));
-    set_timeout(
-        move || {
-            let b = a.take();
-            if let Some(b) = b {
-                DEFAULT_RUNTIME.lock().map(|mut s| {
-                    s.add_task(Box::pin(b));
-                    s.poll_tasks();
-                }).unwrap()
-            }
-        },
-        0,
-    );
+    set_timeout(move || { if let Some(b) = a.take() { run(b); }}, 0);
 }
 
 
