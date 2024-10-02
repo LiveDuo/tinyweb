@@ -140,7 +140,7 @@ pub fn serialize(params: &[InvokeParam]) -> Vec<u8> {
 
 #[cfg(not(test))]
 extern "C" {
-    fn js_register_function(ptr: f64, len: f64) -> f64;
+    fn js_register_function(ptr: f64, len: u32) -> f64;
     fn js_invoke_function(fn_handle: f64, ptr: *const u8, len: u32) -> f64;
     fn js_invoke_function_and_return_object(fn_handle: f64, ptr: *const u8, len: u32) -> i64;
     fn js_invoke_function_and_return_bigint(fn_handle: f64, ptr: *const u8, len: u32) -> i64;
@@ -150,7 +150,7 @@ extern "C" {
 }
 
 #[cfg(test)]
-fn js_register_function(_ptr: f64, _len: f64) -> f64 { 0.0 }
+fn js_register_function(_ptr: f64, _len: u32) -> f64 { 0.0 }
 #[cfg(test)]
 fn js_invoke_function(_fn_handle: f64, _ptr: *const u8, _len: u32) -> f64 { 0.0 }
 #[cfg(test)]
@@ -173,7 +173,7 @@ pub struct JSFunction {
 impl JSFunction {
 
     pub fn register(code: &str) -> JSFunction {
-        JSFunction { fn_handle: unsafe { js_register_function(code.as_ptr() as usize as f64, code.len() as f64) } }
+        JSFunction { fn_handle: unsafe { js_register_function(code.as_ptr() as usize as f64, code.len() as u32) } }
     }
 
     pub fn invoke(&self, params: &[InvokeParam]) -> f64 {
