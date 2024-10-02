@@ -27,8 +27,8 @@ impl<T> Pendable for Arc<Task<T>> {
     fn is_pending(&self) -> bool {
         let mut future = self.future.lock().unwrap();
 
-        fn clone_arc_raw<T>(data: *const ()) -> RawWaker {
-            RawWaker::new(data, waker_vtable::<T>())
+        fn clone_arc_raw<W>(data: *const ()) -> RawWaker {
+            RawWaker::new(data, waker_vtable::<W>())
         }
         fn wake_arc_raw(_data: *const ()) {
             set_timeout(|| { DEFAULT_RUNTIME.lock().unwrap().poll_tasks(); }, 0);
@@ -36,7 +36,6 @@ impl<T> Pendable for Arc<Task<T>> {
         fn drop_arc_raw<W>(data: *const ()) {
             unsafe { drop(Arc::<W>::from_raw(data as *const W)) }
         }
-        
         fn waker_vtable<W>() -> &'static RawWakerVTable {
             &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw, wake_arc_raw, drop_arc_raw::<W>)
         }
