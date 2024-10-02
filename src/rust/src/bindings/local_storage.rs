@@ -1,9 +1,9 @@
 
-use crate::js::JSFunction;
+use crate::js::JsFunction;
 use crate::allocations::get_string_from_allocation;
 
 pub fn local_storage_set(key: &str, value: &str) {
-    let local_storage_set = JSFunction::register(r#"
+    let local_storage_set = JsFunction::register(r#"
         function(key, value){
             localStorage.setItem(key, value);
         }"#);
@@ -11,7 +11,7 @@ pub fn local_storage_set(key: &str, value: &str) {
 }
 
 pub fn local_storage_remove(key: &str) {
-    let local_storage_remove = JSFunction::register(r#"
+    let local_storage_remove = JsFunction::register(r#"
         function(key){
             localStorage.removeItem(key);
         }"#);
@@ -19,7 +19,7 @@ pub fn local_storage_remove(key: &str) {
 }
 
 pub fn local_storage_get(key: &str) -> Option<String> {
-    let local_storage_get = JSFunction::register(r#"
+    let local_storage_get = JsFunction::register(r#"
         function(key){
             const text = localStorage.getItem(key);
             if(text === null){
@@ -37,7 +37,7 @@ pub fn local_storage_get(key: &str) -> Option<String> {
 }
 
 pub fn local_storage_clear() {
-    let local_storage_clear = JSFunction::register(r#"
+    let local_storage_clear = JsFunction::register(r#"
         function(){
             localStorage.clear();
         }"#);

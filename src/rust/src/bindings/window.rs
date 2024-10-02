@@ -2,7 +2,7 @@
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use crate::js::JSFunction;
+use crate::js::JsFunction;
 use crate::bindings::utils::*;
 
 thread_local! {
@@ -27,7 +27,7 @@ pub extern "C" fn web_one_time_empty_handler(id: i64) {
 }
 
 pub fn request_animation_frame(handler: impl FnMut() + 'static) {
-    let function_handle = JSFunction::register(r#"
+    let function_handle = JsFunction::register(r#"
         function(){
             const handler = () => {
                 _wasmModule.instance.exports.web_one_time_empty_handler(id);
@@ -52,7 +52,7 @@ pub fn set_timeout(
     handler: impl FnMut() + 'static,
     ms: impl Into<f64>,
 ) -> f64 {
-    let obj_handle = JSFunction::register(r#"
+    let obj_handle = JsFunction::register(r#"
         function(ms){
             const handler = () => {
                 _wasmModule.instance.exports.web_one_time_empty_handler(id);
@@ -77,7 +77,7 @@ pub fn set_timeout(
 }
 
 pub fn clear_timeout(interval_id: impl Into<f64>) {
-    let clear_interval = JSFunction::register(r#"
+    let clear_interval = JsFunction::register(r#"
         function(interval_id){
             window.clearTimeout(interval_id);
         }"#);

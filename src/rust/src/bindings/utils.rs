@@ -3,10 +3,10 @@ use core::future::Future;
 
 use crate::allocations::get_string_from_allocation;
 use crate::handlers::EventHandlerFuture;
-use crate::js::{ExternRef, JSFunction};
+use crate::js::{ExternRef, JsFunction};
 
 pub fn random() -> f64 {
-    let random = JSFunction::register(r#"
+    let random = JsFunction::register(r#"
         function(){
             return Math.random();
         }"#);
@@ -21,7 +21,7 @@ pub fn random_i64() -> i64 {
 
 // TODO need new linker function
 pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
-    let get_property = JSFunction::register(r#"
+    let get_property = JsFunction::register(r#"
         function(element, property){
             return element[property];
         }"#);
@@ -29,7 +29,7 @@ pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
 }
 
 pub fn set_property_i64(element: &ExternRef, property: &str, value: i64) {
-    let set_property = JSFunction::register(r#"
+    let set_property = JsFunction::register(r#"
         function(element, property, value){
             element[property] = value;
         }"#);
@@ -37,7 +37,7 @@ pub fn set_property_i64(element: &ExternRef, property: &str, value: i64) {
 }
 
 pub fn get_property_f64(element: &ExternRef, property: &str) -> f64 {
-    let get_property = JSFunction::register(r#"
+    let get_property = JsFunction::register(r#"
         function(element, property){
             return element[property];
         }"#);
@@ -45,7 +45,7 @@ pub fn get_property_f64(element: &ExternRef, property: &str) -> f64 {
 }
 
 pub fn set_property_f64(element: &ExternRef, property: &str, value: f64) {
-    let set_property = JSFunction::register(r#"
+    let set_property = JsFunction::register(r#"
         function(element, property, value){
             element[property] = value;
         }"#);
@@ -53,7 +53,7 @@ pub fn set_property_f64(element: &ExternRef, property: &str, value: f64) {
 }
 
 pub fn get_property_bool(element: &ExternRef, property: &str) -> bool {
-    let get_property = JSFunction::register(r#"
+    let get_property = JsFunction::register(r#"
         function(element, property){
             return element[property]?1:0;
         }"#);
@@ -62,7 +62,7 @@ pub fn get_property_bool(element: &ExternRef, property: &str) -> bool {
 }
 
 pub fn set_property_bool(element: &ExternRef, property: &str, value: bool) {
-    let set_property = JSFunction::register(r#"
+    let set_property = JsFunction::register(r#"
         function(element, property, value){
             element[property] = value !==0;
         }"#);
@@ -70,7 +70,7 @@ pub fn set_property_bool(element: &ExternRef, property: &str, value: bool) {
 }
 
 pub fn get_property_string(element: &ExternRef, property: &str) -> String {
-    let get_property = JSFunction::register(r#"
+    let get_property = JsFunction::register(r#"
         function(element, property){
             const text = element[property];
             const allocationId = writeStringToMemory(text);
@@ -82,7 +82,7 @@ pub fn get_property_string(element: &ExternRef, property: &str) -> String {
 }
 
 pub fn set_property_string(element: &ExternRef, property: &str, value: &str) {
-    let set_property = JSFunction::register(r#"
+    let set_property = JsFunction::register(r#"
         function(element, property, value){
             element[property] = value;
         }"#);
@@ -95,7 +95,7 @@ pub extern "C" fn web_handle_empty_callback(id: i64) {
 }
 
 pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
-    let sleep = JSFunction::register(r#"
+    let sleep = JsFunction::register(r#"
         function(ms, state_id){
             window.setTimeout(()=>{
                 _wasmModule.instance.exports.web_handle_empty_callback(state_id);
@@ -108,7 +108,7 @@ pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
 }
 
 pub fn wait_til_animation_frame() -> impl Future<Output = ()> {
-    let wait_til_animation_frame = JSFunction::register(r#"
+    let wait_til_animation_frame = JsFunction::register(r#"
         function(state_id){
             window.requestAnimationFrame(()=>{
                 _wasmModule.instance.exports.web_handle_empty_callback(state_id);
@@ -120,7 +120,7 @@ pub fn wait_til_animation_frame() -> impl Future<Output = ()> {
 }
 
 pub fn create_object() -> ExternRef {
-    let config_ref = JSFunction::register(r#"
+    let config_ref = JsFunction::register(r#"
         function(){
             return {};
         }"#)
@@ -129,7 +129,7 @@ pub fn create_object() -> ExternRef {
 }
 
 pub fn create_array() -> ExternRef {
-    let config_ref = JSFunction::register(r#"
+    let config_ref = JsFunction::register(r#"
         function(){
             return [];
         }"#)
@@ -138,7 +138,7 @@ pub fn create_array() -> ExternRef {
 }
 
 pub fn add_to_array(array: &ExternRef, value: &ExternRef) {
-    let add_to_array = JSFunction::register(r#"
+    let add_to_array = JsFunction::register(r#"
         function(array, value){
             array.push(value);
         }"#);

@@ -1,11 +1,11 @@
 
-use crate::js::{ExternRef, JSFunction};
+use crate::js::{ExternRef, JsFunction};
 
 pub struct CanvasContext(ExternRef);
 
 impl CanvasContext {
     pub fn from_element(element: &ExternRef) -> Self {
-        let get_context = JSFunction::register(r#"
+        let get_context = JsFunction::register(r#"
             function(element){
                 return element.getContext("2d");
             }"#);
@@ -14,7 +14,7 @@ impl CanvasContext {
     }
 
     pub fn set_fill_style(&self, style: &str) {
-        let set_fill_style = JSFunction::register(r#"
+        let set_fill_style = JsFunction::register(r#"
             function(ctx, style){
                 ctx.fillStyle = style;
             }"#);
@@ -22,7 +22,7 @@ impl CanvasContext {
     }
 
     pub fn fill_rect(&self, x: f64, y: f64, width: f64, height: f64) {
-        let fill_rect = JSFunction::register(r#"
+        let fill_rect = JsFunction::register(r#"
             function(ctx, x, y, width, height){
                 ctx.fillRect(x,y,width,height);
             }"#);
@@ -36,7 +36,7 @@ impl CanvasContext {
     }
 
     pub fn clear_rect(&self, x: f64, y: f64, width: f64, height: f64) {
-        let clear_rect = JSFunction::register(r#"
+        let clear_rect = JsFunction::register(r#"
             function(ctx, x, y, width, height){
                 ctx.clearRect(x,y,width,height);
             }"#);
@@ -50,7 +50,7 @@ impl CanvasContext {
     }
 
     pub fn set_font(&self, font: &str) {
-        let set_font = JSFunction::register(r#"
+        let set_font = JsFunction::register(r#"
             function(ctx, font){
                 ctx.font = font;
             }"#);
@@ -58,7 +58,7 @@ impl CanvasContext {
     }
 
     pub fn set_text_align(&self, align: &str) {
-        let set_text_align = JSFunction::register(r#"
+        let set_text_align = JsFunction::register(r#"
             function(ctx, align){
                 ctx.textAlign = align;
             }"#);
@@ -66,7 +66,7 @@ impl CanvasContext {
     }
 
     pub fn set_text_baseline(&self, baseline: &str) {
-        let set_text_baseline = JSFunction::register(r#"
+        let set_text_baseline = JsFunction::register(r#"
             function(ctx, baseline){
                 ctx.textBaseline = baseline;
             }"#);
@@ -74,7 +74,7 @@ impl CanvasContext {
     }
 
     pub fn fill_text(&self, text: &str, x: f64, y: f64) {
-        let fill_text = JSFunction::register(r#"
+        let fill_text = JsFunction::register(r#"
             function(ctx, text, x, y){
                 ctx.fillText(text,x,y);
             }"#);
@@ -82,7 +82,7 @@ impl CanvasContext {
     }
 
     pub fn measure_text(&self, text: &str) -> f64 {
-        let measure_text = JSFunction::register(r#"
+        let measure_text = JsFunction::register(r#"
             function(ctx, text){
                 return ctx.measureText(text).width;
             }"#);
@@ -90,7 +90,7 @@ impl CanvasContext {
     }
 
     pub fn set_line_width(&self, width: f64) {
-        let set_line_width = JSFunction::register(r#"
+        let set_line_width = JsFunction::register(r#"
             function(ctx, width){
                 ctx.lineWidth = width;
             }"#);
@@ -98,7 +98,7 @@ impl CanvasContext {
     }
 
     pub fn set_stroke_style(&self, style: &str) {
-        let set_stroke_style = JSFunction::register(r#"
+        let set_stroke_style = JsFunction::register(r#"
             function(ctx, style){
                 ctx.strokeStyle = style;
             }"#);
@@ -106,7 +106,7 @@ impl CanvasContext {
     }
 
     pub fn stroke_rect(&self, x: f64, y: f64, width: f64, height: f64) {
-        let stroke_rect = JSFunction::register(r#"
+        let stroke_rect = JsFunction::register(r#"
             function(ctx, x, y, width, height){
                 ctx.strokeRect(x,y,width,height);
             }"#);
@@ -120,7 +120,7 @@ impl CanvasContext {
     }
 
     pub fn begin_path(&self) {
-        let begin_path = JSFunction::register(r#"
+        let begin_path = JsFunction::register(r#"
             function(ctx){
                 ctx.beginPath();
             }"#);
@@ -128,7 +128,7 @@ impl CanvasContext {
     }
 
     pub fn move_to(&self, x: f64, y: f64) {
-        let move_to = JSFunction::register(r#"
+        let move_to = JsFunction::register(r#"
             function(ctx, x, y){
                 ctx.moveTo(x,y);
             }"#);
@@ -136,7 +136,7 @@ impl CanvasContext {
     }
 
     pub fn line_to(&self, x: f64, y: f64) {
-        let line_to = JSFunction::register(r#"
+        let line_to = JsFunction::register(r#"
             function(ctx, x, y){
                 ctx.lineTo(x,y);
             }"#);
@@ -144,7 +144,7 @@ impl CanvasContext {
     }
 
     pub fn stroke(&self) {
-        let stroke = JSFunction::register(r#"
+        let stroke = JsFunction::register(r#"
             function(ctx){
                 ctx.stroke();
             }"#);
@@ -152,7 +152,7 @@ impl CanvasContext {
     }
 
     pub fn close_path(&self) {
-        let close_path = JSFunction::register(r#"
+        let close_path = JsFunction::register(r#"
             function(ctx){
                 ctx.closePath();
             }"#);
@@ -160,7 +160,7 @@ impl CanvasContext {
     }
 
     pub fn fill(&self) {
-        let fill = JSFunction::register(r#"
+        let fill = JsFunction::register(r#"
             function(ctx){
                 ctx.fill();
             }"#);
@@ -168,7 +168,7 @@ impl CanvasContext {
     }
 
     pub fn arc(&self, x: f64, y: f64, radius: f64, start_angle: f64, end_angle: f64) {
-        let arc = JSFunction::register(r#"
+        let arc = JsFunction::register(r#"
             function(ctx, x, y, radius, start_angle, end_angle){
                 ctx.arc(x,y,radius,start_angle,end_angle);
             }"#);
@@ -183,7 +183,7 @@ impl CanvasContext {
     }
 
     pub fn arc_to(&self, x1: f64, y1: f64, x2: f64, y2: f64, radius: f64) {
-        let arc_to = JSFunction::register(r#"
+        let arc_to = JsFunction::register(r#"
             function(ctx, x1, y1, x2, y2, radius){
                 ctx.arcTo(x1,y1,x2,y2,radius);
             }"#);
@@ -198,7 +198,7 @@ impl CanvasContext {
     }
 
     pub fn bezier_curve_to(&self, cp1x: f64, cp1y: f64, cp2x: f64, cp2y: f64, x: f64, y: f64) {
-        let bezier_curve_to = JSFunction::register(r#"
+        let bezier_curve_to = JsFunction::register(r#"
             function(ctx, cp1x, cp1y, cp2x, cp2y, x, y){
                 ctx.bezierCurveTo(cp1x,cp1y,cp2x,cp2y,x,y);
             }"#);
@@ -214,7 +214,7 @@ impl CanvasContext {
     }
 
     pub fn quadratic_curve_to(&self, cpx: f64, cpy: f64, x: f64, y: f64) {
-        let quadratic_curve_to = JSFunction::register(r#"
+        let quadratic_curve_to = JsFunction::register(r#"
             function(ctx, cpx, cpy, x, y){
                 ctx.quadraticCurveTo(cpx,cpy,x,y);
             }"#);
@@ -222,7 +222,7 @@ impl CanvasContext {
     }
 
     pub fn rect(&self, x: f64, y: f64, width: f64, height: f64) {
-        let rect = JSFunction::register(r#"
+        let rect = JsFunction::register(r#"
             function(ctx, x, y, width, height){
                 ctx.rect(x,y,width,height);
             }"#);
@@ -236,7 +236,7 @@ impl CanvasContext {
     }
 
     pub fn clip(&self) {
-        let clip = JSFunction::register(r#"
+        let clip = JsFunction::register(r#"
             function(ctx){
                 ctx.clip();
             }"#);
@@ -244,7 +244,7 @@ impl CanvasContext {
     }
 
     pub fn draw_image(&self, image: &ExternRef, dx: f64, dy: f64) {
-        let draw_image = JSFunction::register(r#"
+        let draw_image = JsFunction::register(r#"
             function(ctx, image, dx, dy){
                 ctx.drawImage(image,dx,dy);
             }"#);
@@ -259,7 +259,7 @@ impl CanvasContext {
         dwidth: f64,
         dheight: f64,
     ) {
-        let draw_image_with_size = JSFunction::register(r#"
+        let draw_image_with_size = JsFunction::register(r#"
             function(ctx, image, dx, dy, dwidth, dheight){
                 ctx.drawImage(image,dx,dy,dwidth,dheight);
             }"#);
@@ -285,7 +285,7 @@ impl CanvasContext {
         dwidth: f64,
         dheight: f64,
     ) {
-        let draw_image_with_source = JSFunction::register(r#"
+        let draw_image_with_source = JsFunction::register(r#"
             function(ctx, image, sx, sy, swidth, sheight, dx, dy, dwidth, dheight){
                 ctx.drawImage(image,sx,sy,swidth,sheight,dx,dy,dwidth,dheight);
             }"#);

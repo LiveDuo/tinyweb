@@ -165,14 +165,14 @@ fn js_invoke_function_and_return_array_buffer(_fn_handle: f32, _ptr: *const u8, 
 fn js_invoke_function_and_return_bool(_fn_handle: f32, _ptr: *const u8, _len: u32) -> f64 { 0.0 }
 
 #[derive(Copy, Clone)]
-pub struct JSFunction {
+pub struct JsFunction {
     pub fn_handle: f64,
 }
 
-impl JSFunction {
+impl JsFunction {
 
-    pub fn register(code: &str) -> JSFunction {
-        JSFunction { fn_handle: unsafe { js_register_function(code.as_ptr() as usize as f32, code.len() as u32) } }
+    pub fn register(code: &str) -> JsFunction {
+        JsFunction { fn_handle: unsafe { js_register_function(code.as_ptr() as usize as f32, code.len() as u32) } }
     }
 
     pub fn invoke(&self, params: &[InvokeParam]) -> f64 {
@@ -277,7 +277,7 @@ mod tests {
     fn test_register_invoke() {
         
         // register
-        let func = JSFunction::register("");
+        let func = JsFunction::register("");
         assert_eq!(func.fn_handle, 0.0);
 
         // invoke

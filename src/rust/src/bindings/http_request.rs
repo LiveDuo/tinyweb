@@ -1,6 +1,6 @@
 
 use crate::handlers::EventHandlerFuture;
-use crate::js::{ExternRef, JSFunction};
+use crate::js::{ExternRef, JsFunction};
 
 use std::collections::HashMap;
 use std::future::Future;
@@ -44,7 +44,7 @@ pub struct XMLHttpRequest(ExternRef);
 
 impl XMLHttpRequest {
     pub fn new() -> XMLHttpRequest {
-        let request = JSFunction::register("
+        let request = JsFunction::register("
             function() {
                 return new XMLHttpRequest();
             }
@@ -54,7 +54,7 @@ impl XMLHttpRequest {
     }
 
     pub fn open(&self, method: &str, url: &str) {
-        JSFunction::register("
+        JsFunction::register("
             function(request, method, url) {
                 request.open(method, url);
             }
@@ -63,7 +63,7 @@ impl XMLHttpRequest {
     }
 
     pub fn send(&self) {
-        JSFunction::register("
+        JsFunction::register("
             function(request) {
                 request.send();
             }
@@ -72,7 +72,7 @@ impl XMLHttpRequest {
     }
 
     pub fn send_with_body(&self, body: &str) {
-        JSFunction::register("
+        JsFunction::register("
             function(request, body) {
                 request.send(body);
             }
@@ -81,7 +81,7 @@ impl XMLHttpRequest {
     }
 
     pub fn set_request_header(&self, key: &str, value: &str) {
-        JSFunction::register("
+        JsFunction::register("
             function(request, key, value) {
                 request.setRequestHeader(key, value);
             }
@@ -90,7 +90,7 @@ impl XMLHttpRequest {
     }
 
     pub fn response_status(&self) -> usize {
-        JSFunction::register("
+        JsFunction::register("
             function(request) {
                 return request.status;
             }
@@ -99,7 +99,7 @@ impl XMLHttpRequest {
     }
 
     pub fn response_text(&self) -> String {
-        JSFunction::register("
+        JsFunction::register("
             function(request) {
                 return request.responseText;
             }
@@ -108,7 +108,7 @@ impl XMLHttpRequest {
     }
 
     pub fn response_array_buffer(&self) -> Vec<u8> {
-        JSFunction::register("
+        JsFunction::register("
             function(request) {
                 return request.response;
             }
@@ -117,7 +117,7 @@ impl XMLHttpRequest {
     }
 
     pub fn response_header(&self, key: &str) -> String {
-        JSFunction::register("
+        JsFunction::register("
             function(request, key) {
                 return request.getResponseHeader(key);
             }
@@ -126,7 +126,7 @@ impl XMLHttpRequest {
     }
 
     pub fn set_on_load(&self, callback: impl FnMut() + 'static) {
-        let function_ref = JSFunction::register(r#"
+        let function_ref = JsFunction::register(r#"
             function(request){
                 const handler = () => {
                     _wasmModule.instance.exports.web_handle_http_load_event_handler(id);
@@ -141,7 +141,7 @@ impl XMLHttpRequest {
     }
 
     pub fn set_response_type(&self, response_type: &str) {
-        JSFunction::register("
+        JsFunction::register("
             function(request, response_type) {
                 request.responseType = response_type;
             }

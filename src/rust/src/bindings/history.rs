@@ -1,12 +1,12 @@
 
-use crate::js::{ExternRef, InvokeParam, JSFunction};
+use crate::js::{ExternRef, InvokeParam, JsFunction};
 
 use std::collections::HashMap;
 use std::cell::RefCell;
 use std::rc::Rc;
 
 pub fn history_push_state(title: &str, url: &str) {
-    JSFunction::register("
+    JsFunction::register("
         function(title, url) {
             window.history.pushState({}, title, url);
         }
@@ -15,7 +15,7 @@ pub fn history_push_state(title: &str, url: &str) {
 }
 
 pub fn history_replace_state(title: &str, url: &str) {
-    JSFunction::register("
+    JsFunction::register("
         function(title, url) {
             window.history.replaceState({}, title, url);
         }
@@ -24,7 +24,7 @@ pub fn history_replace_state(title: &str, url: &str) {
 }
 
 pub fn history_back() {
-    JSFunction::register("
+    JsFunction::register("
         function() {
             window.history.back();
         }
@@ -33,7 +33,7 @@ pub fn history_back() {
 }
 
 pub fn history_forward() {
-    JSFunction::register("
+    JsFunction::register("
         function() {
             window.history.forward();
         }
@@ -42,7 +42,7 @@ pub fn history_forward() {
 }
 
 pub fn history_go(delta: i32) {
-    JSFunction::register("
+    JsFunction::register("
         function(delta) {
             window.history.go(delta);
         }
@@ -51,7 +51,7 @@ pub fn history_go(delta: i32) {
 }
 
 pub fn history_length() -> usize {
-    JSFunction::register("
+    JsFunction::register("
         function() {
             return window.history.length;
         }
@@ -60,7 +60,7 @@ pub fn history_length() -> usize {
 }
 
 pub fn location_url() -> String {
-    JSFunction::register("
+    JsFunction::register("
         function() {
             return window.location.href;
         }
@@ -69,7 +69,7 @@ pub fn location_url() -> String {
 }
 
 pub fn location_host() -> String {
-    JSFunction::register("
+    JsFunction::register("
         function() {
             return window.location.host;
         }
@@ -78,7 +78,7 @@ pub fn location_host() -> String {
 }
 
 pub fn location_hostname() -> String {
-    JSFunction::register("
+    JsFunction::register("
         function() {
             return window.location.hostname;
         }
@@ -87,7 +87,7 @@ pub fn location_hostname() -> String {
 }
 
 pub fn location_pathname() -> String {
-    JSFunction::register("
+    JsFunction::register("
         function() {
             return window.location.pathname;
         }
@@ -96,7 +96,7 @@ pub fn location_pathname() -> String {
 }
 
 pub fn location_search() -> String {
-    JSFunction::register("
+    JsFunction::register("
         function() {
             return window.location.search;
         }
@@ -105,7 +105,7 @@ pub fn location_search() -> String {
 }
 
 pub fn location_hash() -> String {
-    JSFunction::register("
+    JsFunction::register("
         function() {
             return window.location.hash;
         }
@@ -114,7 +114,7 @@ pub fn location_hash() -> String {
 }
 
 pub fn location_reload() {
-    JSFunction::register("
+    JsFunction::register("
         function() {
             window.location.reload();
         }
@@ -167,7 +167,7 @@ pub extern "C" fn web_handle_history_pop_state_event(id: i64) {
 pub fn add_history_pop_state_event_listener(
     handler: impl FnMut(PopStateEvent) + 'static,
 ) -> Rc<ExternRef> {
-    let function_ref = JSFunction::register(r#"
+    let function_ref = JsFunction::register(r#"
         function(){
             const handler = (e) => {
                 _wasmModule.instance.exports.web_handle_history_pop_state_event(id);
@@ -186,7 +186,7 @@ pub fn remove_history_pop_state_listener(
     element: &ExternRef,
     function_handle: &Rc<ExternRef>,
 ) {
-    JSFunction::register(r#"
+    JsFunction::register(r#"
         function(element, f){
             window.removeEventListener("popstate", f);
         }"#)
