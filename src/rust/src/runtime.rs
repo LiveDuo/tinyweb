@@ -9,20 +9,6 @@ use std::{
 
 use crate::bindings::window::set_timeout;
 
-unsafe fn clone_arc_raw<T: Send + Sync>(data: *const ()) -> RawWaker {
-    RawWaker::new(data, waker_vtable::<T>())
-}
-unsafe fn wake_arc_raw<T: Send + Sync>(_data: *const ()) {
-    set_timeout(|| { DEFAULT_RUNTIME.lock().unwrap().poll_tasks(); }, 0);
-}
-unsafe fn drop_arc_raw<T>(data: *const ()) {
-    drop(Arc::<T>::from_raw(data as *const T))
-}
-
-fn waker_vtable<W: Send + Sync>() -> &'static RawWakerVTable {
-    &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw::<W>, wake_arc_raw::<W>, drop_arc_raw::<W>)
-}
-
 trait Pendable {
     fn is_pending(&self) -> bool;
 }
@@ -41,9 +27,23 @@ impl<T> Pendable for Arc<Task<T>> {
     fn is_pending(&self) -> bool {
         let mut future = self.future.lock().unwrap();
 
+        fn clone_arc_raw<T>(data: *const ()) -> RawWaker {
+            RawWaker::new(data, waker_vtable::<T>())
+        }
+        fn wake_arc_raw(_data: *const ()) {
+            set_timeout(|| { DEFAULT_RUNTIME.lock().unwrap().poll_tasks(); }, 0);
+        }
+        fn drop_arc_raw<W>(data: *const ()) {
+            unsafe { drop(Arc::<W>::from_raw(data as *const W)) }
+        }
+        
+        fn waker_vtable<W>() -> &'static RawWakerVTable {
+            &RawWakerVTable::new(clone_arc_raw::<W>, wake_arc_raw, wake_arc_raw, drop_arc_raw::<W>)
+        }
+
         let ptr = (&**self as *const Task<T>) as *const ();
-        let waker =
-            ManuallyDrop::new(unsafe { Waker::from_raw(RawWaker::new(ptr, waker_vtable::<Task<T>>())) });
+        let raw_waker = RawWaker::new(ptr, waker_vtable::<Task<T>>());
+        let waker = ManuallyDrop::new(unsafe { Waker::from_raw(raw_waker) });
         let context = &mut Context::from_waker(&*waker);
         matches!(future.as_mut().poll(context), Poll::Pending)
     }
