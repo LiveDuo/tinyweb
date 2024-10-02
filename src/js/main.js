@@ -1,17 +1,12 @@
 'use strict'
 
-const MAX_GENERATION = 0xfffffff0
-const INDEX_MASK = 0xffffffff
-
 const _objects = []
-const _generations = []
 const _freeList = []
 const _functions = []
 
 let _wasmModule = {}
 let _nextIndex = 0
 
-// returns index as bigint in low 32-bits and generation in high 32-bits
 const allocate = (object) => {
 
     // get index
@@ -27,13 +22,8 @@ const allocate = (object) => {
 }
 
 const deallocate = (handle) => {
-    const index = Number(handle & BigInt(INDEX_MASK))
-    const generation = Number(handle >> BigInt(32))
-    if (generation >= MAX_GENERATION) {
-        _generations[index] = -_generations[index]
-    } else if (generation === _generations[index]) {
-        _generations[index] = -_generations[index]
-        _freeList.push(index)
+    if (!handle) {
+        _freeList.push(Number(handle))
     } else {
         throw new Error('Invalid deallocate handle')
     }
@@ -67,7 +57,7 @@ const readParams = (start, length) => {
             i += 1 + 4 + 4
         } else if (parameters[i] === 5) {
             const handle = dataView.getBigInt64(i + 1, true)
-            const index = Number(handle & BigInt(INDEX_MASK))
+            const index = Number(handle)
             values.push(_objects[index])
             i += 1 + 8
         } else if (parameters[i] === 6) {
