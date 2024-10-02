@@ -25,7 +25,7 @@ pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
         function(element, property){
             return element[property];
         }"#);
-    get_property.invoke_and_return_bigint(&[element.into(), property.into()]) as i64
+    get_property.invoke_and_return_bigint(&[element.into(), property.into()])
 }
 
 pub fn set_property_i64(element: &ExternRef, property: &str, value: i64) {
