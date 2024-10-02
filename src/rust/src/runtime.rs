@@ -87,7 +87,7 @@ mod tests {
         let future = async move {
             has_run_clone.lock().map(|mut s| { *s = true; }).unwrap();
         };
-        run(Box::pin(future));
+        run(future);
         assert_eq!(*has_run.lock().unwrap(), true);
     }
 
