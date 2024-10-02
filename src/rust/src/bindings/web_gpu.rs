@@ -9,7 +9,7 @@ pub struct WebGPU;
 
 #[no_mangle]
 pub extern "C" fn web_extern_ref_callback(id: i64, value: i64) {
-    EventHandlerFuture::<ExternRef>::wake_future_with_state_id(id, ExternRef { value });
+    EventHandlerFuture::<ExternRef>::wake_future_with_state_id(id, ExternRef { value: value as u64 });
 }
 
 impl WebGPU {

@@ -40,7 +40,7 @@ impl<T> EventHandler<T> {
         let mut handlers = self.listeners.borrow_mut();
         if let Some(h) = handlers.as_mut() {
             for (key, handler) in h.iter_mut() {
-                if key.value == id {
+                if key.value == id as u64 {
                     handler(event);
                     return;
                 }

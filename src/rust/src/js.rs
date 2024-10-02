@@ -6,7 +6,7 @@ use std::mem::ManuallyDrop;
 
 
 #[derive(Debug, Clone)]
-pub struct ExternRef { pub value: i64, }
+pub struct ExternRef { pub value: u64, }
 
 impl PartialEq for ExternRef {
     fn eq(&self, other: &Self) -> bool {
@@ -185,7 +185,7 @@ impl JSFunction {
         let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let handle = unsafe { js_invoke_function_and_return_object(self.fn_handle as f32, me.as_mut_ptr(), me.len() as u32) };
-        ExternRef { value: handle }
+        ExternRef { value: handle as u64 }
     }
 
     pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> i64 {
