@@ -50,18 +50,13 @@ impl Runtime {
 
     fn add_task<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
         let task = Arc::new(Task { future: Mutex::new(future), });
-        if self.tasks.is_empty() {
-            self.tasks = VecDeque::new();
-        }
         self.tasks.push_back(Box::new(task));
     }
 
     fn poll_tasks(&mut self) {
         if self.tasks.is_empty() {
-            self.tasks = VecDeque::new();
+            return;
         }
-
-        if self.tasks.is_empty() { return; }
 
         for _ in 0..self.tasks.len() {
             let task = self.tasks.pop_front().unwrap();
