@@ -27,10 +27,8 @@ trait Pendable {
     fn is_pending(&self) -> bool;
 }
 
-type TasksList = VecDeque<Box<dyn Pendable + Send>>;
-
 pub struct Runtime {
-    tasks: TasksList,
+    tasks: VecDeque<Box<dyn Pendable + Send>>,
 }
 
 struct Task<T> {
@@ -57,9 +55,6 @@ impl Runtime {
     }
 
     fn poll_tasks(&mut self) {
-        if self.tasks.is_empty() {
-            self.tasks = TasksList::new();
-        }
 
         if self.tasks.is_empty() { return; }
 
