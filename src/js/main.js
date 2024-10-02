@@ -1,7 +1,7 @@
 'use strict'
 
 const objects = []
-const freeList = []
+const objectsFreeList = []
 const functions = []
 
 let _wasmModule = {}
@@ -11,7 +11,7 @@ const allocate = (object) => {
 
     // get index
     let index
-    if (freeList.length > 0) index = freeList.pop()
+    if (objectsFreeList.length > 0) index = objectsFreeList.pop()
     else index = _objectIndex++
 
     // update variables
@@ -21,7 +21,7 @@ const allocate = (object) => {
 
 const deallocate = (handle) => {
     if (!handle) {
-        freeList.push(Number(handle))
+        objectsFreeList.push(Number(handle))
     } else {
         throw new Error('Invalid deallocate handle')
     }
@@ -133,7 +133,7 @@ const getWasmImports = () => {
         js_invoke_function_and_return_array_buffer (handle, start, len) {
             const values = readParams(start, len)
             const result = functions[handle].call({}, ...values)
-            if (result === undefined || result === null) throw new Error('Invalid return arraybuffer')
+            if (result === undefined || result === null) throw new Error('Invalid return array buffer')
 
             const bytes = new Uint8Array(result)
             const id = _wasmModule.instance.exports.create_allocation(bytes.length)
