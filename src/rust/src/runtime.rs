@@ -53,18 +53,18 @@ impl Runtime {
     fn add_task<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
         let task = Arc::new(Task { future: Mutex::new(future), });
         if self.tasks.is_none() {
-            self.tasks = Some(TasksList::new());
+            self.tasks = Some(VecDeque::new());
         }
-        let tasks: &mut TasksList = self.tasks.as_mut().expect("tasks not initialized");
+        let tasks = self.tasks.as_mut().unwrap();
         tasks.push_back(Box::new(task));
     }
 
     fn poll_tasks(&mut self) {
         if self.tasks.is_none() {
-            self.tasks = Some(TasksList::new());
+            self.tasks = Some(VecDeque::new());
         }
 
-        let tasks: &mut TasksList = self.tasks.as_mut().expect("tasks not initialized");
+        let tasks = self.tasks.as_mut().unwrap();
         if tasks.is_empty() { return; }
 
         for _ in 0..tasks.len() {
