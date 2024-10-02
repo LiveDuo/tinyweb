@@ -20,15 +20,10 @@ const allocate = (object) => {
     else index = _nextIndex++
 
     // update variables
-    const currentGeneration = _generations[index]
     _objects[index] = object
-    _generations[index] = currentGeneration === undefined ? 1 : Math.abs(currentGeneration) + 1
 
     // get merged
-    const low = BigInt(index)
-    const high = BigInt(_generations[index]) << BigInt(32)
-    const merged = low | high
-    return merged
+    return BigInt(index)
 }
 
 const deallocate = (handle) => {
