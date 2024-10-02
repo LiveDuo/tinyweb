@@ -48,7 +48,7 @@ impl<T> Pendable for Arc<Task<T>> {
 
 impl Runtime {
 
-    fn add_task<T: Send + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send>>) {
+    fn add_task<T: Send + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + Send + 'static>>) {
         let task = Arc::new(Task { future: Mutex::new(future), });
         self.tasks.push_back(Box::new(task));
     }
@@ -69,14 +69,14 @@ impl Runtime {
 
 static DEFAULT_RUNTIME: Mutex<Runtime> = Mutex::new(Runtime { tasks: VecDeque::new() });
 
-pub fn run<T: Send + 'static>(future: impl Future<Output = T> + 'static + Send) {
+pub fn run<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) {
     DEFAULT_RUNTIME.lock().map(|mut s| {
         s.add_task(Box::pin(future));
         s.poll_tasks();
     }).unwrap()
 }
 
-pub fn coroutine<T: Send + 'static>(future: impl Future<Output = T> + 'static + Send) {
+pub fn coroutine<T: Send + 'static>(future: impl Future<Output = T> + Send + 'static) {
     let mut a = Some(Box::pin(future));
     set_timeout(move || { if let Some(b) = a.take() { run(b); }}, 0);
 }
