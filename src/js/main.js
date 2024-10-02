@@ -5,19 +5,17 @@ const freeList = []
 const functions = []
 
 let _wasmModule = {}
-let _nextIndex = 0
+let _objectIndex = 0
 
 const allocate = (object) => {
 
     // get index
     let index
     if (freeList.length > 0) index = freeList.pop()
-    else index = _nextIndex++
+    else index = _objectIndex++
 
     // update variables
     objects[index] = object
-
-    // get merged
     return BigInt(index)
 }
 
