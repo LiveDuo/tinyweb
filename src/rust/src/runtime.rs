@@ -14,7 +14,7 @@ trait Pendable {
 }
 
 pub struct Runtime {
-    tasks: VecDeque<Box<dyn Pendable + Send + Sync>>,
+    tasks: VecDeque<Box<dyn Pendable + Send>>,
 }
 
 struct Task<T> {
@@ -48,7 +48,7 @@ impl<T> Pendable for Arc<Task<T>> {
 
 impl Runtime {
 
-    fn add_task<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
+    fn add_task<T: Send + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send>>) {
         let task = Arc::new(Task { future: Mutex::new(future), });
         self.tasks.push_back(Box::new(task));
     }
@@ -69,14 +69,14 @@ impl Runtime {
 
 static DEFAULT_RUNTIME: Mutex<Runtime> = Mutex::new(Runtime { tasks: VecDeque::new() });
 
-pub fn run<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
+pub fn run<T: Send + 'static>(future: impl Future<Output = T> + 'static + Send) {
     DEFAULT_RUNTIME.lock().map(|mut s| {
         s.add_task(Box::pin(future));
         s.poll_tasks();
     }).unwrap()
 }
 
-pub fn coroutine<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
+pub fn coroutine<T: Send + 'static>(future: impl Future<Output = T> + 'static + Send) {
     let mut a = Some(Box::pin(future));
     set_timeout(move || { if let Some(b) = a.take() { run(b); }}, 0);
 }
