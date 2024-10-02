@@ -49,10 +49,6 @@ impl<T> Pendable for Arc<Task<T>> {
 }
 
 impl Runtime {
-    fn run<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
-        self.add_task(future);
-        self.poll_tasks();
-    }
 
     fn add_task<T: Send + Sync + 'static>(&mut self, future: Pin<Box<dyn Future<Output = T> + 'static + Send + Sync>>) {
         let task = Arc::new(Task { future: Mutex::new(future), });
@@ -83,7 +79,10 @@ impl Runtime {
 static DEFAULT_RUNTIME: Mutex<Runtime> = Mutex::new(Runtime { tasks: None });
 
 pub fn run<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
-    DEFAULT_RUNTIME.lock().unwrap().run(Box::pin(future))
+    DEFAULT_RUNTIME.lock().map(|mut s| {
+        s.add_task(Box::pin(future));
+        s.poll_tasks();
+    }).unwrap()
 }
 
 pub fn coroutine<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'static + Send + Sync) {
@@ -92,7 +91,10 @@ pub fn coroutine<T: Send + Sync + 'static>(future: impl Future<Output = T> + 'st
         move || {
             let b = a.take();
             if let Some(b) = b {
-                DEFAULT_RUNTIME.lock().unwrap().run(b);
+                DEFAULT_RUNTIME.lock().map(|mut s| {
+                    s.add_task(Box::pin(b));
+                    s.poll_tasks();
+                }).unwrap()
             }
         },
         0,
@@ -112,7 +114,8 @@ mod tests {
         let future = async move {
             has_run_clone.lock().map(|mut s| { *s = true; }).unwrap();
         };
-        DEFAULT_RUNTIME.lock().unwrap().run(Box::pin(future));
+        run(Box::pin(future));
+
         assert_eq!(*has_run.lock().unwrap(), true);
     }
 
