@@ -169,7 +169,6 @@ pub struct JSFunction {
     pub fn_handle: f64,
 }
 
-#[allow(unused_unsafe)]
 impl JSFunction {
 
     pub fn register(code: &str) -> JSFunction {
