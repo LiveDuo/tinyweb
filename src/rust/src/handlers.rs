@@ -117,6 +117,7 @@ pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, 
     globals_get()
 }
 
+// https://rust-lang.github.io/async-book/02_execution/03_wakeups.html
 impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
     pub fn create_future_with_state_id() -> (Self, i64) {
         let state = EventHandlerSharedState { completed: false, waker: None, result: None, };
