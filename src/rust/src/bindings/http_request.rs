@@ -89,13 +89,13 @@ impl XMLHttpRequest {
         .invoke(&[(&(self.0)).into(), key.into(), value.into()]);
     }
 
-    pub fn response_status(&self) -> usize {
+    pub fn response_status(&self) -> u32 {
         JsFunction::register("
             function(request) {
                 return request.status;
             }
             ")
-        .invoke(&[(&(self.0)).into()]) as usize
+        .invoke(&[(&(self.0)).into()]) as u32
     }
 
     pub fn response_text(&self) -> String {
@@ -161,8 +161,8 @@ pub enum HTTPMethod {
 }
 
 pub enum FetchResponse {
-    Text(usize, String),
-    ArrayBuffer(usize, Vec<u8>),
+    Text(u32, String),
+    ArrayBuffer(u32, Vec<u8>),
 }
 
 pub struct FetchOptions<'a> {

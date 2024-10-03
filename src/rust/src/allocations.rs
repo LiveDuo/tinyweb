@@ -5,55 +5,55 @@ thread_local! {
     pub(crate) static ALLOCATIONS: RefCell<Vec<Option<Vec<u8>>>> = RefCell::new(Vec::new());
 }
 
-pub fn get_string_from_allocation(allocation_id: usize) -> String {
+pub fn get_string_from_allocation(allocation_id: u32) -> String {
     ALLOCATIONS.with_borrow(|s| {
-        let allocation = s.get(allocation_id).unwrap();
+        let allocation = s.get(allocation_id as usize).unwrap();
         let vec = allocation.as_ref().unwrap();
         String::from_utf8(vec.clone()).unwrap()
     })
 }
 
-pub fn get_vec_from_allocation(allocation_id: usize) -> Vec<u8> {
+pub fn get_vec_from_allocation(allocation_id: u32) -> Vec<u8> {
     ALLOCATIONS.with_borrow(|s| {
-        let allocation = s.get(allocation_id).unwrap();
+        let allocation = s.get(allocation_id as usize).unwrap();
         let vec = allocation.as_ref().unwrap();
         vec.clone()
     })
 }
 
 #[no_mangle]
-pub fn create_allocation(size: usize) -> usize {
+pub fn create_allocation(size: u32) -> u32 {
     let mut buf = Vec::with_capacity(size as usize);
-    buf.resize(size, 0);
+    buf.resize(size as usize, 0);
 
     ALLOCATIONS.with_borrow_mut(|s| {
         let i = s.len();
         s.push(Some(buf));
         i
-    })
+    }) as u32
 }
 
 #[no_mangle]
-pub fn allocation_ptr(allocation_id: usize) -> *const u8 {
+pub fn allocation_ptr(allocation_id: u32) -> *const u8 {
     ALLOCATIONS.with_borrow(|s| {
-        let allocation = s.get(allocation_id).unwrap();
+        let allocation = s.get(allocation_id as usize).unwrap();
         let vec = allocation.as_ref().unwrap();
         vec.as_ptr()
     })
 }
 
 #[no_mangle]
-pub fn allocation_len(allocation_id: usize) -> f64 {
+pub fn allocation_len(allocation_id: u32) -> f64 {
     ALLOCATIONS.with_borrow(|s| {
-        let allocation = s.get(allocation_id).unwrap();
+        let allocation = s.get(allocation_id as usize).unwrap();
         let vec = allocation.as_ref().unwrap();
         vec.len() as f64
     })
 }
 
-pub fn clear_allocation(allocation_id: usize) {
+pub fn clear_allocation(allocation_id: u32) {
     ALLOCATIONS.with_borrow_mut(|s| {
-        s[allocation_id] = None;
+        s[allocation_id as usize] = None;
     });
 }
 

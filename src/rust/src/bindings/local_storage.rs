@@ -32,7 +32,7 @@ pub fn local_storage_get(key: &str) -> Option<String> {
     if text_allocation_id == 0.0 {
         return None;
     }
-    let text = get_string_from_allocation(text_allocation_id as usize);
+    let text = get_string_from_allocation(text_allocation_id as u32);
     Some(text)
 }
 

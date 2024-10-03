@@ -50,13 +50,13 @@ pub fn history_go(delta: i32) {
     .invoke(&[delta.into()]);
 }
 
-pub fn history_length() -> usize {
+pub fn history_length() -> u32 {
     JsFunction::register("
         function() {
             return window.history.length;
         }
         ")
-    .invoke(&[]) as usize
+    .invoke(&[]) as u32
 }
 
 pub fn location_url() -> String {

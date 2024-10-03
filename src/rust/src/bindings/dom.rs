@@ -128,7 +128,7 @@ fn remove_change_event_handler(id: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_change_event(id: i64, allocation_id: usize) {
+pub extern "C" fn web_handle_change_event(id: i64, allocation_id: u32) {
     CHANGE_EVENT_HANDLERS.with_borrow_mut(|s| {
         if let Some(h) = s.as_mut() {
             for (key, handler) in h.iter_mut() {

@@ -156,7 +156,7 @@ pub struct JsFunction {
 impl JsFunction {
 
     pub fn register(code: &str) -> JsFunction {
-        JsFunction { fn_handle: unsafe { js_register_function(code.as_ptr() as usize as f32, code.len() as u32) } }
+        JsFunction { fn_handle: unsafe { js_register_function(code.as_ptr() as u32 as f32, code.len() as u32) } }
     }
 
     pub fn invoke(&self, params: &[InvokeParam]) -> f64 {
@@ -183,7 +183,7 @@ impl JsFunction {
         let mut me = ManuallyDrop::new(param_bytes);
         let allocation_id =
             unsafe { js_invoke_function_and_return_string(self.fn_handle as f32, me.as_mut_ptr(), me.len() as u32) };
-        crate::allocations::get_string_from_allocation(allocation_id as usize)
+        crate::allocations::get_string_from_allocation(allocation_id as u32)
     }
 
     pub fn invoke_and_return_array_buffer(&self, params: &[InvokeParam]) -> Vec<u8> {
@@ -191,7 +191,7 @@ impl JsFunction {
         let mut me = ManuallyDrop::new(param_bytes);
         let allocation_id =
             unsafe { js_invoke_function_and_return_array_buffer(self.fn_handle as f32, me.as_mut_ptr(), me.len() as u32) };
-        crate::allocations::get_vec_from_allocation(allocation_id as usize)
+        crate::allocations::get_vec_from_allocation(allocation_id as u32)
     }
 
     pub fn invoke_and_return_bool(&self, params: &[InvokeParam]) -> bool {
