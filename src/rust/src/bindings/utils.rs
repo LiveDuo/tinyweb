@@ -10,7 +10,7 @@ pub fn random() -> f32 {
         function(){
             return Math.random();
         }"#);
-    random.invoke(&[])
+    random.invoke(&[]) as f32
 }
 
 // TODO need new linker function
@@ -52,7 +52,7 @@ pub fn get_property_bool(element: &ExternRef, property: &str) -> bool {
             return element[property]?1:0;
         }"#);
     let v = get_property.invoke(&[element.into(), property.into()]);
-    v == 1.0
+    v == 1
 }
 
 pub fn set_property_bool(element: &ExternRef, property: &str, value: bool) {

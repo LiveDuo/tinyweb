@@ -156,10 +156,10 @@ impl JsFunction {
         Self { fn_handle: unsafe { js_register_function(code.as_ptr(), code.len() as u32) } }
     }
 
-    pub fn invoke(&self, params: &[InvokeParam]) -> f32 {
+    pub fn invoke(&self, params: &[InvokeParam]) -> u32 {
         let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
-        unsafe { js_invoke_function(self.fn_handle, me.as_mut_ptr(), me.len() as u32) as f32 }
+        unsafe { js_invoke_function(self.fn_handle, me.as_mut_ptr(), me.len() as u32) }
     }
 
     pub fn invoke_and_return_object(&self, params: &[InvokeParam]) -> ExternRef {
@@ -263,7 +263,7 @@ mod tests {
 
         // invoke
         let result = func.invoke(&[]);
-        assert_eq!(result, 0.0);
+        assert_eq!(result, 0);
         
         // invoke and return object
         let result = func.invoke_and_return_object(&[]);

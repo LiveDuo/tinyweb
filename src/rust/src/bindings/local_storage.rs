@@ -29,7 +29,7 @@ pub fn local_storage_get(key: &str) -> Option<String> {
             return allocationId;
         }"#);
     let text_allocation_id = local_storage_get.invoke(&[key.into()]);
-    if text_allocation_id == 0.0 {
+    if text_allocation_id == 0 {
         return None;
     }
     let text = get_string_from_allocation(text_allocation_id as u32);
