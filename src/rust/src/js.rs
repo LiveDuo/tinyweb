@@ -153,7 +153,7 @@ pub struct JsFunction {
 impl JsFunction {
 
     pub fn register(code: &str) -> JsFunction {
-        JsFunction { fn_handle: unsafe { js_register_function(code.as_ptr(), code.len() as u32) } }
+        Self { fn_handle: unsafe { js_register_function(code.as_ptr(), code.len() as u32) } }
     }
 
     pub fn invoke(&self, params: &[InvokeParam]) -> f32 {
@@ -166,7 +166,7 @@ impl JsFunction {
         let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let handle = unsafe { js_invoke_function_and_return_object(self.fn_handle, me.as_mut_ptr(), me.len() as u32) };
-        ExternRef { value: handle as u64 }
+        ExternRef { value: handle }
     }
 
     pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> i64 {
