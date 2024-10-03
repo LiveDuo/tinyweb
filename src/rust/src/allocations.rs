@@ -43,11 +43,11 @@ pub fn allocation_ptr(allocation_id: u32) -> *const u8 {
 }
 
 #[no_mangle]
-pub fn allocation_len(allocation_id: u32) -> f64 {
+pub fn allocation_len(allocation_id: u32) -> u32 {
     ALLOCATIONS.with_borrow(|s| {
         let allocation = s.get(allocation_id as usize).unwrap();
         let vec = allocation.as_ref().unwrap();
-        vec.len() as f64
+        vec.len() as u32
     })
 }
 
@@ -74,7 +74,7 @@ mod tests {
         assert_eq!(ptr.is_null(), false);
         
         let len = allocation_len(id);
-        assert_eq!(len, 1f64);
+        assert_eq!(len, 1u32);
         
         let id2 = create_allocation(1);
         let allocation = ALLOCATIONS.with_borrow(|s| s[id2 as usize].clone());
