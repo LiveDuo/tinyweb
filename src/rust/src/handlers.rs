@@ -69,7 +69,7 @@ impl<T> Future for EventHandlerFuture<T> {
 }
 
 pub struct SharedStateMap<T> {
-    map: Mutex<HashMap<i64, Arc<Mutex<EventHandlerSharedState<T>>>>>,
+    map: Mutex<HashMap<u32, Arc<Mutex<EventHandlerSharedState<T>>>>>,
 }
 
 impl<T> Default for SharedStateMap<T> {
@@ -81,13 +81,13 @@ impl<T> Default for SharedStateMap<T> {
 impl<T> SharedStateMap<T> {
     pub fn add_shared_state(&self, id: i64, state: Arc<Mutex<EventHandlerSharedState<T>>>) {
         let mut map = self.map.lock().unwrap();
-        map.insert(id, state);
+        map.insert(id as u32, state);
     }
     pub fn wake_future(&self, id: i64, result: T) {
         let mut waker = None;
         {
             let mut map = self.map.lock().unwrap();
-            if let Some(state) = map.remove(&id) {
+            if let Some(state) = map.remove(&(id as u32)) {
                 let mut shared_state = state.lock().unwrap();
                 shared_state.completed = true;
                 shared_state.result = Some(result);

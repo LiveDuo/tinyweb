@@ -6,7 +6,7 @@ use crate::js::JsFunction;
 use crate::bindings::utils::*;
 
 thread_local! {
-    static ANIMATION_FRAME_EVENT_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> = RefCell::new(None);
+    static ANIMATION_FRAME_EVENT_HANDLERS: RefCell<Option<HashMap<u32, Box<dyn FnMut() + 'static>>>> = RefCell::new(None);
 }
 
 #[no_mangle]
@@ -15,7 +15,7 @@ pub extern "C" fn web_one_time_empty_handler(id: i64) {
     {
         ANIMATION_FRAME_EVENT_HANDLERS.with_borrow_mut(|h| {
             if let Some(h) = h.as_mut() {
-                if let Some(handler) = h.remove(&id) {
+                if let Some(handler) = h.remove(&(id as u32)) {
                     c = Some(handler);
                 }
             }
@@ -44,7 +44,7 @@ pub fn request_animation_frame(handler: impl FnMut() + 'static) {
         }
         h.as_mut()
             .unwrap()
-            .insert(function_handle, Box::new(handler));
+            .insert(function_handle as u32, Box::new(handler));
     });
 }
 
@@ -71,7 +71,7 @@ pub fn set_timeout(
         }
         h.as_mut()
             .unwrap()
-            .insert(function_handle, Box::new(handler));
+            .insert(function_handle as u32, Box::new(handler));
     });
     timer_handle
 }

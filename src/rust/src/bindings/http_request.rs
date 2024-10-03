@@ -8,7 +8,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 thread_local! {
-    static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<i64, Box<dyn FnMut() + 'static>>>> =
+    static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<u32, Box<dyn FnMut() + 'static>>>> =
         RefCell::new(None);
 }
 
@@ -18,7 +18,7 @@ fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + 
         if h.is_none() {
             *h = Some(HashMap::new());
         }
-        h.as_mut().unwrap().insert(function_handle, handler);
+        h.as_mut().unwrap().insert(function_handle as u32, handler);
     });
 }
 
@@ -28,7 +28,7 @@ pub extern "C" fn web_handle_http_load_event_handler(id: i64) {
     {
         HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
             if let Some(h) = h.as_mut() {
-                if let Some(handler) = h.remove(&id) {
+                if let Some(handler) = h.remove(&(id as u32)) {
                     c = Some(handler);
                 }
             }
