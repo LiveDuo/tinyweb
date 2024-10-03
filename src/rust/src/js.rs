@@ -28,8 +28,8 @@ impl From<i32> for InvokeParam<'_> {
     fn from(i: i32) -> Self { InvokeParam::Float64(i as f64) }
 }
 
-impl From<usize> for InvokeParam<'_> {
-    fn from(i: usize) -> Self { InvokeParam::Float64(i as f64) }
+impl From<u32> for InvokeParam<'_> {
+    fn from(i: u32) -> Self { InvokeParam::Float64(i as f64) }
 }
 
 impl From<i64> for InvokeParam<'_> {

@@ -342,21 +342,21 @@ impl GPUCanvasAlphaMode {
 }
 
 pub struct GPUBufferDescriptor {
-    pub size: usize,
-    pub usage: usize,
+    pub size: u32,
+    pub usage: u32,
     pub mapped_at_creation: bool,
 }
 
-pub const GPU_BUFFER_USAGE_MAP_READ: usize = 0x0001;
-pub const GPU_BUFFER_USAGE_MAP_WRITE: usize = 0x0002;
-pub const GPU_BUFFER_USAGE_COPY_SRC: usize = 0x0004;
-pub const GPU_BUFFER_USAGE_COPY_DST: usize = 0x0008;
-pub const GPU_BUFFER_USAGE_INDEX: usize = 0x0010;
-pub const GPU_BUFFER_USAGE_VERTEX: usize = 0x0020;
-pub const GPU_BUFFER_USAGE_UNIFORM: usize = 0x0040;
-pub const GPU_BUFFER_USAGE_STORAGE: usize = 0x0080;
-pub const GPU_BUFFER_USAGE_INDIRECT: usize = 0x0100;
-pub const GPU_BUFFER_USAGE_QUERY_RESOLVE: usize = 0x0200;
+pub const GPU_BUFFER_USAGE_MAP_READ: u32 = 0x0001;
+pub const GPU_BUFFER_USAGE_MAP_WRITE: u32 = 0x0002;
+pub const GPU_BUFFER_USAGE_COPY_SRC: u32 = 0x0004;
+pub const GPU_BUFFER_USAGE_COPY_DST: u32 = 0x0008;
+pub const GPU_BUFFER_USAGE_INDEX: u32 = 0x0010;
+pub const GPU_BUFFER_USAGE_VERTEX: u32 = 0x0020;
+pub const GPU_BUFFER_USAGE_UNIFORM: u32 = 0x0040;
+pub const GPU_BUFFER_USAGE_STORAGE: u32 = 0x0080;
+pub const GPU_BUFFER_USAGE_INDIRECT: u32 = 0x0100;
+pub const GPU_BUFFER_USAGE_QUERY_RESOLVE: u32 = 0x0200;
 
 pub struct GPUBuffer(ExternRef);
 
@@ -489,8 +489,8 @@ pub struct GPURenderPipelineDescriptor<'a> {
 
 pub struct GPUVertexAttribute {
     pub format: GPUVertexFormat,
-    pub offset: usize,
-    pub shader_location: usize,
+    pub offset: u32,
+    pub shader_location: u32,
 }
 
 #[derive(Clone, Copy)]
@@ -580,7 +580,7 @@ impl GPUVertexStepMode {
 }
 
 pub struct GPUVertexBufferLayout {
-    pub array_stride: usize,
+    pub array_stride: u32,
     pub step_mode: GPUInputStepMode,
     pub attributes: Vec<GPUVertexAttribute>,
 }
@@ -765,7 +765,7 @@ impl GPURenderPass {
         ]);
     }
 
-    pub fn set_vertex_buffer(&self, slot: usize, buffer: &GPUBuffer) {
+    pub fn set_vertex_buffer(&self, slot: u32, buffer: &GPUBuffer) {
         JsFunction::register(r#"
         function(encoder, slot, buffer){
             encoder.setVertexBuffer(slot, buffer);
@@ -783,7 +783,7 @@ impl GPURenderPass {
         .invoke(&[(&self.0).into(), (&buffer.0).into(), index_format.into()]);
     }
 
-    pub fn draw_indexed(&self, index_count: usize) {
+    pub fn draw_indexed(&self, index_count: u32) {
         JsFunction::register(r#"
         function(encoder, indexCount){
             encoder.drawIndexed(indexCount);
