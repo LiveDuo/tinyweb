@@ -5,13 +5,7 @@ let wasmModule = {}
 const state = { objects: [], objectFreeList: [], objectIndex: 0, functions: [] }
 
 const allocate = (object) => {
-
-    // get index
-    let index
-    if (state.objectFreeList.length > 0) index = state.objectFreeList.pop()
-    else index = state.objectIndex++
-
-    // update variables
+    const index = (state.objectFreeList.length > 0) ? state.objectFreeList.pop() : state.objectIndex++
     state.objects[index] = object
     return BigInt(index)
 }
