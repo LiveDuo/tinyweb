@@ -226,7 +226,7 @@ mod tests {
         assert_eq!(serialize(&[InvokeParam::String(text)]), expected);
 
         // extern ref
-        assert_eq!(serialize(&[InvokeParam::ExternRef(&ExternRef { value: 42 })]), [vec![5], 42u64.to_le_bytes().to_vec()].concat());
+        assert_eq!(serialize(&[InvokeParam::ExternRef(&ExternRef { value: 42 })]), [vec![5], 42u32.to_le_bytes().to_vec()].concat());
         
         // float32 array
         let array = [1.0, 2.0];
