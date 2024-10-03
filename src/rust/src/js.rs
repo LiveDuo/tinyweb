@@ -130,7 +130,7 @@ extern "C" {
     fn js_invoke_function_and_return_bigint(fn_handle: f32, ptr: *const u8, len: u32) -> i64;
     fn js_invoke_function_and_return_string(fn_handle: f32, ptr: *const u8, len: u32) -> f64;
     fn js_invoke_function_and_return_array_buffer(fn_handle: f32, ptr: *const u8, len: u32) -> u32;
-    fn js_invoke_function_and_return_bool(fn_handle: f32, ptr: *const u8, len: u32) -> u64;
+    fn js_invoke_function_and_return_bool(fn_handle: f32, ptr: *const u8, len: u32) -> u32;
 }
 
 #[cfg(test)]
@@ -146,7 +146,7 @@ fn js_invoke_function_and_return_string(_fn_handle: f32, _ptr: *const u8, _len: 
 #[cfg(test)]
 fn js_invoke_function_and_return_array_buffer(_fn_handle: f32, _ptr: *const u8, _len: u32) -> u32 { 0 }
 #[cfg(test)]
-fn js_invoke_function_and_return_bool(_fn_handle: f32, _ptr: *const u8, _len: u32) -> u64 { 0 }
+fn js_invoke_function_and_return_bool(_fn_handle: f32, _ptr: *const u8, _len: u32) -> u32 { 0 }
 
 #[derive(Copy, Clone)]
 pub struct JsFunction {
