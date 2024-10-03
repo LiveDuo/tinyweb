@@ -27,7 +27,7 @@ impl WebGPU {
             async function(state_id){
                 const a = await navigator.gpu.requestAdapter();
                 const ref = allocate(a);
-                _wasmModule.instance.exports.web_extern_ref_callback(state_id, ref);
+                wasmModule.instance.exports.web_extern_ref_callback(state_id, ref);
             }"#)
         .invoke(&[state_id.into()]);
         let adapter_ref = future.await;
@@ -53,7 +53,7 @@ impl GPUAdapter {
             async function(adapter, state_id){
                 const d = await adapter.requestDevice();
                 const ref = allocate(d);
-                _wasmModule.instance.exports.web_extern_ref_callback(state_id, ref);
+                wasmModule.instance.exports.web_extern_ref_callback(state_id, ref);
             }"#)
         .invoke(&[(&(self.0)).into(), state_id.into()]);
         let device_ref = future.await;

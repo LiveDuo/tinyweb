@@ -98,7 +98,7 @@ pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
     let sleep = JsFunction::register(r#"
         function(ms, state_id){
             window.setTimeout(()=>{
-                _wasmModule.instance.exports.web_handle_empty_callback(state_id);
+                wasmModule.instance.exports.web_handle_empty_callback(state_id);
             }, ms);
         }"#);
     let ms = ms.into();
@@ -111,7 +111,7 @@ pub fn wait_til_animation_frame() -> impl Future<Output = ()> {
     let wait_til_animation_frame = JsFunction::register(r#"
         function(state_id){
             window.requestAnimationFrame(()=>{
-                _wasmModule.instance.exports.web_handle_empty_callback(state_id);
+                wasmModule.instance.exports.web_handle_empty_callback(state_id);
             });
         }"#);
     let (future, state_id) = EventHandlerFuture::<()>::create_future_with_state_id();

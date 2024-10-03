@@ -1,6 +1,6 @@
 'use strict'
 
-let _wasmModule = {}
+let wasmModule = {}
 
 const state = { objects: [], objectFreeList: [], objectIndex: 0, functions: [] }
 
@@ -27,7 +27,7 @@ const deallocate = (handle) => {
 // 0 = undefined, 1 = null, 2 = f64, 3 = bigint, 4 = string, 5 = extern ref, 6 = array of f64, 7 = true, 8 = false
 const readParams = (start, length) => {
     
-    const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
+    const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
     const parameters = new Uint8Array(memory.slice(start, start + length))
     const dataView = new DataView(parameters.buffer)
     const values = []
@@ -88,7 +88,7 @@ const getWasmImports = () => {
     const env = {
         js_register_function (start, len, utfByteLen) {
             const decoder = (utfByteLen === 16) ? new TextDecoder('utf-16') : new TextDecoder('utf-8')
-            const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
+            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             const functionBody = decoder.decode(memory.subarray(start, start + len))
             const id = state.functions.length
             state.functions.push(Function(`'use strict';return(${functionBody})`)())
@@ -121,9 +121,9 @@ const getWasmImports = () => {
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
             const bytes = (new TextEncoder()).encode(str)
-            const id = _wasmModule.instance.exports.create_allocation(bytes.length)
-            const ptr = _wasmModule.instance.exports.allocation_ptr(id)
-            const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
+            const id = wasmModule.instance.exports.create_allocation(bytes.length)
+            const ptr = wasmModule.instance.exports.allocation_ptr(id)
+            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             memory.set(bytes, ptr)
             return id
         },
@@ -133,9 +133,9 @@ const getWasmImports = () => {
             if (result === undefined || result === null) throw new Error('Invalid return array buffer')
 
             const bytes = new Uint8Array(result)
-            const id = _wasmModule.instance.exports.create_allocation(bytes.length)
-            const ptr = _wasmModule.instance.exports.allocation_ptr(id)
-            const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
+            const id = wasmModule.instance.exports.create_allocation(bytes.length)
+            const ptr = wasmModule.instance.exports.allocation_ptr(id)
+            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             memory.set(bytes, ptr)
             return id
         },
@@ -150,12 +150,12 @@ const loadWasm = async () => {
     const imports = getWasmImports()
     const wasmScript = document.querySelector('script[type="application/wasm"]')
     const wasmBuffer = await fetch(wasmScript.src).then(r => r.arrayBuffer())
-    _wasmModule = await WebAssembly.instantiate(wasmBuffer, imports)
-    _wasmModule.instance.exports.main()
+    wasmModule = await WebAssembly.instantiate(wasmBuffer, imports)
+    wasmModule.instance.exports.main()
 }
 
 const loadExports = () => {
-    exports._wasmModule = _wasmModule
+    exports.wasmModule = wasmModule
     exports.allocate = allocate
     exports.deallocate = deallocate
     exports.readParams = readParams
