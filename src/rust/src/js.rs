@@ -1,26 +1,10 @@
 
-use std::hash::{Hash, Hasher};
 use std::mem::ManuallyDrop;
 
 
-
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ExternRef { pub value: u64, }
 
-impl PartialEq for ExternRef {
-    fn eq(&self, other: &Self) -> bool {
-        self.value == other.value
-    }
-}
-
-impl Eq for ExternRef {}
-
-impl Hash for ExternRef {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.value.hash(state);
-    }
-}
 
 // preceded by a 32 bit integer indicating its type
 pub enum InvokeParam<'a> {
