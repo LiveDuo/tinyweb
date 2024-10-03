@@ -1,27 +1,30 @@
 'use strict'
 
-const objects = []
-const objectsFreeList = []
-const functions = []
+const state = {
+    objects: [],
+    objectsFreeList: [],
+    objectIndex: 0,
+    functions: []
+}
 
 let _wasmModule = {}
-let _objectIndex = 0
+
 
 const allocate = (object) => {
 
     // get index
     let index
-    if (objectsFreeList.length > 0) index = objectsFreeList.pop()
-    else index = _objectIndex++
+    if (state.objectsFreeList.length > 0) index = state.objectsFreeList.pop()
+    else index = state.objectIndex++
 
     // update variables
-    objects[index] = object
+    state.objects[index] = object
     return BigInt(index)
 }
 
 const deallocate = (handle) => {
-    if (!handle) {
-        objectsFreeList.push(Number(handle))
+    if (handle) {
+        state.objectsFreeList.push(Number(handle))
     } else {
         throw new Error('Invalid deallocate handle')
     }
@@ -56,7 +59,7 @@ const readParams = (start, length) => {
         } else if (parameters[i] === 5) {
             const handle = dataView.getBigInt64(i + 1, true)
             const index = Number(handle)
-            values.push(objects[index])
+            values.push(state.objects[index])
             i += 1 + 8
         } else if (parameters[i] === 6) {
             const start = dataView.getInt32(i + 1, true)
@@ -93,34 +96,34 @@ const getWasmImports = () => {
             const decoder = (utfByteLen === 16) ? new TextDecoder('utf-16') : new TextDecoder('utf-8')
             const memory = new Uint8Array(_wasmModule.instance.exports.memory.buffer)
             const functionBody = decoder.decode(memory.subarray(start, start + len))
-            const id = functions.length
-            functions.push(Function(`'use strict';return(${functionBody})`)())
+            const id = state.functions.length
+            state.functions.push(Function(`'use strict';return(${functionBody})`)())
             return id
         },
         js_invoke_function (handle, start, len) {
             const values = readParams(start, len)
-            const result = functions[handle].call({}, ...values)
+            const result = state.functions[handle].call({}, ...values)
             return result
         },
         js_invoke_function_and_return_object (handle, start, len) {
             const values = readParams(start, len)
-            const result = functions[handle].call({}, ...values)
+            const result = state.functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return object')
             return allocate(result)
         },
         js_invoke_function_and_return_bool (handle, start, len) {
             const values = readParams(start, len)
-            const result = functions[handle].call({}, ...values)
+            const result = state.functions[handle].call({}, ...values)
             return result ? 1 : 0
         },
         js_invoke_function_and_return_bigint (handle, start, len) {
             const values = readParams(start, len)
-            const result = functions[handle].call({}, ...values)
+            const result = state.functions[handle].call({}, ...values)
             return result
         },
         js_invoke_function_and_return_string (handle, start, len) {
             const values = readParams(start, len)
-            const result = functions[handle].call({}, ...values)
+            const result = state.functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
             const bytes = (new TextEncoder()).encode(str)
@@ -132,7 +135,7 @@ const getWasmImports = () => {
         },
         js_invoke_function_and_return_array_buffer (handle, start, len) {
             const values = readParams(start, len)
-            const result = functions[handle].call({}, ...values)
+            const result = state.functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return array buffer')
 
             const bytes = new Uint8Array(result)
