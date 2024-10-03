@@ -97,11 +97,7 @@ pub fn serialize(params: &[InvokeParam]) -> Vec<u8> {
                 param_bytes.extend_from_slice(&len.to_le_bytes());
             }
             InvokeParam::Bool(b) => {
-                if *b {
-                    param_bytes.push(7);
-                } else {
-                    param_bytes.push(8);
-                }
+                param_bytes.push(if *b { 7 } else { 8 });
             }
             InvokeParam::Float64Array(a) => {
                 param_bytes.push(9);
