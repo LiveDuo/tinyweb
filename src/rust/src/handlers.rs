@@ -79,11 +79,11 @@ impl<T> Default for SharedStateMap<T> {
 }
 
 impl<T> SharedStateMap<T> {
-    pub fn add_shared_state(&self, id: i64, state: Arc<Mutex<EventHandlerSharedState<T>>>) {
+    pub fn add_shared_state(&self, id: u32, state: Arc<Mutex<EventHandlerSharedState<T>>>) {
         let mut map = self.map.lock().unwrap();
         map.insert(id as u32, state);
     }
-    pub fn wake_future(&self, id: i64, result: T) {
+    pub fn wake_future(&self, id: u32, result: T) {
         let mut waker = None;
         {
             let mut map = self.map.lock().unwrap();
@@ -119,18 +119,18 @@ pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, 
 
 // https://rust-lang.github.io/async-book/02_execution/03_wakeups.html
 impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
-    pub fn create_future_with_state_id() -> (Self, i64) {
+    pub fn create_future_with_state_id() -> (Self, u32) {
         let state = EventHandlerSharedState { completed: false, waker: None, result: None, };
         let shared_state = Arc::new(Mutex::new(state));
 
-        let id = (random() * std::f32::MAX) as i64;
+        let id = (random() * std::f32::MAX) as u32;
         let state_storage = globals_get::<SharedStateMap<T>>();
         state_storage.add_shared_state(id, shared_state.clone());
 
         (EventHandlerFuture { shared_state: shared_state.clone(), }, id)
     }
 
-    pub fn wake_future_with_state_id(id: i64, result: T) {
+    pub fn wake_future_with_state_id(id: u32, result: T) {
         let state_storage = globals_get::<SharedStateMap<T>>();
         state_storage.wake_future(id, result);
     }
