@@ -67,7 +67,7 @@ mod tests {
     fn test_allocation() {
         
         let id = create_allocation(1);
-        let allocation = ALLOCATIONS.with_borrow(|s| s[id].clone());
+        let allocation = ALLOCATIONS.with_borrow(|s| s[id as usize].clone());
         assert_eq!(allocation.is_some(), true);
 
         let ptr = allocation_ptr(id);
@@ -77,12 +77,12 @@ mod tests {
         assert_eq!(len, 1f64);
         
         let id2 = create_allocation(1);
-        let allocation = ALLOCATIONS.with_borrow(|s| s[id2].clone());
+        let allocation = ALLOCATIONS.with_borrow(|s| s[id2 as usize].clone());
         assert_eq!(allocation.is_some(), true);
 
         clear_allocation(id);
 
-        let allocation = ALLOCATIONS.with_borrow(|s| s[id].clone());
+        let allocation = ALLOCATIONS.with_borrow(|s| s[id as usize].clone());
         assert_eq!(allocation.is_some(), false);
 
     }
@@ -95,7 +95,7 @@ mod tests {
         
         let text = "hello";
         ALLOCATIONS.with_borrow_mut(|s| {
-            s[id] = Some(text.as_bytes().to_vec());
+            s[id as usize] = Some(text.as_bytes().to_vec());
         });
         
         let memory_text = get_string_from_allocation(id);
@@ -106,7 +106,7 @@ mod tests {
         
         let vec = vec![1, 2];
         ALLOCATIONS.with_borrow_mut(|s| {
-            s[id] = Some(vec.clone());
+            s[id as usize] = Some(vec.clone());
         });
         
         let memory_vec = get_vec_from_allocation(id);
