@@ -1,20 +1,14 @@
 'use strict'
 
-const state = {
-    objects: [],
-    objectsFreeList: [],
-    objectIndex: 0,
-    functions: []
-}
-
 let _wasmModule = {}
 
+const state = { objects: [], objectFreeList: [], objectIndex: 0, functions: [] }
 
 const allocate = (object) => {
 
     // get index
     let index
-    if (state.objectsFreeList.length > 0) index = state.objectsFreeList.pop()
+    if (state.objectFreeList.length > 0) index = state.objectFreeList.pop()
     else index = state.objectIndex++
 
     // update variables
@@ -24,7 +18,7 @@ const allocate = (object) => {
 
 const deallocate = (handle) => {
     if (handle) {
-        state.objectsFreeList.push(Number(handle))
+        state.objectFreeList.push(Number(handle))
     } else {
         throw new Error('Invalid deallocate handle')
     }
