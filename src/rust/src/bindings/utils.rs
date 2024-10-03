@@ -5,16 +5,12 @@ use crate::allocations::get_string_from_allocation;
 use crate::handlers::EventHandlerFuture;
 use crate::js::{ExternRef, JsFunction};
 
-pub fn random() -> i64 {
+pub fn random() -> f32 {
     let random = JsFunction::register(r#"
         function(){
             return Math.random();
         }"#);
-    random.invoke(&[]) as i64
-}
-
-pub fn random_i64() -> i64 {
-    random() * std::i64::MAX
+    random.invoke(&[])
 }
 
 // TODO need new linker function

@@ -1,5 +1,5 @@
 
-use crate::bindings::utils::random_i64;
+use crate::bindings::utils::random;
 use crate::js::ExternRef;
 
 use std::{
@@ -123,7 +123,7 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
         let state = EventHandlerSharedState { completed: false, waker: None, result: None, };
         let shared_state = Arc::new(Mutex::new(state));
 
-        let id = random_i64();
+        let id = (random() * std::f32::MAX) as i64;
         let state_storage = globals_get::<SharedStateMap<T>>();
         state_storage.add_shared_state(id, shared_state.clone());
 
