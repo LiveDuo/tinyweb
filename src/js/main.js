@@ -45,10 +45,10 @@ const readParams = (start, length) => {
             values.push((new TextDecoder('utf-8')).decode(memory.subarray(start, start + len)))
             i += 1 + 4 + 4
         } else if (parameters[i] === 5) {
-            const handle = dataView.getBigInt64(i + 1, true)
+            const handle = dataView.getUint32(i + 1, true)
             const index = Number(handle)
             values.push(state.objects[index])
-            i += 1 + 8
+            i += 1 + 4
         } else if (parameters[i] === 6) {
             const start = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)

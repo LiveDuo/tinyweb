@@ -156,7 +156,7 @@ pub extern "C" fn web_handle_history_pop_state_event(id: i64) {
     HISTORY_POP_STATE_EVENT_HANDLERS.with_borrow_mut(|s| {
         if let Some(h) = s {
             for (key, handler) in h.iter_mut() {
-                if key.value == id as u64 {
+                if key.value == id as u32 {
                     handler(PopStateEvent {});
                 }
             }
@@ -177,7 +177,7 @@ pub fn add_history_pop_state_event_listener(
             return id;
         }"#)
     .invoke_and_return_bigint(&[]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u64, });
+    let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     add_history_pop_state_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }

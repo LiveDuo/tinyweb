@@ -3,7 +3,7 @@ use std::mem::ManuallyDrop;
 
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ExternRef { pub value: u64, }
+pub struct ExternRef { pub value: u32, }
 
 
 // preceded by a 32 bit integer indicating its type
@@ -166,7 +166,7 @@ impl JsFunction {
         let param_bytes = serialize(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let handle = unsafe { js_invoke_function_and_return_object(self.fn_handle, me.as_mut_ptr(), me.len() as u32) };
-        ExternRef { value: handle }
+        ExternRef { value: handle as u32 }
     }
 
     pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> i64 {
