@@ -86,7 +86,7 @@ impl CanvasContext {
             function(ctx, text){
                 return ctx.measureText(text).width;
             }"#);
-        measure_text.invoke(&[(&self.0).into(), text.into()])
+        measure_text.invoke(&[(&self.0).into(), text.into()]) as f64
     }
 
     pub fn set_line_width(&self, width: f64) {

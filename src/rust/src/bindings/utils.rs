@@ -10,7 +10,7 @@ pub fn random() -> f64 {
         function(){
             return Math.random();
         }"#);
-    random.invoke(&[])
+    random.invoke(&[]) as f64
 }
 
 pub fn random_i64() -> i64 {
@@ -41,7 +41,7 @@ pub fn get_property_f64(element: &ExternRef, property: &str) -> f64 {
         function(element, property){
             return element[property];
         }"#);
-    get_property.invoke(&[element.into(), property.into()])
+    get_property.invoke(&[element.into(), property.into()]) as f64
 }
 
 pub fn set_property_f64(element: &ExternRef, property: &str, value: f64) {
