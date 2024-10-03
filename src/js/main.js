@@ -80,7 +80,7 @@ const readParams = (start, length) => {
 const getWasmImports = () => {
     
     const env = {
-        js_register_function (start, len, utfByteLen) {
+        __register_function (start, len, utfByteLen) {
             const decoder = (utfByteLen === 16) ? new TextDecoder('utf-16') : new TextDecoder('utf-8')
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             const functionBody = decoder.decode(memory.subarray(start, start + len))
@@ -88,28 +88,28 @@ const getWasmImports = () => {
             state.functions.push(Function(`'use strict';return(${functionBody})`)())
             return id
         },
-        js_invoke_function (handle, start, len) {
+        __invoke_function (handle, start, len) {
             const values = readParams(start, len)
             const result = state.functions[handle].call({}, ...values)
             return result
         },
-        js_invoke_function_and_return_object (handle, start, len) {
+        __invoke_function_and_return_object (handle, start, len) {
             const values = readParams(start, len)
             const result = state.functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return object')
             return allocate(result)
         },
-        js_invoke_function_and_return_bool (handle, start, len) {
+        __invoke_function_and_return_bool (handle, start, len) {
             const values = readParams(start, len)
             const result = state.functions[handle].call({}, ...values)
             return result ? 1 : 0
         },
-        js_invoke_function_and_return_bigint (handle, start, len) {
+        __invoke_function_and_return_bigint (handle, start, len) {
             const values = readParams(start, len)
             const result = state.functions[handle].call({}, ...values)
             return result
         },
-        js_invoke_function_and_return_string (handle, start, len) {
+        __invoke_function_and_return_string (handle, start, len) {
             const values = readParams(start, len)
             const result = state.functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
@@ -121,7 +121,7 @@ const getWasmImports = () => {
             memory.set(bytes, ptr)
             return id
         },
-        js_invoke_function_and_return_array_buffer (handle, start, len) {
+        __invoke_function_and_return_array_buffer (handle, start, len) {
             const values = readParams(start, len)
             const result = state.functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return array buffer')
