@@ -35,7 +35,6 @@ fn setup_temp_project() -> PathBuf {
     std::fs::copy(js_path, temp_dir.join("main.js")).unwrap();
 
     // copy html
-    // let html_path = project_path.join("src").join("rust").join("public").join("index.html");
     let html = r#"<script src="main.js"></script><script type="application/wasm" src="client.wasm"></script>"#;
     std::fs::write(temp_dir.join("index.html"), html).unwrap();
 
