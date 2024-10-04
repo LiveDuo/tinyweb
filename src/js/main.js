@@ -6,8 +6,9 @@ const state = { objects: [], objectFreeList: [], objectIndex: 0, functions: [] }
 
 const allocate = (object) => {
     if (state.objectFreeList.length > 0) state.objectFreeList.pop()
-    state.objects[state.objectIndex + 1] = object
-    return BigInt(state.objectIndex + 1)
+    state.objectIndex++
+    state.objects[state.objectIndex] = object
+    return BigInt(state.objectIndex)
 }
 
 const deallocate = (functionId) => {
