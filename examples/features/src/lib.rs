@@ -14,7 +14,7 @@ use tinyweb::bindings::http_request::{FetchOptions, FetchResponse};
 const BUTTON_CLASSES: &[&str] = &["bg-blue-500", "hover:bg-blue-700", "text-white", "p-2", "rounded", "m-2"];
 
 #[derive(Debug, Default)]
-struct Router { root: Option<ExternRef>, pages: HashMap::<String, El> }
+struct Router { root: Option<ExternRef>, pages: HashMap::<String, (El, Option<String>)> }
 
 impl Router {
     fn navigate(&self, page: &str) {
@@ -24,7 +24,7 @@ impl Router {
         let body = self.root.as_ref().unwrap();
         dom::element_set_inner_html(&body, "");
         
-        let el = self.pages.get(page).unwrap();
+        let (el, _) = self.pages.get(page).unwrap();
         el.mount(&body);
     }
 }
@@ -128,7 +128,7 @@ pub fn main() {
     page1.mount(&body);
     
     // set router
-    let pages = [("page1".to_owned(), page1), ("page2".to_owned(), page2)];
+    let pages = [("page1".to_owned(), (page1, None)), ("page2".to_owned(), (page2, None))];
     let router = Router { pages: HashMap::from_iter(pages), root: Some(body) };
     ROUTER.with(|s| { *s.borrow_mut() = router; });
 
