@@ -80,9 +80,9 @@ pub fn serialize(params: &[InvokeParam]) -> Vec<u8> {
             }
             InvokeParam::String(s) => {
                 param_bytes.push(4);
-                let start = s.as_ptr() as u32;
+                let ptr = s.as_ptr() as u32;
                 let len = s.len();
-                param_bytes.extend_from_slice(&start.to_le_bytes());
+                param_bytes.extend_from_slice(&ptr.to_le_bytes());
                 param_bytes.extend_from_slice(&len.to_le_bytes());
             }
             InvokeParam::ExternRef(i) => {
@@ -91,9 +91,9 @@ pub fn serialize(params: &[InvokeParam]) -> Vec<u8> {
             }
             InvokeParam::Float32Array(a) => {
                 param_bytes.push(6);
-                let start = a.as_ptr() as u32;
+                let ptr = a.as_ptr() as u32;
                 let len = a.len();
-                param_bytes.extend_from_slice(&start.to_le_bytes());
+                param_bytes.extend_from_slice(&ptr.to_le_bytes());
                 param_bytes.extend_from_slice(&len.to_le_bytes());
             }
             InvokeParam::Bool(b) => {
@@ -101,16 +101,16 @@ pub fn serialize(params: &[InvokeParam]) -> Vec<u8> {
             }
             InvokeParam::Float64Array(a) => {
                 param_bytes.push(9);
-                let start = a.as_ptr() as u32;
+                let ptr = a.as_ptr() as u32;
                 let len = a.len();
-                param_bytes.extend_from_slice(&start.to_le_bytes());
+                param_bytes.extend_from_slice(&ptr.to_le_bytes());
                 param_bytes.extend_from_slice(&len.to_le_bytes());
             }
             InvokeParam::Uint32Array(a) => {
                 param_bytes.push(10);
-                let start = a.as_ptr() as u32;
+                let ptr = a.as_ptr() as u32;
                 let len = a.len();
-                param_bytes.extend_from_slice(&start.to_le_bytes());
+                param_bytes.extend_from_slice(&ptr.to_le_bytes());
                 param_bytes.extend_from_slice(&len.to_le_bytes());
             }
         }
