@@ -16,7 +16,7 @@ thread_local! {
     pub static ROUTER: RefCell<Router> = Default::default();
 }
 
-async fn call_backend(url: String, body: Option<&str>) -> JsonValue {
+async fn fetch_json(url: String, body: Option<&str>) -> JsonValue {
     let fetch_options = http_request::FetchOptions { url: &url, body, ..Default::default()};
     let fetch_res = http_request::fetch(fetch_options).await;
     let result = match fetch_res { http_request::FetchResponse::Text(_, d) => Ok(d), _ => Err(()), };
@@ -65,7 +65,7 @@ fn page1() -> El {
         .child(El::new("button").text("api").classes(&BUTTON_CLASSES).on_click(|_| {
             tinyweb::runtime::run(async move {
                 let url = format!("https://pokeapi.co/api/v2/pokemon/{}", 1);
-                let result = call_backend(url, None).await;
+                let result = fetch_json(url, None).await;
                 dom::alert(&result["name"].as_str().unwrap());
             });
         }))
