@@ -114,7 +114,7 @@ const getWasmImports = () => {
             const result = state.functions[handle].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
-            const bytes = (new TextEncoder()).encode(str)
+            const bytes = (new TextEncoder()).encode(result)
             const id = wasmModule.instance.exports.create_allocation(bytes.length)
             const ptr = wasmModule.instance.exports.allocation_ptr(id)
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
