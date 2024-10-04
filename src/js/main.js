@@ -133,7 +133,7 @@ const getWasmImports = () => {
             memory.set(bytes, ptr)
             return id
         },
-        js_externref_drop (obj) {
+        __drop_externref (obj) {
             deallocate(obj)
         },
     }
