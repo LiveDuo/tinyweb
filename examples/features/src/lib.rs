@@ -18,13 +18,13 @@ struct Router { root: Option<ExternRef>, pages: HashMap::<String, (El, Option<St
 
 impl Router {
     fn navigate(&self, page: &str) {
-
-        history::history_push_state("test", page);
+        
+        let (el, title) = self.pages.get(page).unwrap();
+        history::history_push_state(&title.to_owned().unwrap_or_default(), page);
 
         let body = self.root.as_ref().unwrap();
         dom::element_set_inner_html(&body, "");
         
-        let (el, _) = self.pages.get(page).unwrap();
         el.mount(&body);
     }
 }
