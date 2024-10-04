@@ -14,9 +14,9 @@ use tinyweb::bindings::http_request::{FetchOptions, FetchResponse};
 const BUTTON_CLASSES: &[&str] = &["bg-blue-500", "hover:bg-blue-700", "text-white", "p-2", "rounded", "m-2"];
 
 #[derive(Debug, Default)]
-struct Runtime { root: Option<ExternRef>, pages: HashMap::<String, El> }
+struct Router { root: Option<ExternRef>, pages: HashMap::<String, El> }
 
-impl Runtime {
+impl Router {
     fn navigate(&self, page: &str) {
 
         history::history_push_state("test", page);
@@ -30,17 +30,16 @@ impl Runtime {
 }
 
 thread_local! {
-    pub static RUNTIME: RefCell<Runtime> = Default::default();
+    pub static ROUTER: RefCell<Router> = Default::default();
 }
 
-fn get_pokemon() {
-    tinyweb::runtime::run(async move {
-        let fetch_options = FetchOptions { url: "https://pokeapi.co/api/v2/pokemon/1", ..Default::default()};
-        let fetch_res = http_request::fetch(fetch_options).await;
-        let result = match fetch_res { FetchResponse::Text(_, d) => Ok(d), _ => Err(()), };
-        let value = json::parse(&result.unwrap()).unwrap();
-        dom::alert(&value["name"].as_str().unwrap());
-    });
+async fn get_pokemon() {
+    
+    let fetch_options = FetchOptions { url: "https://pokeapi.co/api/v2/pokemon/1", ..Default::default()};
+    let fetch_res = http_request::fetch(fetch_options).await;
+    let result = match fetch_res { FetchResponse::Text(_, d) => Ok(d), _ => Err(()), };
+    let value = json::parse(&result.unwrap()).unwrap();
+    dom::alert(&value["name"].as_str().unwrap());
 }
 
 fn page1() -> El {
@@ -71,7 +70,7 @@ fn page1() -> El {
 
             // start timer
             let signal_time_clone = signal_time_clone.clone();
-            tinyweb::runtime::coroutine(async move {
+            tinyweb::runtime::run(async move {
                 loop {
                     signal_time_clone.set("⏰ tik");
                     tinyweb::bindings::utils::sleep(1_000).await;
@@ -82,9 +81,11 @@ fn page1() -> El {
 
         })
         .classes(&["m-2"])
-        .child(El::new("button").text("api").classes(&BUTTON_CLASSES).on_click(|_| { get_pokemon(); }))
+        .child(El::new("button").text("api").classes(&BUTTON_CLASSES).on_click(|_| {
+            tinyweb::runtime::run(async move { get_pokemon().await; });
+        }))
         .child(El::new("button").text("page 2").classes(&BUTTON_CLASSES).on_click(move |_| {
-            RUNTIME.with(|s| { s.borrow().navigate("page2"); });
+            ROUTER.with(|s| { s.borrow().navigate("page2"); });
         }))
         .child(El::new("br"))
         .child(El::new("button").text("add").classes(&BUTTON_CLASSES).on_click(move |_| {
@@ -109,7 +110,7 @@ fn page2() -> El {
     El::new("div")
         .classes(&["m-2"])
         .child(El::new("button").text("page 1").classes(&BUTTON_CLASSES).on_click(move |_| {
-            RUNTIME.with(|s| { s.borrow().navigate("page1"); });
+            ROUTER.with(|s| { s.borrow().navigate("page1"); });
         }))
 }
 
@@ -126,9 +127,9 @@ pub fn main() {
     let body = dom::query_selector("body");
     page1.mount(&body);
     
-    // set runtime
+    // set router
     let pages = [("page1".to_owned(), page1), ("page2".to_owned(), page2)];
-    let runtime = Runtime { pages: HashMap::from_iter(pages), root: Some(body) };
-    RUNTIME.with(|s| { *s.borrow_mut() = runtime; });
+    let router = Router { pages: HashMap::from_iter(pages), root: Some(body) };
+    ROUTER.with(|s| { *s.borrow_mut() = router; });
 
 }
