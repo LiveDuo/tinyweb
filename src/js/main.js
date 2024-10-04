@@ -80,12 +80,12 @@ const readParams = (start, length) => {
 const getWasmImports = () => {
     
     const env = {
-        __register_function (start, len, utfByteLen) {
-            const decoder = (utfByteLen === 16) ? new TextDecoder('utf-16') : new TextDecoder('utf-8')
+        __register_function (start, len) {
+            const decoder = new TextDecoder('utf-8')
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             const functionBody = decoder.decode(memory.subarray(start, start + len))
-            const id = state.functions.length
             state.functions.push(Function(`'use strict';return(${functionBody})`)())
+            const id = state.functions.length - 1
             return id
         },
         __invoke_function (handle, start, len) {
