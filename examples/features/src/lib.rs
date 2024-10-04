@@ -9,6 +9,7 @@ use tinyweb::element::{El, Router};
 use tinyweb::signals::{Signal, SignalAsync};
 
 use tinyweb::bindings::{console, dom, http_request};
+use tinyweb::bindings::http_request::*;
 
 const BUTTON_CLASSES: &[&str] = &["bg-blue-500", "hover:bg-blue-700", "text-white", "p-2", "rounded", "m-2"];
 
@@ -16,10 +17,12 @@ thread_local! {
     pub static ROUTER: RefCell<Router> = Default::default();
 }
 
-async fn fetch_json(url: String, body: Option<&str>) -> JsonValue {
-    let fetch_options = http_request::FetchOptions { url: &url, body, ..Default::default()};
+async fn fetch_json(method: HTTPMethod, url: String, body: Option<JsonValue>) -> JsonValue {
+    let body_temp = body.map(|s| s.dump());
+    let body = body_temp.as_ref().map(|s| s.as_str());
+    let fetch_options = FetchOptions { action: method, url: &url, body, ..Default::default()};
     let fetch_res = http_request::fetch(fetch_options).await;
-    let result = match fetch_res { http_request::FetchResponse::Text(_, d) => Ok(d), _ => Err(()), };
+    let result = match fetch_res { FetchResponse::Text(_, d) => Ok(d), _ => Err(()), };
     json::parse(&result.unwrap()).unwrap()
 }
 
@@ -65,7 +68,7 @@ fn page1() -> El {
         .child(El::new("button").text("api").classes(&BUTTON_CLASSES).on_click(|_| {
             tinyweb::runtime::run(async move {
                 let url = format!("https://pokeapi.co/api/v2/pokemon/{}", 1);
-                let result = fetch_json(url, None).await;
+                let result = fetch_json(HTTPMethod::GET, url, None).await;
                 dom::alert(&result["name"].as_str().unwrap());
             });
         }))
