@@ -1,7 +1,9 @@
 
+use std::collections::HashMap;
 use std::ops::Deref;
 
 use crate::bindings::dom::{self, MouseEvent};
+use crate::bindings::history;
 use crate::js::ExternRef;
 
 #[derive(Debug, Clone)]
@@ -52,6 +54,22 @@ impl El {
     }
 }
 
+
+#[derive(Debug, Default)]
+pub struct Router { pub root: Option<ExternRef>, pub pages: HashMap::<String, (El, Option<String>)> }
+
+impl Router {
+    pub fn navigate(&self, page: &str) {
+        
+        let (el, title) = self.pages.get(page).unwrap();
+        history::history_push_state(&title.to_owned().unwrap_or_default(), page);
+
+        let body = self.root.as_ref().unwrap();
+        dom::element_set_inner_html(&body, "");
+        
+        el.mount(&body);
+    }
+}
 
 #[cfg(test)]
 mod tests {

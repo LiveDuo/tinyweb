@@ -4,40 +4,22 @@ mod keycodes;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
-use tinyweb::element::El;
-use tinyweb::js::ExternRef;
+use tinyweb::element::{El, Router};
 use tinyweb::signals::{Signal, SignalAsync};
 
-use tinyweb::bindings::{console, dom, history, http_request};
-use tinyweb::bindings::http_request::{FetchOptions, FetchResponse};
+use tinyweb::bindings::{console, dom, http_request};
 
 const BUTTON_CLASSES: &[&str] = &["bg-blue-500", "hover:bg-blue-700", "text-white", "p-2", "rounded", "m-2"];
-
-#[derive(Debug, Default)]
-struct Router { root: Option<ExternRef>, pages: HashMap::<String, (El, Option<String>)> }
-
-impl Router {
-    fn navigate(&self, page: &str) {
-        
-        let (el, title) = self.pages.get(page).unwrap();
-        history::history_push_state(&title.to_owned().unwrap_or_default(), page);
-
-        let body = self.root.as_ref().unwrap();
-        dom::element_set_inner_html(&body, "");
-        
-        el.mount(&body);
-    }
-}
 
 thread_local! {
     pub static ROUTER: RefCell<Router> = Default::default();
 }
 
-async fn get_pokemon() {
-    
-    let fetch_options = FetchOptions { url: "https://pokeapi.co/api/v2/pokemon/1", ..Default::default()};
+async fn get_pokemon(id: u32) {
+    let url = format!("https://pokeapi.co/api/v2/pokemon/{}", id);
+    let fetch_options = http_request::FetchOptions { url: &url, ..Default::default()};
     let fetch_res = http_request::fetch(fetch_options).await;
-    let result = match fetch_res { FetchResponse::Text(_, d) => Ok(d), _ => Err(()), };
+    let result = match fetch_res { http_request::FetchResponse::Text(_, d) => Ok(d), _ => Err(()), };
     let value = json::parse(&result.unwrap()).unwrap();
     dom::alert(&value["name"].as_str().unwrap());
 }
@@ -82,7 +64,7 @@ fn page1() -> El {
         })
         .classes(&["m-2"])
         .child(El::new("button").text("api").classes(&BUTTON_CLASSES).on_click(|_| {
-            tinyweb::runtime::run(async move { get_pokemon().await; });
+            tinyweb::runtime::run(async move { get_pokemon(1).await; });
         }))
         .child(El::new("button").text("page 2").classes(&BUTTON_CLASSES).on_click(move |_| {
             ROUTER.with(|s| { s.borrow().navigate("page2"); });
