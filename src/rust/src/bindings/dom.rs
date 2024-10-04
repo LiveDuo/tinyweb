@@ -1,7 +1,6 @@
 
 use crate::js::{ExternRef, JsFunction, InvokeParam};
 use crate::allocations::get_string_from_allocation;
-use crate::handlers::EventHandler;
 
 use std::collections::HashMap;
 use std::cell::RefCell;
@@ -169,6 +168,42 @@ pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Rc<
         }"#);
     remove_change_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
     remove_change_event_handler(function_handle);
+}
+
+pub struct EventHandler<T> {
+    pub listeners: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(T) + 'static>>>>,
+}
+
+impl<T> EventHandler<T> {
+    pub fn add_listener(&self, id: Rc<ExternRef>, handler: Box<dyn FnMut(T) + 'static>) {
+        let mut handlers = self.listeners.borrow_mut();
+        if let Some(h) = handlers.as_mut() {
+            h.insert(id, handler);
+        } else {
+            let mut h = HashMap::new();
+            h.insert(id, handler);
+            *handlers = Some(h);
+        }
+    }
+
+    pub fn remove_listener(&self, id: &Rc<ExternRef>) {
+        let mut handlers = self.listeners.borrow_mut();
+        if let Some(h) = handlers.as_mut() {
+            h.remove(id);
+        }
+    }
+
+    pub fn call(&self, id: i64, event: T) {
+        let mut handlers = self.listeners.borrow_mut();
+        if let Some(h) = handlers.as_mut() {
+            for (key, handler) in h.iter_mut() {
+                if key.value == id as u32 {
+                    handler(event);
+                    return;
+                }
+            }
+        }
+    }
 }
 
 pub struct MouseEvent {
@@ -424,3 +459,44 @@ pub fn element_remove_key_up_listener(element: &ExternRef, function_handle: &Rc<
     remove_key_up_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
     remove_keyboard_event_handler(function_handle);
 }
+
+
+#[cfg(test)]
+mod tests {
+
+    use crate::js::ExternRef;
+
+    use super::*;
+
+    thread_local! {
+        static EVENT_HANDLER: EventHandler<()> = EventHandler { listeners: RefCell::new(None), };
+    }
+
+    #[test]
+    fn test_run() {
+ 
+        let has_run = Rc::new(RefCell::new(false));
+        let has_run_clone = has_run.clone();
+
+        // add listener
+        let function_handle = Rc::new(ExternRef { value: 0, });
+        let handler = move |_| {
+            *has_run_clone.borrow_mut() = true;
+        };
+        EVENT_HANDLER.with(|s| s.add_listener(function_handle.clone(), Box::new(handler)));
+
+        // call listener
+        EVENT_HANDLER.with(|s| s.call(0, ()));
+        assert_eq!(*has_run.borrow(), true);
+
+        // remove listener
+        EVENT_HANDLER.with(|s| s.remove_listener(&function_handle.clone()));
+        let count = EVENT_HANDLER.with(|s| {
+            s.listeners.borrow().as_ref().map(|s| s.len()).unwrap_or(0)
+        });
+        assert_eq!(count, 0);
+    }
+
+}
+
+
