@@ -1,5 +1,5 @@
 
-use crate::handlers::EventHandlerFuture;
+use crate::runtime::EventHandlerFuture;
 use crate::js::{ExternRef, JsFunction};
 
 use std::collections::HashMap;

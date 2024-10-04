@@ -2,7 +2,7 @@
 use core::future::Future;
 
 use crate::allocations::get_string_from_allocation;
-use crate::handlers::EventHandlerFuture;
+use crate::runtime::EventHandlerFuture;
 use crate::js::{ExternRef, JsFunction};
 
 pub fn random() -> f32 {
