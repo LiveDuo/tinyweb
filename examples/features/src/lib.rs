@@ -4,6 +4,7 @@ mod keycodes;
 use std::cell::RefCell;
 use std::collections::HashMap;
 
+use json::JsonValue;
 use tinyweb::element::{El, Router};
 use tinyweb::signals::{Signal, SignalAsync};
 
@@ -15,13 +16,11 @@ thread_local! {
     pub static ROUTER: RefCell<Router> = Default::default();
 }
 
-async fn get_pokemon(id: u32) {
-    let url = format!("https://pokeapi.co/api/v2/pokemon/{}", id);
-    let fetch_options = http_request::FetchOptions { url: &url, ..Default::default()};
+async fn call_backend(url: String, body: Option<&str>) -> JsonValue {
+    let fetch_options = http_request::FetchOptions { url: &url, body, ..Default::default()};
     let fetch_res = http_request::fetch(fetch_options).await;
     let result = match fetch_res { http_request::FetchResponse::Text(_, d) => Ok(d), _ => Err(()), };
-    let value = json::parse(&result.unwrap()).unwrap();
-    dom::alert(&value["name"].as_str().unwrap());
+    json::parse(&result.unwrap()).unwrap()
 }
 
 fn page1() -> El {
@@ -64,7 +63,11 @@ fn page1() -> El {
         })
         .classes(&["m-2"])
         .child(El::new("button").text("api").classes(&BUTTON_CLASSES).on_click(|_| {
-            tinyweb::runtime::run(async move { get_pokemon(1).await; });
+            tinyweb::runtime::run(async move {
+                let url = format!("https://pokeapi.co/api/v2/pokemon/{}", 1);
+                let result = call_backend(url, None).await;
+                dom::alert(&result["name"].as_str().unwrap());
+            });
         }))
         .child(El::new("button").text("page 2").classes(&BUTTON_CLASSES).on_click(move |_| {
             ROUTER.with(|s| { s.borrow().navigate("page2"); });
