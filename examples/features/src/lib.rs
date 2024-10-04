@@ -129,7 +129,8 @@ pub fn main() {
     
     // set router
     let pages = [("page1".to_owned(), (page1, None)), ("page2".to_owned(), (page2, None))];
-    let router = Router { pages: HashMap::from_iter(pages), root: Some(body) };
-    ROUTER.with(|s| { *s.borrow_mut() = router; });
+    ROUTER.with(|s| {
+        *s.borrow_mut() = Router { pages: HashMap::from_iter(pages), root: Some(body) };
+    });
 
 }
