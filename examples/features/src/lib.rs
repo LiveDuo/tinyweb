@@ -9,7 +9,7 @@ use tinyweb::js::ExternRef;
 use tinyweb::signals::{Signal, SignalAsync};
 
 use tinyweb::bindings::{console, dom, history, http_request};
-use tinyweb::bindings::http_request::{FetchOptions, FetchResponse, FetchResponseType};
+use tinyweb::bindings::http_request::{FetchOptions, FetchResponse};
 
 const BUTTON_CLASSES: &[&str] = &["bg-blue-500", "hover:bg-blue-700", "text-white", "p-2", "rounded", "m-2"];
 
@@ -33,19 +33,12 @@ thread_local! {
     pub static RUNTIME: RefCell<Runtime> = Default::default();
 }
 
-async fn fetch_array_buffer(url: &str) -> Result<Vec<u8>, String> {
-    let fetch_options = FetchOptions { url, response_type: FetchResponseType::ArrayBuffer, ..Default::default()};
-    match http_request::fetch(fetch_options).await {
-        FetchResponse::ArrayBuffer(_, ab) => Ok(ab),
-        FetchResponse::Text(_, _) => Err("Invalid response".to_owned()),
-    }
-}
-
 fn get_pokemon() {
     tinyweb::runtime::run(async move {
-        let result = fetch_array_buffer("https://pokeapi.co/api/v2/pokemon/1").await.unwrap();
-        let string = String::from_utf8(result).unwrap();
-        let value = json::parse(&string).unwrap();
+        let fetch_options = FetchOptions { url: "https://pokeapi.co/api/v2/pokemon/1", ..Default::default()};
+        let fetch_res = http_request::fetch(fetch_options).await;
+        let result = match fetch_res { FetchResponse::Text(_, d) => Ok(d), _ => Err(()), };
+        let value = json::parse(&result.unwrap()).unwrap();
         dom::alert(&value["name"].as_str().unwrap());
     });
 }
