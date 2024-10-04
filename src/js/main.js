@@ -10,19 +10,19 @@ const allocate = (object) => {
     return BigInt(index)
 }
 
-const deallocate = (handle) => {
-    if (handle) {
-        state.objectFreeList.push(Number(handle))
+const deallocate = (functionId) => {
+    if (functionId) {
+        state.objectFreeList.push(Number(functionId))
     } else {
-        throw new Error('Invalid deallocate handle')
+        throw new Error('Invalid deallocate functionId')
     }
 }
 
 // 0 = undefined, 1 = null, 2 = f64, 3 = bigint, 4 = string, 5 = extern ref, 6 = array of f64, 7 = true, 8 = false
-const readParams = (start, length) => {
+const readParams = (ptr, length) => {
     
     const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-    const parameters = new Uint8Array(memory.slice(start, start + length))
+    const parameters = new Uint8Array(memory.slice(ptr, ptr + length))
     const dataView = new DataView(parameters.buffer)
     const values = []
     let i = 0
@@ -40,19 +40,19 @@ const readParams = (start, length) => {
             values.push(dataView.getBigInt64(i + 1, true))
             i += 1 + 8
         } else if (parameters[i] === 4) {
-            const start = dataView.getInt32(i + 1, true)
+            const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
-            values.push((new TextDecoder('utf-8')).decode(memory.subarray(start, start + len)))
+            values.push((new TextDecoder('utf-8')).decode(memory.subarray(ptr, ptr + len)))
             i += 1 + 4 + 4
         } else if (parameters[i] === 5) {
-            const handle = dataView.getUint32(i + 1, true)
-            const index = Number(handle)
+            const functionId = dataView.getUint32(i + 1, true)
+            const index = Number(functionId)
             values.push(state.objects[index])
             i += 1 + 4
         } else if (parameters[i] === 6) {
-            const start = dataView.getInt32(i + 1, true)
+            const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
-            values.push(new Float32Array(memory.buffer.slice(start, start + len * 4)))
+            values.push(new Float32Array(memory.buffer.slice(ptr, ptr + len * 4)))
             i += 1 + 4 + 4
         } else if (parameters[i] === 7) {
             values.push(true)
@@ -61,14 +61,14 @@ const readParams = (start, length) => {
             values.push(false)
             i += 1
         } else if (parameters[i] === 9) {
-            const start = dataView.getInt32(i + 1, true)
+            const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
-            values.push(new Float64Array(memory.buffer.slice(start, start + len * 8)))
+            values.push(new Float64Array(memory.buffer.slice(ptr, ptr + len * 8)))
             i += 1 + 4 + 4
         } else if (parameters[i] === 10) {
-            const start = dataView.getInt32(i + 1, true)
+            const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
-            values.push(new Uint32Array(memory.buffer.slice(start, start + len * 4)))
+            values.push(new Uint32Array(memory.buffer.slice(ptr, ptr + len * 4)))
             i += 1 + 4 + 4
         } else {
             throw new Error('Invalid parameter type')
@@ -80,57 +80,57 @@ const readParams = (start, length) => {
 const getWasmImports = () => {
     
     const env = {
-        __register_function (start, len) {
+        __register_function (ptr, len) {
             const decoder = new TextDecoder('utf-8')
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-            const functionBody = decoder.decode(memory.subarray(start, start + len))
+            const functionBody = decoder.decode(memory.subarray(ptr, ptr + len))
             state.functions.push(Function(`'use strict';return(${functionBody})`)())
             const id = state.functions.length - 1
             return id
         },
-        __invoke_function (handle, start, len) {
-            const values = readParams(start, len)
-            const result = state.functions[handle].call({}, ...values)
+        __invoke_function (functionId, ptr, len) {
+            const values = readParams(ptr, len)
+            const result = state.functions[functionId].call({}, ...values)
             return result
         },
-        __invoke_function_and_return_object (handle, start, len) {
-            const values = readParams(start, len)
-            const result = state.functions[handle].call({}, ...values)
+        __invoke_function_and_return_object (functionId, ptr, len) {
+            const values = readParams(ptr, len)
+            const result = state.functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return object')
             return allocate(result)
         },
-        __invoke_function_and_return_bool (handle, start, len) {
-            const values = readParams(start, len)
-            const result = state.functions[handle].call({}, ...values)
+        __invoke_function_and_return_bool (functionId, ptr, len) {
+            const values = readParams(ptr, len)
+            const result = state.functions[functionId].call({}, ...values)
             return result ? 1 : 0
         },
-        __invoke_function_and_return_bigint (handle, start, len) {
-            const values = readParams(start, len)
-            const result = state.functions[handle].call({}, ...values)
+        __invoke_function_and_return_bigint (functionId, ptr, len) {
+            const values = readParams(ptr, len)
+            const result = state.functions[functionId].call({}, ...values)
             return result
         },
-        __invoke_function_and_return_string (handle, start, len) {
-            const values = readParams(start, len)
-            const result = state.functions[handle].call({}, ...values)
+        __invoke_function_and_return_string (functionId, ptr, len) {
+            const values = readParams(ptr, len)
+            const result = state.functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
             const bytes = (new TextEncoder()).encode(result)
             const id = wasmModule.instance.exports.create_allocation(bytes.length)
-            const ptr = wasmModule.instance.exports.allocation_ptr(id)
+            const allocationPtr = wasmModule.instance.exports.allocation_ptr(id)
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-            memory.set(bytes, ptr)
+            memory.set(bytes, allocationPtr)
             return id
         },
-        __invoke_function_and_return_array_buffer (handle, start, len) {
-            const values = readParams(start, len)
-            const result = state.functions[handle].call({}, ...values)
+        __invoke_function_and_return_array_buffer (functionId, ptr, len) {
+            const values = readParams(ptr, len)
+            const result = state.functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return array buffer')
 
             const bytes = new Uint8Array(result)
             const id = wasmModule.instance.exports.create_allocation(bytes.length)
-            const ptr = wasmModule.instance.exports.allocation_ptr(id)
+            const allocationPtr = wasmModule.instance.exports.allocation_ptr(id)
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-            memory.set(bytes, ptr)
+            memory.set(bytes, allocationPtr)
             return id
         },
         __drop_externref (obj) {
