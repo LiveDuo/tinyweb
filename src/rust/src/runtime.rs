@@ -184,4 +184,20 @@ mod tests {
         assert_eq!(*has_run.lock().unwrap(), true);
     }
 
+    #[test]
+    fn test_future() {
+
+        run(async move {
+            let (future, state_id) = EventHandlerFuture::<bool>::create_future_with_state_id();
+            assert_eq!(future.shared_state.lock().map(|s| s.result).unwrap(), None);
+            
+            EventHandlerFuture::<bool>::wake_future_with_state_id(state_id, true);
+            assert_eq!(future.shared_state.lock().map(|s| s.result).unwrap(), Some(true));
+            
+            let result = future.await;
+            assert_eq!(result, true);
+        });
+
+    }
+
 }
