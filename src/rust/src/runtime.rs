@@ -36,12 +36,6 @@ pub struct SharedStateMap<T> {
     map: Mutex<HashMap<u32, Arc<Mutex<EventHandlerSharedState<T>>>>>,
 }
 
-impl<T> Default for SharedStateMap<T> {
-    fn default() -> Self {
-        Self { map: Mutex::new(HashMap::new()), }
-    }
-}
-
 impl<T> SharedStateMap<T> {
     pub fn add_shared_state(&self, id: u32, state: Arc<Mutex<EventHandlerSharedState<T>>>) {
         let mut map = self.map.lock().unwrap();
@@ -66,19 +60,19 @@ impl<T> SharedStateMap<T> {
 
 static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> = Mutex::new(LinkedList::new());
 
-pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, T> {
+pub fn globals_get<T: Send + Sync + 'static>() -> MutexGuard<'static, SharedStateMap<T>> {
 
     let mut globals = GLOBALS_LIST.lock().unwrap();
-    let id = TypeId::of::<T>();
+    let id = TypeId::of::<SharedStateMap<T>>();
 
     let mutex = if let Some(v) = globals.iter().find(|&r| r.0 == id) {
-        unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<T>) }
+        unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<SharedStateMap<T>>) }
     } else {
-        let v = Box::new(Mutex::new(T::default()));
+        let v = Box::new(Mutex::new(SharedStateMap { map: Mutex::new(HashMap::new()), }));
         let leaked = Box::leak(v);
         globals.push_front((id, leaked));
     
-        unsafe { &*(leaked as *const Mutex<T>) }
+        unsafe { &*(leaked as *const Mutex<SharedStateMap<T>>) }
     };
     return mutex.lock().unwrap();
 }
@@ -90,14 +84,14 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
         let shared_state = Arc::new(Mutex::new(state));
 
         let id = (random() * std::f32::MAX) as u32;
-        let state_storage = globals_get::<SharedStateMap<T>>();
+        let state_storage = globals_get::<T>();
         state_storage.add_shared_state(id, shared_state.clone());
 
         (EventHandlerFuture { shared_state: shared_state.clone(), }, id)
     }
 
     pub fn wake_future_with_state_id(id: u32, result: T) {
-        let state_storage = globals_get::<SharedStateMap<T>>();
+        let state_storage = globals_get::<T>();
         state_storage.wake_future(id, result);
     }
 }
