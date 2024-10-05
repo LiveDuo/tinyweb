@@ -68,16 +68,16 @@ static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + S
 
 pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, T> {
 
+    let mut globals = GLOBALS_LIST.lock().unwrap();
+    let id = TypeId::of::<T>();
     loop {
-        let mut globals = GLOBALS_LIST.lock().unwrap();
-        let id = TypeId::of::<T>();
         if let Some(v) = globals.iter().find(|&r| r.0 == id) {
             let m = unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<T>) };
             return m.lock().unwrap();
+        } else {
+            let v = Box::new(Mutex::new(T::default()));
+            globals.push_front((id,  Box::leak(v)));
         }
-        let v = Box::new(Mutex::new(T::default()));
-        let handle = Box::leak(v);
-        globals.push_front((id, handle));
     }
 }
 
