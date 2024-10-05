@@ -71,17 +71,16 @@ pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, 
     let mut globals = GLOBALS_LIST.lock().unwrap();
     let id = TypeId::of::<T>();
 
-    if let Some(v) = globals.iter().find(|&r| r.0 == id) {
-        let m = unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<T>) };
-        return m.lock().unwrap();
+    let mutex = if let Some(v) = globals.iter().find(|&r| r.0 == id) {
+        unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<T>) }
     } else {
         let v = Box::new(Mutex::new(T::default()));
         let leaked = Box::leak(v);
         globals.push_front((id, leaked));
     
-        let m = unsafe { &*(leaked as *const Mutex<T>) };
-        m.lock().unwrap()
-    }
+        unsafe { &*(leaked as *const Mutex<T>) }
+    };
+    return mutex.lock().unwrap();
 }
 
 // https://rust-lang.github.io/async-book/02_execution/03_wakeups.html
