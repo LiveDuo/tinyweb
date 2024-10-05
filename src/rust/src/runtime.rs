@@ -37,10 +37,6 @@ pub struct SharedStateMap<T> {
 }
 
 impl<T> SharedStateMap<T> {
-    pub fn add_shared_state(&self, id: u32, state: Arc<Mutex<EventHandlerSharedState<T>>>) {
-        let mut map = self.map.lock().unwrap();
-        map.insert(id as u32, state);
-    }
     pub fn wake_future(&self, id: u32, result: T) {
         let mut waker = None;
         {
@@ -85,7 +81,9 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
 
         let id = (random() * std::f32::MAX) as u32;
         let state_storage = globals_get::<T>();
-        state_storage.add_shared_state(id, shared_state.clone());
+        state_storage.map.lock().map(|mut s| {
+            s.insert(id as u32, shared_state.clone());
+        }).unwrap();
 
         (EventHandlerFuture { shared_state: shared_state.clone(), }, id)
     }
