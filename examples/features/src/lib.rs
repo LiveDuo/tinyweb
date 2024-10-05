@@ -14,7 +14,7 @@ use tinyweb::bindings::http_request::*;
 const BUTTON_CLASSES: &[&str] = &["bg-blue-500", "hover:bg-blue-700", "text-white", "p-2", "rounded", "m-2"];
 
 thread_local! {
-    pub static ROUTER: RefCell<Router> = Default::default();
+    pub static ROUTER: RefCell<Router> = RefCell::new(Router::default());
 }
 
 async fn fetch_json(method: HTTPMethod, url: String, body: Option<JsonValue>) -> JsonValue {
