@@ -67,7 +67,8 @@ impl<T> SharedStateMap<T> {
 static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> = Mutex::new(LinkedList::new());
 
 pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, T> {
-    {
+
+    loop {
         let mut globals = GLOBALS_LIST.lock().unwrap();
         let id = TypeId::of::<T>();
         if let Some(v) = globals.iter().find(|&r| r.0 == id) {
@@ -78,7 +79,6 @@ pub fn globals_get<T: Default + Send + Sync + 'static>() -> MutexGuard<'static, 
         let handle = Box::leak(v);
         globals.push_front((id, handle));
     }
-    globals_get()
 }
 
 // https://rust-lang.github.io/async-book/02_execution/03_wakeups.html
