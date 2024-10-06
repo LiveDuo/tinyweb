@@ -125,7 +125,7 @@ pub fn location_reload() {
 pub struct PopStateEvent {}
 
 thread_local! {
-    pub static HISTORY_POP_STATE_EVENT_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(PopStateEvent) + 'static>>>> = Default::default();
+    static HISTORY_POP_STATE_EVENT_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(PopStateEvent) + 'static>>>> = Default::default();
 }
 
 fn add_history_pop_state_event_handler(

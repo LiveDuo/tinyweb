@@ -2,7 +2,7 @@
 use std::cell::RefCell;
 
 thread_local! {
-    pub(crate) static ALLOCATIONS: RefCell<Vec<Option<Vec<u8>>>> = RefCell::new(Vec::new());
+    pub static ALLOCATIONS: RefCell<Vec<Option<Vec<u8>>>> = RefCell::new(Vec::new());
 }
 
 pub fn get_string_from_allocation(allocation_id: u32) -> String {

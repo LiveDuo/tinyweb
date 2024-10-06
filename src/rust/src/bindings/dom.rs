@@ -99,7 +99,7 @@ pub struct ChangeEvent {
 }
 
 thread_local! {
-    pub static CHANGE_EVENT_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(ChangeEvent) + 'static>>>> = Default::default();
+    static CHANGE_EVENT_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(ChangeEvent) + 'static>>>> = Default::default();
 }
 
 fn add_change_event_handler(
@@ -212,7 +212,7 @@ pub struct MouseEvent {
 }
 
 thread_local! {
-    pub static MOUSE_EVENT_HANDLER: EventHandler<MouseEvent> = EventHandler { listeners: RefCell::new(None) };
+    static MOUSE_EVENT_HANDLER: EventHandler<MouseEvent> = EventHandler { listeners: RefCell::new(None) };
 }
 
 #[no_mangle]
@@ -362,7 +362,7 @@ pub struct KeyboardEvent {
 }
 
 thread_local! {
-    pub static KEYBOARD_EVENT_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(KeyboardEvent) + 'static>>>> = Default::default();
+    static KEYBOARD_EVENT_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(KeyboardEvent) + 'static>>>> = Default::default();
 }
 
 fn add_keyboard_event_handler(

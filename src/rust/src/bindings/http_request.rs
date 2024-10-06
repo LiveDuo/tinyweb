@@ -8,8 +8,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 thread_local! {
-    static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<u32, Box<dyn FnMut() + 'static>>>> =
-        RefCell::new(None);
+    static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<u32, Box<dyn FnMut() + 'static>>>> = RefCell::new(None);
 }
 
 fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + 'static>) {
