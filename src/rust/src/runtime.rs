@@ -96,18 +96,18 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
 
 fn simple_waker<T>(task: &Arc<Task<T>>) -> Waker {
 
-    fn clone_arc_raw<T>(data: *const ()) -> RawWaker {
-        let _arc = unsafe { ManuallyDrop::new(Arc::<T>::from_raw(data as *const T)).clone() };
+    fn clone_fn<T>(data: *const ()) -> RawWaker {
+        let _arc = ManuallyDrop::new(unsafe { Arc::<T>::from_raw(data as *const T) });
         RawWaker::new(data, waker_vtable::<T>())
     }
-    fn wake_arc_raw(_data: *const ()) {
+    fn wake_fn(_data: *const ()) {
         set_timeout(|| { DEFAULT_RUNTIME.lock().unwrap().poll_tasks(); }, 0);
     }
-    fn drop_arc_raw<T>(data: *const ()) {
+    fn drop_fn<T>(data: *const ()) {
         unsafe { drop(Arc::<T>::from_raw(data as *const T)) }
     }
     fn waker_vtable<T>() -> &'static RawWakerVTable {
-        &RawWakerVTable::new(clone_arc_raw::<T>, wake_arc_raw, wake_arc_raw, drop_arc_raw::<T>)
+        &RawWakerVTable::new(clone_fn::<T>, wake_fn, wake_fn, drop_fn::<T>)
     }
     let ptr = (&**task as *const Task<T>) as *const ();
     let raw_waker = RawWaker::new(ptr, waker_vtable::<Task<T>>());
