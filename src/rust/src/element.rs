@@ -43,7 +43,7 @@ impl El {
         }
         self
     }
-    pub fn on_mount(self, cb: impl Fn(&Self) + 'static) -> Self {
+    pub fn on_mount(self, mut cb: impl FnMut(&Self) + 'static) -> Self {
         cb(&self);
         self
     }
