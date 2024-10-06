@@ -37,6 +37,12 @@ impl El {
         dom::append_child(&self, &child);
         self
     }
+    pub fn children(self, children: &[El]) -> Self {
+        for child in children {
+            dom::append_child(&self, &child);
+        }
+        self
+    }
     pub fn on_mount(self, cb: impl Fn(&Self) + 'static) -> Self {
         cb(&self);
         self
