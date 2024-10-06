@@ -56,7 +56,7 @@ impl<T> SharedStateMap<T> {
 
 static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + Sync>)>> = Mutex::new(LinkedList::new());
 
-pub fn globals_get<T: Send + Sync + 'static>() -> MutexGuard<'static, SharedStateMap<T>> {
+pub fn get_globals_mutex<T: Send + Sync + 'static>() -> MutexGuard<'static, SharedStateMap<T>> {
 
     let mut globals = GLOBALS_LIST.lock().unwrap();
     let id = TypeId::of::<SharedStateMap<T>>();
@@ -80,7 +80,7 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
         let shared_state = Arc::new(Mutex::new(state));
 
         let id = (random() * std::f32::MAX) as u32;
-        let state_storage = globals_get::<T>();
+        let state_storage = get_globals_mutex::<T>();
         state_storage.map.lock().map(|mut s| {
             s.insert(id as u32, shared_state.clone());
         }).unwrap();
@@ -89,7 +89,7 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
     }
 
     pub fn wake_future_with_state_id(id: u32, result: T) {
-        let state_storage = globals_get::<T>();
+        let state_storage = get_globals_mutex::<T>();
         state_storage.wake_future(id, result);
     }
 }
