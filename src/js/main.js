@@ -21,7 +21,7 @@ const deallocate = (functionId) => {
 
 const writeStringToMemory = (str) => {
     const bytes = (new TextEncoder()).encode(str)
-    const id = wasmModule.instance.exports.create_allocation(size)
+    const id = wasmModule.instance.exports.create_allocation(bytes.length)
     const ptr = wasmModule.instance.exports.allocation_ptr(id)
     const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
     memory.set(bytes, ptr)
