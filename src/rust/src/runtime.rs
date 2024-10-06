@@ -59,14 +59,17 @@ static GLOBALS_LIST: Mutex<LinkedList<(TypeId, &'static Mutex<dyn Any + Send + S
 pub fn get_globals_mutex<T: Send + Sync + 'static>() -> MutexGuard<'static, SharedStateMap<T>> {
 
     let mut globals = GLOBALS_LIST.lock().unwrap();
-    let id = TypeId::of::<SharedStateMap<T>>();
+    let type_id = TypeId::of::<SharedStateMap<T>>();
 
-    let mutex = if let Some(v) = globals.iter().find(|&r| r.0 == id) {
-        unsafe { &*(v.1 as *const Mutex<dyn Any + Send + Sync> as *const Mutex<SharedStateMap<T>>) }
+    let list_opt = globals.iter().find(|(r, _)| *r == type_id)
+        .map(|(_, v)| *v as *const Mutex<dyn Any + Send + Sync>);
+    
+    let mutex = if let Some(v) = list_opt {
+        unsafe { &*(v as *const Mutex<SharedStateMap<T>>) }
     } else {
-        let v = Box::new(Mutex::new(SharedStateMap { map: Mutex::new(HashMap::new()), }));
+        let v = Box::new(Mutex::new(SharedStateMap { map: Mutex::new(HashMap::new()) }));
         let leaked = Box::leak(v);
-        globals.push_front((id, leaked));
+        globals.push_front((type_id, leaked));
     
         unsafe { &*(leaked as *const Mutex<SharedStateMap<T>>) }
     };
