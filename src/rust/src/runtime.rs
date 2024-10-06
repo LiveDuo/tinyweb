@@ -114,16 +114,10 @@ fn simple_waker<T>(task: &Arc<Task<T>>) -> Waker {
     unsafe { Waker::from_raw(raw_waker) }
 }
 
+struct Task<T> { future: Mutex<Pin<Box<dyn Future<Output = T> + Send + 'static>>>, }
+
 trait Pendable {
     fn is_pending(&self) -> bool;
-}
-
-pub struct Runtime {
-    tasks: VecDeque<Box<dyn Pendable + Send>>,
-}
-
-struct Task<T> {
-    future: Mutex<Pin<Box<dyn Future<Output = T> + Send + 'static>>>,
 }
 
 impl<T> Pendable for Arc<Task<T>> {
@@ -134,6 +128,8 @@ impl<T> Pendable for Arc<Task<T>> {
         matches!(future.as_mut().poll(context), Poll::Pending)
     }
 }
+
+pub struct Runtime { tasks: VecDeque<Box<dyn Pendable + Send>> }
 
 impl Runtime {
 
