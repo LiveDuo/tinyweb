@@ -164,9 +164,7 @@ pub extern "C" fn web_handle_history_pop_state_event(id: i64) {
     });
 }
 
-pub fn add_history_pop_state_event_listener(
-    handler: impl FnMut(PopStateEvent) + 'static,
-) -> Rc<ExternRef> {
+pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) + 'static) -> Rc<ExternRef> {
     let function_ref = JsFunction::register(r#"
         function(){
             const handler = (e) => {
@@ -182,10 +180,7 @@ pub fn add_history_pop_state_event_listener(
     function_handle
 }
 
-pub fn remove_history_pop_state_listener(
-    element: &ExternRef,
-    function_handle: &Rc<ExternRef>,
-) {
+pub fn remove_history_pop_state_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
     JsFunction::register(r#"
         function(element, f){
             window.removeEventListener("popstate", f);

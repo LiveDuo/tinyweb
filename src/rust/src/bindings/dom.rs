@@ -140,10 +140,7 @@ pub extern "C" fn web_handle_change_event(id: i64, allocation_id: u32) {
     });
 }
 
-pub fn add_change_event_listener(
-    element: &ExternRef,
-    handler: impl FnMut(ChangeEvent) + 'static,
-) -> Rc<ExternRef> {
+pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(ChangeEvent) + 'static) -> Rc<ExternRef> {
     let function_ref = JsFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -223,10 +220,7 @@ pub extern "C" fn web_handle_mouse_event_handler(id: i64, x: f64, y: f64) {
     })
 }
 
-pub fn element_add_click_listener(
-    element: &ExternRef,
-    handler: impl FnMut(MouseEvent) + 'static,
-) -> Rc<ExternRef> {
+pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
     let function_ref = JsFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -255,10 +249,7 @@ pub fn element_remove_click_listener(element: &ExternRef, function_handle: &Rc<E
     });
 }
 
-pub fn element_add_mouse_move_listener(
-    element: &ExternRef,
-    handler: impl FnMut(MouseEvent) + 'static,
-) -> Rc<ExternRef> {
+pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
     let function_ref = JsFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -275,10 +266,7 @@ pub fn element_add_mouse_move_listener(
     function_handle
 }
 
-pub fn element_remove_mouse_move_listener(
-    element: &ExternRef,
-    function_handle: &Rc<ExternRef>,
-) {
+pub fn element_remove_mouse_move_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
     let remove_mouse_move_listener = JsFunction::register(r#"
         function(element, f){
             element.removeEventListener("mousemove", f);
@@ -289,10 +277,7 @@ pub fn element_remove_mouse_move_listener(
     });
 }
 
-pub fn element_add_mouse_down_listener(
-    element: &ExternRef,
-    handler: impl FnMut(MouseEvent) + 'static,
-) -> Rc<ExternRef> {
+pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
     let function_ref = JsFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -309,10 +294,7 @@ pub fn element_add_mouse_down_listener(
     function_handle
 }
 
-pub fn element_remove_mouse_down_listener(
-    element: &ExternRef,
-    function_handle: &Rc<ExternRef>,
-) {
+pub fn element_remove_mouse_down_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
     let remove_mouse_down_listener = JsFunction::register(r#"
         function(element, f){
             element.removeEventListener("mousedown", f);
@@ -323,10 +305,7 @@ pub fn element_remove_mouse_down_listener(
     });
 }
 
-pub fn element_add_mouse_up_listener(
-    element: &ExternRef,
-    handler: impl FnMut(MouseEvent) + 'static,
-) -> Rc<ExternRef> {
+pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
     let function_ref = JsFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -343,10 +322,7 @@ pub fn element_add_mouse_up_listener(
     function_handle
 }
 
-pub fn element_remove_mouse_up_listener(
-    element: &ExternRef,
-    function_handle: &Rc<ExternRef>,
-) {
+pub fn element_remove_mouse_up_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
     let remove_mouse_up_listener = JsFunction::register(r#"
         function(element, f){
             element.removeEventListener("mouseup", f);
@@ -401,10 +377,7 @@ pub extern "C" fn web_handle_keyboard_event_handler(id: i64, key_code: f64) {
     });
 }
 
-pub fn element_add_key_down_listener(
-    element: &ExternRef,
-    handler: impl FnMut(KeyboardEvent) + 'static,
-) -> Rc<ExternRef> {
+pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(KeyboardEvent) + 'static) -> Rc<ExternRef> {
     let function_ref = JsFunction::register(r#"
         function(element ){
             const handler = (e) => {
@@ -420,10 +393,7 @@ pub fn element_add_key_down_listener(
     function_handle
 }
 
-pub fn element_remove_key_down_listener(
-    element: &ExternRef,
-    function_handle: &Rc<ExternRef>,
-) {
+pub fn element_remove_key_down_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
     let remove_key_down_listener = JsFunction::register(r#"
         function(element, f){
             element.removeEventListener("keydown", f);
@@ -432,10 +402,7 @@ pub fn element_remove_key_down_listener(
     remove_keyboard_event_handler(function_handle);
 }
 
-pub fn element_add_key_up_listener(
-    element: &ExternRef,
-    handler: impl FnMut(KeyboardEvent) + 'static,
-) -> Rc<ExternRef> {
+pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(KeyboardEvent) + 'static) -> Rc<ExternRef> {
     let function_ref = JsFunction::register(r#"
         function(element ){
             const handler = (e) => {
