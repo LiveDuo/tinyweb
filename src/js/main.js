@@ -19,6 +19,15 @@ const deallocate = (functionId) => {
     }
 }
 
+const writeStringToMemory = (str) => {
+    const bytes = (new TextEncoder()).encode(str)
+    const id = wasmModule.instance.exports.create_allocation(size)
+    const ptr = wasmModule.instance.exports.allocation_ptr(id)
+    const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
+    memory.set(bytes, ptr)
+    return id
+}
+
 // 0 = undefined, 1 = null, 2 = f64, 3 = bigint, 4 = string, 5 = extern ref, 6 = array of f64, 7 = true, 8 = false
 const readParams = (ptr, length) => {
     
@@ -151,6 +160,7 @@ const loadWasm = async () => {
 
 const loadExports = () => {
     exports.wasmModule = wasmModule
+    exports.writeStringToMemory = writeStringToMemory
     exports.allocate = allocate
     exports.deallocate = deallocate
     exports.readParams = readParams
