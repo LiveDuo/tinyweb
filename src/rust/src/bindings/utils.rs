@@ -13,7 +13,6 @@ pub fn random() -> f32 {
     random.invoke(&[]) as f32
 }
 
-// TODO need new linker function
 pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
     let get_property = JsFunction::register(r#"
         function(element, property){
