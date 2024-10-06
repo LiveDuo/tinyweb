@@ -94,20 +94,24 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
     }
 }
 
+fn simple_waker<T>(task: &Arc<Task<T>>) -> Waker {
 
-
-fn clone_arc_raw<T>(data: *const ()) -> RawWaker {
-    let _arc = unsafe { ManuallyDrop::new(Arc::<T>::from_raw(data as *const T)).clone() };
-    RawWaker::new(data, waker_vtable::<T>())
-}
-fn wake_arc_raw(_data: *const ()) {
-    set_timeout(|| { DEFAULT_RUNTIME.lock().unwrap().poll_tasks(); }, 0);
-}
-fn drop_arc_raw<T>(data: *const ()) {
-    unsafe { drop(Arc::<T>::from_raw(data as *const T)) }
-}
-fn waker_vtable<T>() -> &'static RawWakerVTable {
-    &RawWakerVTable::new(clone_arc_raw::<T>, wake_arc_raw, wake_arc_raw, drop_arc_raw::<T>)
+    fn clone_arc_raw<T>(data: *const ()) -> RawWaker {
+        let _arc = unsafe { ManuallyDrop::new(Arc::<T>::from_raw(data as *const T)).clone() };
+        RawWaker::new(data, waker_vtable::<T>())
+    }
+    fn wake_arc_raw(_data: *const ()) {
+        set_timeout(|| { DEFAULT_RUNTIME.lock().unwrap().poll_tasks(); }, 0);
+    }
+    fn drop_arc_raw<T>(data: *const ()) {
+        unsafe { drop(Arc::<T>::from_raw(data as *const T)) }
+    }
+    fn waker_vtable<T>() -> &'static RawWakerVTable {
+        &RawWakerVTable::new(clone_arc_raw::<T>, wake_arc_raw, wake_arc_raw, drop_arc_raw::<T>)
+    }
+    let ptr = (&**task as *const Task<T>) as *const ();
+    let raw_waker = RawWaker::new(ptr, waker_vtable::<Task<T>>());
+    unsafe { Waker::from_raw(raw_waker) }
 }
 
 trait Pendable {
@@ -125,11 +129,8 @@ struct Task<T> {
 impl<T> Pendable for Arc<Task<T>> {
     fn is_pending(&self) -> bool {
         let mut future = self.future.lock().unwrap();
-
-        let ptr = (&**self as *const Task<T>) as *const ();
-        let raw_waker = RawWaker::new(ptr, waker_vtable::<Task<T>>());
-        let waker = ManuallyDrop::new(unsafe { Waker::from_raw(raw_waker) });
-        let context = &mut Context::from_waker(&*waker);
+        let waker = ManuallyDrop::new(simple_waker::<T>(self));
+        let context = &mut Context::from_waker(&waker);
         matches!(future.as_mut().poll(context), Poll::Pending)
     }
 }
