@@ -2,7 +2,7 @@
 use std::mem::ManuallyDrop;
 
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ExternRef { pub value: u32, }
 
 

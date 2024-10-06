@@ -6,7 +6,7 @@ use crate::bindings::dom::{self, MouseEvent};
 use crate::bindings::history;
 use crate::js::ExternRef;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct El(ExternRef);
 
 impl Deref for El {
