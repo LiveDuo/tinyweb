@@ -97,7 +97,7 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
 fn simple_waker<T>(task: &Arc<Task<T>>) -> Waker {
 
     fn clone_fn<T>(data: *const ()) -> RawWaker {
-        let _arc = ManuallyDrop::new(unsafe { Arc::<T>::from_raw(data as *const T) });
+        let _arc = ManuallyDrop::new(unsafe { Arc::<T>::from_raw(data as *const T) }).clone();
         RawWaker::new(data, waker_vtable::<T>())
     }
     fn wake_fn(_data: *const ()) {
