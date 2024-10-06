@@ -5,8 +5,6 @@ use std::mem::ManuallyDrop;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ExternRef { pub value: u32, }
 
-
-// preceded by a 32 bit integer indicating its type
 pub enum InvokeParam<'a> {
     Undefined,
     Null,
@@ -60,6 +58,7 @@ impl<'a> From<&'a [u32]> for InvokeParam<'a> {
     fn from(a: &'a [u32]) -> Self { InvokeParam::Uint32Array(a) }
 }
 
+// preceded by a 32 bit integer indicating its type
 pub fn serialize(params: &[InvokeParam]) -> Vec<u8> {
     let mut param_bytes = Vec::new();
     for param in params {
