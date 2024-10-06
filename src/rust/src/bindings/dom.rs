@@ -341,10 +341,7 @@ thread_local! {
     static KEYBOARD_EVENT_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(KeyboardEvent) + 'static>>>> = Default::default();
 }
 
-fn add_keyboard_event_handler(
-    function_handle: Rc<ExternRef>,
-    handler: Box<dyn FnMut(KeyboardEvent) + 'static>,
-) {
+fn add_keyboard_event_handler(function_handle: Rc<ExternRef>, handler: Box<dyn FnMut(KeyboardEvent) + 'static>) {
 
     KEYBOARD_EVENT_HANDLERS.with_borrow_mut(|h| {
         if h.is_none() {
