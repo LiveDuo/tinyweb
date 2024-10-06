@@ -33,7 +33,7 @@ impl El {
         classes.iter().for_each(|c| { dom::element_add_class(&self, c); });
         self
     }
-    pub fn append(self, child: El) -> Self {
+    pub fn child(self, child: El) -> Self {
         dom::append_child(&self, &child);
         self
     }
@@ -88,8 +88,8 @@ mod tests {
         
         El::new("div")
             .classes(&[])
-            .append(El::new("button").text("button 1"))
-            .append(El::new("button").text("button 2"));
+            .child(El::new("button").text("button 1"))
+            .child(El::new("button").text("button 2"));
     }
 
 }

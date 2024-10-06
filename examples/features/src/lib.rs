@@ -65,30 +65,30 @@ fn page1() -> El {
 
         })
         .classes(&["m-2"])
-        .append(El::new("button").text("api").classes(&BUTTON_CLASSES).on_click(|_| {
+        .child(El::new("button").text("api").classes(&BUTTON_CLASSES).on_click(|_| {
             tinyweb::runtime::run(async move {
                 let url = format!("https://pokeapi.co/api/v2/pokemon/{}", 1);
                 let result = fetch_json(HTTPMethod::GET, url, None).await;
                 dom::alert(&result["name"].as_str().unwrap());
             });
         }))
-        .append(El::new("button").text("page 2").classes(&BUTTON_CLASSES).on_click(move |_| {
+        .child(El::new("button").text("page 2").classes(&BUTTON_CLASSES).on_click(move |_| {
             ROUTER.with(|s| { s.borrow().navigate("page2"); });
         }))
-        .append(El::new("br"))
-        .append(El::new("button").text("add").classes(&BUTTON_CLASSES).on_click(move |_| {
+        .child(El::new("br"))
+        .child(El::new("button").text("add").classes(&BUTTON_CLASSES).on_click(move |_| {
             let count = signal_count_clone.get() + 1;
             signal_count_clone.set(count);
         }))
-        .append(El::new("div").text("0").on_mount(move |el| {
+        .child(El::new("div").text("0").on_mount(move |el| {
             let el_clone = el.clone();
             signal_count.on(move |v| { dom::element_set_inner_html(&el_clone, &v.to_string()); });
         }))
-        .append(El::new("div").text("-").on_mount(move |el| {
+        .child(El::new("div").text("-").on_mount(move |el| {
             let el_clone = el.clone();
             signal_time.on(move |v| { dom::element_set_inner_html(&el_clone, &v.to_string()); });
         }))
-        .append(El::new("div").text("-").on_mount(move |el| {
+        .child(El::new("div").text("-").on_mount(move |el| {
             let el_clone = el.clone();
             signal_key.on(move |v| { dom::element_set_inner_html(&el_clone, &v.to_string()); });
         }))
@@ -97,7 +97,7 @@ fn page1() -> El {
 fn page2() -> El {
     El::new("div")
         .classes(&["m-2"])
-        .append(El::new("button").text("page 1").classes(&BUTTON_CLASSES).on_click(move |_| {
+        .child(El::new("button").text("page 1").classes(&BUTTON_CLASSES).on_click(move |_| {
             ROUTER.with(|s| { s.borrow().navigate("page1"); });
         }))
 }
