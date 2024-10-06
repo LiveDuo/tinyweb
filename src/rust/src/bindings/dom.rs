@@ -99,14 +99,11 @@ pub struct ChangeEvent {
 }
 
 thread_local! {
-    static CHANGE_EVENT_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(ChangeEvent) + 'static>>>> = Default::default();
+    static ELEMENT_CHANGE_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(ChangeEvent) + 'static>>>> = Default::default();
 }
 
-fn add_change_event_handler(
-    id: Rc<ExternRef>,
-    handler: Box<dyn FnMut(ChangeEvent) + 'static>,
-) {
-    CHANGE_EVENT_HANDLERS.with_borrow_mut(|s| {
+fn add_change_event_handler(id: Rc<ExternRef>, handler: Box<dyn FnMut(ChangeEvent) + 'static>) {
+    ELEMENT_CHANGE_HANDLERS.with_borrow_mut(|s| {
         if let Some(h) = s.as_mut() {
             h.insert(id, handler);
         } else {
@@ -119,7 +116,7 @@ fn add_change_event_handler(
 
 fn remove_change_event_handler(id: &Rc<ExternRef>) {
 
-    CHANGE_EVENT_HANDLERS.with_borrow_mut(|s| {
+    ELEMENT_CHANGE_HANDLERS.with_borrow_mut(|s| {
         if let Some(h) = s.as_mut() {
             h.remove(id);
         }
@@ -128,7 +125,7 @@ fn remove_change_event_handler(id: &Rc<ExternRef>) {
 
 #[no_mangle]
 pub extern "C" fn web_handle_change_event(id: i64, allocation_id: u32) {
-    CHANGE_EVENT_HANDLERS.with_borrow_mut(|s| {
+    ELEMENT_CHANGE_HANDLERS.with_borrow_mut(|s| {
         if let Some(h) = s.as_mut() {
             for (key, handler) in h.iter_mut() {
                 if key.value == id as u32 {
