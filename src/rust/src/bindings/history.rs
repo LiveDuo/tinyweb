@@ -125,14 +125,14 @@ pub fn location_reload() {
 pub struct PopStateEvent {}
 
 thread_local! {
-    static HISTORY_POP_STATE_EVENT_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(PopStateEvent) + 'static>>>> = Default::default();
+    static HISTORY_POP_STATE_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(PopStateEvent) + 'static>>>> = Default::default();
 }
 
 fn add_history_pop_state_event_handler(
     id: Rc<ExternRef>,
     handler: Box<dyn FnMut(PopStateEvent) + 'static>,
 ) {
-    HISTORY_POP_STATE_EVENT_HANDLERS.with_borrow_mut(|s| {
+    HISTORY_POP_STATE_HANDLERS.with_borrow_mut(|s| {
         if let Some(h) = s {
             h.insert(id, handler);
         } else {
@@ -144,7 +144,7 @@ fn add_history_pop_state_event_handler(
 }
 
 fn remove_history_pop_state_event_handler(id: &Rc<ExternRef>) {
-    HISTORY_POP_STATE_EVENT_HANDLERS.with_borrow_mut(|s| {
+    HISTORY_POP_STATE_HANDLERS.with_borrow_mut(|s| {
         if let Some(h) = s {
             h.remove(id);
         }
@@ -153,7 +153,7 @@ fn remove_history_pop_state_event_handler(id: &Rc<ExternRef>) {
 
 #[no_mangle]
 pub extern "C" fn web_handle_history_pop_state_event(id: i64) {
-    HISTORY_POP_STATE_EVENT_HANDLERS.with_borrow_mut(|s| {
+    HISTORY_POP_STATE_HANDLERS.with_borrow_mut(|s| {
         if let Some(h) = s {
             for (key, handler) in h.iter_mut() {
                 if key.value == id as u32 {
