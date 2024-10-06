@@ -70,7 +70,7 @@ pub fn get_property_string(element: &ExternRef, property: &str) -> String {
             return allocationId;
         }"#);
     let text_allocation_id = get_property.invoke(&[element.into(), property.into()]);
-    let text = get_string_from_allocation(text_allocation_id as u32);
+    let text = get_string_from_allocation(text_allocation_id);
     text
 }
 
