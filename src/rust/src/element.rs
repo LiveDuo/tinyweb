@@ -53,7 +53,7 @@ impl El {
         self
     }
     pub fn text(self, text: &str) -> Self {
-        
+
         let el = dom::create_text_node(text);
         dom::append_child(&self, &el);
 
@@ -62,30 +62,33 @@ impl El {
 }
 
 
+#[derive(Debug)]
+pub struct Page { pub element: El, pub title: Option<String> }
+
 #[derive(Debug, Default)]
-pub struct Router { pub root: Option<ExternRef>, pub pages: HashMap::<String, (El, Option<String>)> }
+pub struct Router { pub root: Option<ExternRef>, pub pages: HashMap::<String, Page> }
 
 impl Router {
-    pub fn navigate(&self, page: &str) {
-        
-        let (el, title) = self.pages.get(page).unwrap();
-        history::history_push_state(&title.to_owned().unwrap_or_default(), page);
+    pub fn navigate(&self, route: &str) {
+
+        let page = self.pages.get(route).unwrap();
+        history::history_push_state(&page.title.to_owned().unwrap_or_default(), route);
 
         let body = self.root.as_ref().unwrap();
         dom::element_set_inner_html(&body, "");
-        
-        el.mount(&body);
+
+        page.element.mount(&body);
     }
 }
 
 #[cfg(test)]
 mod tests {
-    
+
     use super::*;
 
     #[test]
     fn test_element() {
-        
+
         El::new("div")
             .classes(&[])
             .child(El::new("button").text("button 1"))
