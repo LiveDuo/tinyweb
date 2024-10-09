@@ -5,10 +5,10 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use json::JsonValue;
-use tinyweb::element::{El, Router};
+use tinyweb::element::{El, Router, Page};
 use tinyweb::signals::{Signal, SignalAsync};
 
-use tinyweb::bindings::{console, dom, http_request};
+use tinyweb::bindings::{console, dom, http_request, history};
 use tinyweb::bindings::http_request::*;
 
 const BUTTON_CLASSES: &[&str] = &["bg-blue-500", "hover:bg-blue-700", "text-white", "p-2", "rounded", "m-2"];
@@ -35,7 +35,7 @@ fn page1() -> El {
     // count signal
     let signal_count = Signal::new(0);
     let signal_count_clone = signal_count.clone();
-    
+
     // time signal
     let signal_time = SignalAsync::new("-");
     let signal_time_clone = signal_time.clone();
@@ -108,15 +108,17 @@ pub fn main() {
     std::panic::set_hook(Box::new(|e| console::console_log(&e.to_string())));
 
     // get pages
-    let page1 = page1();
-    let page2 = page2();
-    
-    // mount page
+    let pages = [
+        ("page1".to_owned(), Page { element: page1(), title: None }),
+        ("page2".to_owned(), Page { element: page2(), title: None })
+    ];
+
+    // load page
     let body = dom::query_selector("body");
-    page1.mount(&body);
-    
-    // set router
-    let pages = [("page1".to_owned(), (page1, None)), ("page2".to_owned(), (page2, None))];
+    let (_, page) = pages.iter().find(|&(s, _)| *s == history::location_pathname()).unwrap_or(&pages[0]);
+    page.element.mount(&body);
+
+    // init router
     ROUTER.with(|s| {
         *s.borrow_mut() = Router { pages: HashMap::from_iter(pages), root: Some(body) };
     });
