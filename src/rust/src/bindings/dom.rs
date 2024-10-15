@@ -172,16 +172,28 @@ pub struct EventHandler<T> {
 
 impl<T> EventHandler<T> {
     pub fn add_listener(&self, id: Rc<ExternRef>, handler: Box<dyn FnMut(T) + 'static>) {
-        let mut handlers = self.listeners.lock().unwrap();
-        handlers.insert(id, handler);
+
+        super::console::console_log("add_listener");
+
+        self.listeners.lock().map(|mut s| {
+            s.insert(id, handler);
+        }).unwrap();
+
+        super::console::console_log("add_listener after");
     }
 
     pub fn remove_listener(&self, id: &Rc<ExternRef>) {
+
+        super::console::console_log("remove_listener");
+
         let mut handlers = self.listeners.lock().unwrap();
         handlers.remove(id);
     }
 
     pub fn call(&self, id: i64, event: T) {
+
+        super::console::console_log("call");
+
         let mut handlers = self.listeners.lock().unwrap();
         for (key, handler) in handlers.iter_mut() {
             if key.value == id as u32 {
@@ -204,12 +216,17 @@ thread_local! {
 #[no_mangle]
 pub extern "C" fn web_handle_mouse_event_handler(id: i64, x: f64, y: f64) {
 
+    super::console::console_log("web_handle_mouse_event_handler");
+
     MOUSE_EVENT_HANDLER.with(|s| {
         s.call(id, MouseEvent { offset_x: x, offset_y: y });
     })
 }
 
 pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
+
+    super::console::console_log("element_add_click_listener");
+
     let function_ref = JsFunction::register(r#"
         function(element ){
             const handler = (e) => {
