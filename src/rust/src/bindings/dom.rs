@@ -145,7 +145,7 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
             const handler = (e) => {
                 const value = e.target.value;
                 const allocationId = writeStringToMemory(value);
-                wasmModule.instance.exports.web_handle_change_event_handler(id, allocationId);
+                wasmModule.instance.exports.web_handle_change_event(id, allocationId);
             };
             const id = allocate(handler);
             element.addEventListener("change",handler);
