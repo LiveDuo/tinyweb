@@ -327,25 +327,19 @@ pub struct KeyboardEvent {
 }
 
 thread_local! {
-    static KEYBOARD_EVENT_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(KeyboardEvent) + 'static>>>> = Default::default();
+    static KEYBOARD_EVENT_HANDLERS: RefCell<HashMap<Rc<ExternRef>, Box<dyn FnMut(KeyboardEvent) + 'static>>> = Default::default();
 }
 
 fn add_keyboard_event_handler(function_handle: Rc<ExternRef>, handler: Box<dyn FnMut(KeyboardEvent) + 'static>) {
 
     KEYBOARD_EVENT_HANDLERS.with_borrow_mut(|h| {
-        if h.is_none() {
-            *h = Some(HashMap::new());
-        }
-        h.as_mut().unwrap().insert(function_handle, handler);
+        h.insert(function_handle, handler);
     });
 }
 
 fn remove_keyboard_event_handler(function_handle: &Rc<ExternRef>) {
     KEYBOARD_EVENT_HANDLERS.with_borrow_mut(|h| {
-        if h.is_none() {
-            return;
-        }
-        h.as_mut().unwrap().remove(function_handle);
+        h.remove(function_handle);
     });
 }
 
@@ -353,11 +347,9 @@ fn remove_keyboard_event_handler(function_handle: &Rc<ExternRef>) {
 pub extern "C" fn web_handle_keyboard_event_handler(id: i64, key_code: f64) {
 
     KEYBOARD_EVENT_HANDLERS.with_borrow_mut(|s| {
-        if let Some(h) = s.as_mut() {
-            for (key, handler) in h.iter_mut() {
-                if key.value == id as u32 {
-                    handler(KeyboardEvent { key_code });
-                }
+        for (key, handler) in s.iter_mut() {
+            if key.value == id as u32 {
+                handler(KeyboardEvent { key_code });
             }
         }
     });
