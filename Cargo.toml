@@ -4,7 +4,6 @@ members = [
     "src/rust",
     "examples/minimal",
     "examples/features",
+    "examples/simple",
 ]
-default-members = [
-    "src/rust",
-]
+default-members = ["src/rust"]
