@@ -130,12 +130,15 @@ fn remove_change_event_handler(id: &Rc<ExternRef>) {
 #[no_mangle]
 pub extern "C" fn web_handle_change_event(id: i64, allocation_id: u32) {
     ELEMENT_CHANGE_HANDLERS.with(|s| {
-        for (key, handler) in s.lock().unwrap().iter_mut() {
-            if key.value == id as u32 {
-                let value = get_string_from_allocation(allocation_id);
-                handler(ChangeEvent { value });
-            }
-        }
+
+        let handler = s.lock().map(|mut s| {
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == id as u32).unwrap();
+            handler as *mut Box<dyn FnMut(ChangeEvent) + 'static>
+        }).unwrap();
+
+        let value = get_string_from_allocation(allocation_id);
+        unsafe { (*handler)(ChangeEvent { value }) }
+
     });
 }
 
@@ -347,11 +350,14 @@ fn remove_keyboard_event_handler(function_handle: &Rc<ExternRef>) {
 pub extern "C" fn web_handle_keyboard_event_handler(id: i64, key_code: f64) {
 
     KEYBOARD_EVENT_HANDLERS.with(|s| {
-        for (key, handler) in s.lock().unwrap().iter_mut() {
-            if key.value == id as u32 {
-                handler(KeyboardEvent { key_code });
-            }
-        }
+
+        let handler = s.lock().map(|mut s| {
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == id as u32).unwrap();
+            handler as *mut Box<dyn FnMut(KeyboardEvent) + 'static>
+        }).unwrap();
+
+        unsafe { (*handler)(KeyboardEvent { key_code }) }
+
     });
 }
 

@@ -146,11 +146,13 @@ fn remove_history_pop_state_event_handler(id: &Rc<ExternRef>) {
 #[no_mangle]
 pub extern "C" fn web_handle_history_pop_state_event(id: i64) {
     HISTORY_POP_STATE_HANDLERS.with(|s| {
-        for (key, handler) in s.lock().unwrap().iter_mut() {
-            if key.value == id as u32 {
-                handler(PopStateEvent {});
-            }
-        }
+
+        let handler = s.lock().map(|mut s| {
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == id as u32).unwrap();
+            handler as *mut Box<dyn FnMut(PopStateEvent) + 'static>
+        }).unwrap();
+
+        unsafe { (*handler)(PopStateEvent {}) }
     });
 }
 
