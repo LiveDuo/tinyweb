@@ -111,39 +111,29 @@ pub struct ChangeEvent {
 }
 
 thread_local! {
-    static ELEMENT_CHANGE_HANDLERS: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(ChangeEvent) + 'static>>>> = Default::default();
+    static ELEMENT_CHANGE_HANDLERS: RefCell<HashMap<Rc<ExternRef>, Box<dyn FnMut(ChangeEvent) + 'static>>> = Default::default();
 }
 
 fn add_change_event_handler(id: Rc<ExternRef>, handler: Box<dyn FnMut(ChangeEvent) + 'static>) {
     ELEMENT_CHANGE_HANDLERS.with_borrow_mut(|s| {
-        if let Some(h) = s.as_mut() {
-            h.insert(id, handler);
-        } else {
-            let mut h = HashMap::new();
-            h.insert(id, handler);
-            *s = Some(h);
-        }
+        s.insert(id, handler);
     });
 }
 
 fn remove_change_event_handler(id: &Rc<ExternRef>) {
 
     ELEMENT_CHANGE_HANDLERS.with_borrow_mut(|s| {
-        if let Some(h) = s.as_mut() {
-            h.remove(id);
-        }
+        s.remove(id);
     });
 }
 
 #[no_mangle]
 pub extern "C" fn web_handle_change_event(id: i64, allocation_id: u32) {
     ELEMENT_CHANGE_HANDLERS.with_borrow_mut(|s| {
-        if let Some(h) = s.as_mut() {
-            for (key, handler) in h.iter_mut() {
-                if key.value == id as u32 {
-                    let value = get_string_from_allocation(allocation_id);
-                    handler(ChangeEvent { value });
-                }
+        for (key, handler) in s.iter_mut() {
+            if key.value == id as u32 {
+                let value = get_string_from_allocation(allocation_id);
+                handler(ChangeEvent { value });
             }
         }
     });
@@ -177,36 +167,26 @@ pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Rc<
 }
 
 pub struct EventHandler<T> {
-    pub listeners: RefCell<Option<HashMap<Rc<ExternRef>, Box<dyn FnMut(T) + 'static>>>>,
+    pub listeners: RefCell<HashMap<Rc<ExternRef>, Box<dyn FnMut(T) + 'static>>>,
 }
 
 impl<T> EventHandler<T> {
     pub fn add_listener(&self, id: Rc<ExternRef>, handler: Box<dyn FnMut(T) + 'static>) {
         let mut handlers = self.listeners.borrow_mut();
-        if let Some(h) = handlers.as_mut() {
-            h.insert(id, handler);
-        } else {
-            let mut h = HashMap::new();
-            h.insert(id, handler);
-            *handlers = Some(h);
-        }
+        handlers.insert(id, handler);
     }
 
     pub fn remove_listener(&self, id: &Rc<ExternRef>) {
         let mut handlers = self.listeners.borrow_mut();
-        if let Some(h) = handlers.as_mut() {
-            h.remove(id);
-        }
+        handlers.remove(id);
     }
 
     pub fn call(&self, id: i64, event: T) {
         let mut handlers = self.listeners.borrow_mut();
-        if let Some(h) = handlers.as_mut() {
-            for (key, handler) in h.iter_mut() {
-                if key.value == id as u32 {
-                    handler(event);
-                    return;
-                }
+        for (key, handler) in handlers.iter_mut() {
+            if key.value == id as u32 {
+                handler(event);
+                return;
             }
         }
     }
@@ -218,7 +198,7 @@ pub struct MouseEvent {
 }
 
 thread_local! {
-    static MOUSE_EVENT_HANDLER: EventHandler<MouseEvent> = EventHandler { listeners: RefCell::new(None) };
+    static MOUSE_EVENT_HANDLER: EventHandler<MouseEvent> = EventHandler { listeners: Default::default() };
 }
 
 #[no_mangle]
@@ -442,7 +422,7 @@ mod tests {
     use super::*;
 
     thread_local! {
-        static EVENT_HANDLER: EventHandler<()> = EventHandler { listeners: RefCell::new(None), };
+        static EVENT_HANDLER: EventHandler<()> = EventHandler { listeners: Default::default() };
     }
 
     #[test]
@@ -464,9 +444,7 @@ mod tests {
 
         // remove listener
         EVENT_HANDLER.with(|s| s.remove_listener(&function_handle.clone()));
-        let count = EVENT_HANDLER.with(|s| {
-            s.listeners.borrow().as_ref().map(|s| s.len()).unwrap_or(0)
-        });
+        let count = EVENT_HANDLER.with(|s| s.listeners.borrow().len());
         assert_eq!(count, 0);
     }
 

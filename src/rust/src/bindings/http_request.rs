@@ -8,35 +8,23 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 thread_local! {
-    static HTTP_LOAD_HANDLERS: RefCell<Option<HashMap<u32, Box<dyn FnMut() + 'static>>>> = RefCell::new(None);
+    static HTTP_LOAD_HANDLERS: RefCell<HashMap<u32, Box<dyn FnMut() + 'static>>> = Default::default();
 }
 
 fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + 'static>) {
 
     HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
-        if h.is_none() {
-            *h = Some(HashMap::new());
-        }
-        h.as_mut().unwrap().insert(function_handle as u32, handler);
+        h.insert(function_handle as u32, handler);
     });
 }
 
 #[no_mangle]
 pub extern "C" fn web_handle_http_load_event_handler(id: i64) {
-    let mut c = None;
-    {
-        HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
-            if let Some(h) = h.as_mut() {
-                if let Some(handler) = h.remove(&(id as u32)) {
-                    c = Some(handler);
-                }
-            }
-        });
-        
-    }
-    if let Some(mut c) = c {
-        c();
-    }
+    HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
+        if let Some(mut handler) = h.remove(&(id as u32)) {
+            handler();
+        }
+    });
 }
 
 pub struct XMLHttpRequest(ExternRef);
