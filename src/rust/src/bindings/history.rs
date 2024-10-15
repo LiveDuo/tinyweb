@@ -2,7 +2,7 @@
 use crate::js::{ExternRef, InvokeParam, JsFunction};
 
 use std::collections::HashMap;
-use std::cell::RefCell;
+use std::sync::Mutex;
 use std::rc::Rc;
 
 pub fn history_push_state(title: &str, url: &str) {
@@ -125,28 +125,28 @@ pub fn location_reload() {
 pub struct PopStateEvent {}
 
 thread_local! {
-    static HISTORY_POP_STATE_HANDLERS: RefCell<HashMap<Rc<ExternRef>, Box<dyn FnMut(PopStateEvent) + 'static>>> = Default::default();
+    static HISTORY_POP_STATE_HANDLERS: Mutex<HashMap<Rc<ExternRef>, Box<dyn FnMut(PopStateEvent) + 'static>>> = Default::default();
 }
 
 fn add_history_pop_state_event_handler(
     id: Rc<ExternRef>,
     handler: Box<dyn FnMut(PopStateEvent) + 'static>,
 ) {
-    HISTORY_POP_STATE_HANDLERS.with_borrow_mut(|s| {
-        s.insert(id, handler);
+    HISTORY_POP_STATE_HANDLERS.with(|s| {
+        s.lock().unwrap().insert(id, handler);
     });
 }
 
 fn remove_history_pop_state_event_handler(id: &Rc<ExternRef>) {
-    HISTORY_POP_STATE_HANDLERS.with_borrow_mut(|s| {
-        s.remove(id);
+    HISTORY_POP_STATE_HANDLERS.with(|s| {
+        s.lock().unwrap().remove(id);
     });
 }
 
 #[no_mangle]
 pub extern "C" fn web_handle_history_pop_state_event(id: i64) {
-    HISTORY_POP_STATE_HANDLERS.with_borrow_mut(|s| {
-        for (key, handler) in s.iter_mut() {
+    HISTORY_POP_STATE_HANDLERS.with(|s| {
+        for (key, handler) in s.lock().unwrap().iter_mut() {
             if key.value == id as u32 {
                 handler(PopStateEvent {});
             }

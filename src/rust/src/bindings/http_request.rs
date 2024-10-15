@@ -4,24 +4,24 @@ use crate::js::{ExternRef, JsFunction};
 
 use std::collections::HashMap;
 use std::future::Future;
-use std::cell::RefCell;
+use std::sync::Mutex;
 use std::rc::Rc;
 
 thread_local! {
-    static HTTP_LOAD_HANDLERS: RefCell<HashMap<u32, Box<dyn FnMut() + 'static>>> = Default::default();
+    static HTTP_LOAD_HANDLERS: Mutex<HashMap<u32, Box<dyn FnMut() + 'static>>> = Default::default();
 }
 
 fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + 'static>) {
 
-    HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
-        h.insert(function_handle as u32, handler);
+    HTTP_LOAD_HANDLERS.with(|h| {
+        h.lock().unwrap().insert(function_handle as u32, handler);
     });
 }
 
 #[no_mangle]
 pub extern "C" fn web_handle_http_load_event_handler(id: i64) {
-    HTTP_LOAD_HANDLERS.with_borrow_mut(|h| {
-        if let Some(mut handler) = h.remove(&(id as u32)) {
+    HTTP_LOAD_HANDLERS.with(|h| {
+        if let Some(mut handler) = h.lock().unwrap().remove(&(id as u32)) {
             handler();
         }
     });

@@ -3,7 +3,7 @@ use crate::js::{ExternRef, JsFunction, InvokeParam};
 use crate::allocations::get_string_from_allocation;
 
 use std::collections::HashMap;
-use std::cell::RefCell;
+use std::sync::Mutex;
 use std::rc::Rc;
 
 pub fn create_element(tag: &str) -> ExternRef {
@@ -111,26 +111,26 @@ pub struct ChangeEvent {
 }
 
 thread_local! {
-    static ELEMENT_CHANGE_HANDLERS: RefCell<HashMap<Rc<ExternRef>, Box<dyn FnMut(ChangeEvent) + 'static>>> = Default::default();
+    static ELEMENT_CHANGE_HANDLERS: Mutex<HashMap<Rc<ExternRef>, Box<dyn FnMut(ChangeEvent) + 'static>>> = Default::default();
 }
 
 fn add_change_event_handler(id: Rc<ExternRef>, handler: Box<dyn FnMut(ChangeEvent) + 'static>) {
-    ELEMENT_CHANGE_HANDLERS.with_borrow_mut(|s| {
-        s.insert(id, handler);
+    ELEMENT_CHANGE_HANDLERS.with(|s| {
+        s.lock().unwrap().insert(id, handler);
     });
 }
 
 fn remove_change_event_handler(id: &Rc<ExternRef>) {
 
-    ELEMENT_CHANGE_HANDLERS.with_borrow_mut(|s| {
-        s.remove(id);
+    ELEMENT_CHANGE_HANDLERS.with(|s| {
+        s.lock().unwrap().remove(id);
     });
 }
 
 #[no_mangle]
 pub extern "C" fn web_handle_change_event(id: i64, allocation_id: u32) {
-    ELEMENT_CHANGE_HANDLERS.with_borrow_mut(|s| {
-        for (key, handler) in s.iter_mut() {
+    ELEMENT_CHANGE_HANDLERS.with(|s| {
+        for (key, handler) in s.lock().unwrap().iter_mut() {
             if key.value == id as u32 {
                 let value = get_string_from_allocation(allocation_id);
                 handler(ChangeEvent { value });
@@ -167,22 +167,22 @@ pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Rc<
 }
 
 pub struct EventHandler<T> {
-    pub listeners: RefCell<HashMap<Rc<ExternRef>, Box<dyn FnMut(T) + 'static>>>,
+    pub listeners: Mutex<HashMap<Rc<ExternRef>, Box<dyn FnMut(T) + 'static>>>,
 }
 
 impl<T> EventHandler<T> {
     pub fn add_listener(&self, id: Rc<ExternRef>, handler: Box<dyn FnMut(T) + 'static>) {
-        let mut handlers = self.listeners.borrow_mut();
+        let mut handlers = self.listeners.lock().unwrap();
         handlers.insert(id, handler);
     }
 
     pub fn remove_listener(&self, id: &Rc<ExternRef>) {
-        let mut handlers = self.listeners.borrow_mut();
+        let mut handlers = self.listeners.lock().unwrap();
         handlers.remove(id);
     }
 
     pub fn call(&self, id: i64, event: T) {
-        let mut handlers = self.listeners.borrow_mut();
+        let mut handlers = self.listeners.lock().unwrap();
         for (key, handler) in handlers.iter_mut() {
             if key.value == id as u32 {
                 handler(event);
@@ -327,27 +327,27 @@ pub struct KeyboardEvent {
 }
 
 thread_local! {
-    static KEYBOARD_EVENT_HANDLERS: RefCell<HashMap<Rc<ExternRef>, Box<dyn FnMut(KeyboardEvent) + 'static>>> = Default::default();
+    static KEYBOARD_EVENT_HANDLERS: Mutex<HashMap<Rc<ExternRef>, Box<dyn FnMut(KeyboardEvent) + 'static>>> = Default::default();
 }
 
 fn add_keyboard_event_handler(function_handle: Rc<ExternRef>, handler: Box<dyn FnMut(KeyboardEvent) + 'static>) {
 
-    KEYBOARD_EVENT_HANDLERS.with_borrow_mut(|h| {
-        h.insert(function_handle, handler);
+    KEYBOARD_EVENT_HANDLERS.with(|h| {
+        h.lock().unwrap().insert(function_handle, handler);
     });
 }
 
 fn remove_keyboard_event_handler(function_handle: &Rc<ExternRef>) {
-    KEYBOARD_EVENT_HANDLERS.with_borrow_mut(|h| {
-        h.remove(function_handle);
+    KEYBOARD_EVENT_HANDLERS.with(|h| {
+        h.lock().unwrap().remove(function_handle);
     });
 }
 
 #[no_mangle]
 pub extern "C" fn web_handle_keyboard_event_handler(id: i64, key_code: f64) {
 
-    KEYBOARD_EVENT_HANDLERS.with_borrow_mut(|s| {
-        for (key, handler) in s.iter_mut() {
+    KEYBOARD_EVENT_HANDLERS.with(|s| {
+        for (key, handler) in s.lock().unwrap().iter_mut() {
             if key.value == id as u32 {
                 handler(KeyboardEvent { key_code });
             }
@@ -409,6 +409,8 @@ pub fn element_remove_key_up_listener(element: &ExternRef, function_handle: &Rc<
 #[cfg(test)]
 mod tests {
 
+    use std::cell::RefCell;
+
     use crate::js::ExternRef;
 
     use super::*;
@@ -436,7 +438,7 @@ mod tests {
 
         // remove listener
         EVENT_HANDLER.with(|s| s.remove_listener(&function_handle.clone()));
-        let count = EVENT_HANDLER.with(|s| s.listeners.borrow().len());
+        let count = EVENT_HANDLER.with(|s| s.listeners.lock().unwrap().len());
         assert_eq!(count, 0);
     }
 
