@@ -2,7 +2,7 @@
 use std::collections::HashMap;
 use std::ops::Deref;
 
-use crate::bindings::dom::{self, MouseEvent};
+use crate::bindings::dom::{self, ChangeEvent, MouseEvent};
 use crate::bindings::history;
 use crate::js::ExternRef;
 
@@ -50,6 +50,10 @@ impl El {
     }
     pub fn on_click(self, cb: impl FnMut(MouseEvent) + 'static) -> Self {
         dom::element_add_click_listener(&self, cb);
+        self
+    }
+    pub fn on_change(self, cb: impl FnMut(ChangeEvent) + 'static) -> Self {
+        dom::add_change_event_listener(&self, cb);
         self
     }
     pub fn text(self, text: &str) -> Self {
