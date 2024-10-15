@@ -38,6 +38,18 @@ pub fn alert(message: &str) {
     message_fn.invoke(&[message.into()]);
 }
 
+pub fn prompt(message: &str, placeholder: &str) -> String {
+    let message_fn = JsFunction::register(r#"
+        function(message, placeholder){
+            const text = prompt(message, placeholder);
+            const allocationId = writeStringToMemory(text);
+            return allocationId;
+        }"#);
+    let text_allocation_id = message_fn.invoke(&[message.into(), placeholder.into()]);
+    let text = get_string_from_allocation(text_allocation_id);
+    text
+}
+
 pub fn query_selector(selector: &str) -> ExternRef {
     let query_selector = JsFunction::register(r#"
         function(selector){
@@ -435,7 +447,7 @@ mod tests {
 
     #[test]
     fn test_run() {
- 
+
         let has_run = Rc::new(RefCell::new(false));
         let has_run_clone = has_run.clone();
 
@@ -459,5 +471,3 @@ mod tests {
     }
 
 }
-
-
