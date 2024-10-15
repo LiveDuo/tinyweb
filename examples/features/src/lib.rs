@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use json::JsonValue;
 use tinyweb::element::{El, Router, Page};
-use tinyweb::signals::{Signal, SignalAsync};
+use tinyweb::signals::Signal;
 
 use tinyweb::bindings::{console, dom, http_request, history};
 use tinyweb::bindings::http_request::*;
@@ -37,7 +37,7 @@ fn page1() -> El {
     let signal_count_clone = signal_count.clone();
 
     // time signal
-    let signal_time = SignalAsync::new("-");
+    let signal_time = Signal::new("-");
     let signal_time_clone = signal_time.clone();
 
     El::new("div")
