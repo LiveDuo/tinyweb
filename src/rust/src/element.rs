@@ -29,6 +29,12 @@ impl El {
         dom::element_set_attribute(&self, name, value);
         self
     }
+    pub fn attr_fn(self, name: &str, value: &str, cb: impl Fn() -> bool + 'static) -> Self {
+        if cb() {
+            dom::element_set_attribute(&self, name, value);
+        }
+        self
+    }
     pub fn classes(self, classes: &[&str]) -> Self {
         classes.iter().for_each(|c| { dom::element_add_class(&self, c); });
         self
