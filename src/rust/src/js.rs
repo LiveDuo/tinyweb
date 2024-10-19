@@ -18,46 +18,6 @@ pub enum InvokeParam<'a> {
     Uint32Array(&'a [u32]),
 }
 
-impl From<f64> for InvokeParam<'_> {
-    fn from(f: f64) -> Self { InvokeParam::Float64(f) }
-}
-
-impl From<i32> for InvokeParam<'_> {
-    fn from(i: i32) -> Self { InvokeParam::Float64(i as f64) }
-}
-
-impl From<u32> for InvokeParam<'_> {
-    fn from(i: u32) -> Self { InvokeParam::Float64(i as f64) }
-}
-
-impl From<i64> for InvokeParam<'_> {
-    fn from(i: i64) -> Self { InvokeParam::BigInt(i) }
-}
-
-impl<'a> From<&'a str> for InvokeParam<'a> {
-    fn from(s: &'a str) -> Self { InvokeParam::String(s) }
-}
-
-impl<'a> From<&'a ExternRef> for InvokeParam<'a> {
-    fn from(i: &'a ExternRef) -> Self { InvokeParam::ExternRef(i) }
-}
-
-impl<'a> From<&'a [f32]> for InvokeParam<'a> {
-    fn from(a: &'a [f32]) -> Self { InvokeParam::Float32Array(a) }
-}
-
-impl<'a> From<&'a [f64]> for InvokeParam<'a> {
-    fn from(a: &'a [f64]) -> Self { InvokeParam::Float64Array(a) }
-}
-
-impl From<bool> for InvokeParam<'_> {
-    fn from(b: bool) -> Self { InvokeParam::Bool(b) }
-}
-
-impl<'a> From<&'a [u32]> for InvokeParam<'a> {
-    fn from(a: &'a [u32]) -> Self { InvokeParam::Uint32Array(a) }
-}
-
 // preceded by a 32 bit integer indicating its type
 pub fn serialize(params: &[InvokeParam]) -> Vec<u8> {
     let mut param_bytes = Vec::new();
@@ -201,12 +161,12 @@ impl JsFunction {
 
 #[cfg(test)]
 mod tests {
-    
+
     use super::*;
 
     #[test]
     fn test_params() {
-        
+
         // undefined
         assert_eq!(serialize(&[InvokeParam::Undefined]), vec![0]);
 
@@ -225,24 +185,24 @@ mod tests {
 
         // extern ref
         assert_eq!(serialize(&[InvokeParam::ExternRef(&ExternRef { value: 42 })]), [vec![5], 42u32.to_le_bytes().to_vec()].concat());
-        
+
         // float32 array
         let array = [1.0, 2.0];
         let array_ptr = array.as_ptr() as u32;
         let array_len = array.len() as u64;
         let expected = [vec![6], array_ptr.to_le_bytes().to_vec(), array_len.to_le_bytes().to_vec()].concat();
         assert_eq!(serialize(&[InvokeParam::Float32Array(&array)]), expected);
-        
+
         // float64 array
         let array = [1.0, 2.0];
         let array_ptr = array.as_ptr() as u32;
         let array_len = array.len() as u64;
         let expected = [vec![9], array_ptr.to_le_bytes().to_vec(), array_len.to_le_bytes().to_vec()].concat();
         assert_eq!(serialize(&[InvokeParam::Float64Array(&array)]), expected);
-        
+
         // bool
         assert_eq!(serialize(&[InvokeParam::Bool(true)]), vec![7]);
-        
+
         // u32 array
         let array = [1, 2];
         let array_ptr = array.as_ptr() as u32;
@@ -254,7 +214,7 @@ mod tests {
 
     #[test]
     fn test_register_invoke() {
-        
+
         // register
         let func = JsFunction::register("");
         assert_eq!(func.function_id, 0);
@@ -262,15 +222,15 @@ mod tests {
         // invoke
         let result = func.invoke(&[]);
         assert_eq!(result, 0);
-        
+
         // invoke and return object
         let result = func.invoke_and_return_object(&[]);
         assert_eq!(result, ExternRef { value: 0 });
-        
+
         // invoke and return bigint
         let result = func.invoke_and_return_bigint(&[]);
         assert_eq!(result, 0);
-        
+
         // invoke and return string
         let text = "hello";
         crate::allocations::ALLOCATIONS.with_borrow_mut(|s| {
@@ -278,7 +238,7 @@ mod tests {
         });
         let result = func.invoke_and_return_string(&[]);
         assert_eq!(result, "hello".to_owned());
-        
+
         // invoke and return array buffer
         let vec = vec![1, 2];
         crate::allocations::ALLOCATIONS.with_borrow_mut(|s| {
@@ -286,7 +246,7 @@ mod tests {
         });
         let result = func.invoke_and_return_array_buffer(&[]);
         assert_eq!(result, vec);
-        
+
         // invoke and return bool
         let result = func.invoke_and_return_bool(&[]);
         assert_eq!(result, false);

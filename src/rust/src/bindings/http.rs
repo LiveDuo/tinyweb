@@ -1,6 +1,6 @@
 
 use crate::runtime::EventHandlerFuture;
-use crate::js::{ExternRef, JsFunction};
+use crate::js::{ExternRef, InvokeParam, JsFunction};
 
 use std::collections::HashMap;
 use std::future::Future;
@@ -46,7 +46,7 @@ impl XMLHttpRequest {
                 request.open(method, url);
             }
             ")
-        .invoke(&[(&(self.0)).into(), method.into(), url.into()]);
+        .invoke(&[InvokeParam::ExternRef(&self.0), InvokeParam::String(method), InvokeParam::String(url)]);
     }
 
     pub fn send(&self) {
@@ -55,7 +55,7 @@ impl XMLHttpRequest {
                 request.send();
             }
             ")
-        .invoke(&[(&(self.0)).into()]);
+        .invoke(&[InvokeParam::ExternRef(&self.0)]);
     }
 
     pub fn send_with_body(&self, body: &str) {
@@ -64,7 +64,7 @@ impl XMLHttpRequest {
                 request.send(body);
             }
             ")
-        .invoke(&[(&(self.0)).into(), body.into()]);
+        .invoke(&[InvokeParam::ExternRef(&self.0), InvokeParam::String(body)]);
     }
 
     pub fn set_request_header(&self, key: &str, value: &str) {
@@ -73,7 +73,7 @@ impl XMLHttpRequest {
                 request.setRequestHeader(key, value);
             }
             ")
-        .invoke(&[(&(self.0)).into(), key.into(), value.into()]);
+        .invoke(&[InvokeParam::ExternRef(&self.0), InvokeParam::String(key), InvokeParam::String(value)]);
     }
 
     pub fn response_status(&self) -> u32 {
@@ -82,7 +82,7 @@ impl XMLHttpRequest {
                 return request.status;
             }
             ")
-        .invoke(&[(&(self.0)).into()]) as u32
+        .invoke(&[InvokeParam::ExternRef(&self.0)]) as u32
     }
 
     pub fn response_text(&self) -> String {
@@ -91,7 +91,7 @@ impl XMLHttpRequest {
                 return request.responseText;
             }
             ")
-        .invoke_and_return_string(&[(&(self.0)).into()])
+        .invoke_and_return_string(&[InvokeParam::ExternRef(&self.0)])
     }
 
     pub fn response_array_buffer(&self) -> Vec<u8> {
@@ -100,7 +100,7 @@ impl XMLHttpRequest {
                 return request.response;
             }
             ")
-        .invoke_and_return_array_buffer(&[(&(self.0)).into()])
+        .invoke_and_return_array_buffer(&[InvokeParam::ExternRef(&self.0)])
     }
 
     pub fn response_header(&self, key: &str) -> String {
@@ -109,7 +109,7 @@ impl XMLHttpRequest {
                 return request.getResponseHeader(key);
             }
             ")
-        .invoke_and_return_string(&[(&(self.0)).into(), key.into()])
+        .invoke_and_return_string(&[InvokeParam::ExternRef(&self.0), InvokeParam::String(key)])
     }
 
     pub fn set_on_load(&self, callback: impl FnMut() + 'static) {
@@ -123,7 +123,7 @@ impl XMLHttpRequest {
                 request.onload = handler;
                 return id;
             }"#)
-        .invoke_and_return_bigint(&[(&(self.0)).into()]);
+        .invoke_and_return_bigint(&[InvokeParam::ExternRef(&self.0)]);
         add_http_load_event_handler(function_ref, Box::new(callback));
     }
 
@@ -133,7 +133,7 @@ impl XMLHttpRequest {
                 request.responseType = response_type;
             }
             ")
-        .invoke(&[(&(self.0)).into(), response_type.into()]);
+        .invoke(&[InvokeParam::ExternRef(&self.0), InvokeParam::String(response_type)]);
     }
 }
 

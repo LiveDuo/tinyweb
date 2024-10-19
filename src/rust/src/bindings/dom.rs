@@ -11,7 +11,7 @@ pub fn create_element(tag: &str) -> ExternRef {
         function (t) {
             return document.createElement(t);
         }"#);
-    create_fn.invoke_and_return_object(&[tag.into()])
+    create_fn.invoke_and_return_object(&[InvokeParam::String(tag)])
 }
 
 pub fn create_text_node(text: &str) -> ExternRef {
@@ -19,7 +19,7 @@ pub fn create_text_node(text: &str) -> ExternRef {
         function (t) {
             return document.createTextNode(t);
         }"#);
-    create_fn.invoke_and_return_object(&[text.into()])
+    create_fn.invoke_and_return_object(&[InvokeParam::String(text)])
 }
 
 pub fn append_child(parent: &ExternRef, child: &ExternRef) {
@@ -27,7 +27,7 @@ pub fn append_child(parent: &ExternRef, child: &ExternRef) {
         function (p, e) {
             p.appendChild(e);
         }");
-    append_fn.invoke(&[parent.into(), child.into()]);
+    append_fn.invoke(&[InvokeParam::ExternRef(parent), InvokeParam::ExternRef(child)]);
 }
 
 pub fn alert(message: &str) {
@@ -35,7 +35,7 @@ pub fn alert(message: &str) {
         function(message){
             alert(message);
         }"#);
-    message_fn.invoke(&[message.into()]);
+    message_fn.invoke(&[InvokeParam::String(message)]);
 }
 
 pub fn prompt(message: &str, placeholder: &str) -> String {
@@ -45,7 +45,7 @@ pub fn prompt(message: &str, placeholder: &str) -> String {
             const allocationId = writeStringToMemory(text);
             return allocationId;
         }"#);
-    let text_allocation_id = message_fn.invoke(&[message.into(), placeholder.into()]);
+    let text_allocation_id = message_fn.invoke(&[InvokeParam::String(message), InvokeParam::String(placeholder)]);
     let text = get_string_from_allocation(text_allocation_id);
     text
 }
@@ -55,7 +55,7 @@ pub fn query_selector(selector: &str) -> ExternRef {
         function(selector){
             return document.querySelector(selector);
         }"#);
-    query_selector.invoke_and_return_object(&[selector.into()])
+    query_selector.invoke_and_return_object(&[InvokeParam::String(selector)])
 }
 
 pub fn element_set_inner_html(element: &ExternRef, html: &str) {
@@ -63,7 +63,7 @@ pub fn element_set_inner_html(element: &ExternRef, html: &str) {
         function(element, html){
             element.innerHTML = html;
         }"#);
-    set_inner_html.invoke(&[element.into(), html.into()]);
+    set_inner_html.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(html)]);
 }
 
 pub fn element_add_class(element: &ExternRef, class: &str) {
@@ -71,7 +71,7 @@ pub fn element_add_class(element: &ExternRef, class: &str) {
         function(element, c){
             element.classList.add(c);
         }"#);
-    add_class.invoke(&[element.into(), class.into()]);
+    add_class.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(class)]);
 }
 
 pub fn element_remove_class(element: &ExternRef, class: &str) {
@@ -79,7 +79,7 @@ pub fn element_remove_class(element: &ExternRef, class: &str) {
         function(element, c){
             element.classList.remove(c);
         }"#);
-    remove_class.invoke(&[element.into(), class.into()]);
+    remove_class.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(class)]);
 }
 
 pub fn element_set_style_attribute(element: &ExternRef, attribute: &str, value: &str) {
@@ -87,7 +87,7 @@ pub fn element_set_style_attribute(element: &ExternRef, attribute: &str, value: 
         function(element, attribute, value){
             element.style[attribute] = value;
         }"#);
-    set_style_attribute.invoke(&[element.into(), attribute.into(), value.into()]);
+    set_style_attribute.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(attribute), InvokeParam::String(value)]);
 }
 
 pub fn element_set_attribute(element: &ExternRef, attribute: &str, value: &str) {
@@ -95,7 +95,7 @@ pub fn element_set_attribute(element: &ExternRef, attribute: &str, value: &str) 
         function(element, attribute, value){
             element.setAttribute(attribute, value);
         }"#);
-    set_attribute.invoke(&[element.into(), attribute.into(), value.into()]);
+    set_attribute.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(attribute), InvokeParam::String(value)]);
 }
 
 pub fn element_remove(element: &ExternRef) {
@@ -103,7 +103,7 @@ pub fn element_remove(element: &ExternRef) {
         function(element){
             element.remove();
         }"#);
-    remove.invoke(&[element.into()]);
+    remove.invoke(&[InvokeParam::ExternRef(element)]);
 }
 
 pub struct ChangeEvent {
@@ -154,7 +154,7 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
             element.addEventListener("change",handler);
             return id;
         }"#)
-    .invoke_and_return_bigint(&[element.into()]);
+    .invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     add_change_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
@@ -165,7 +165,7 @@ pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Rc<
         function(element, f){
             element.removeEventListener("change", f);
         }"#);
-    remove_change_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
+    remove_change_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     remove_change_event_handler(function_handle);
 }
 
@@ -221,7 +221,7 @@ pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(Mouse
             const id = allocate(handler);
             element.addEventListener("click",handler);
             return id;
-        }"#).invoke_and_return_bigint(&[element.into()]);
+        }"#).invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
 
     MOUSE_EVENT_HANDLER.with(|s| {
@@ -235,7 +235,7 @@ pub fn element_remove_click_listener(element: &ExternRef, function_handle: &Rc<E
         function(element, f){
             element.removeEventListener("click", f);
         }"#);
-    remove_click_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
+    remove_click_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
         s.remove_listener(function_handle);
     });
@@ -250,7 +250,7 @@ pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(
             const id = allocate(handler);
             element.addEventListener("mousemove",handler);
             return id;
-        }"#).invoke_and_return_bigint(&[element.into()]);
+        }"#).invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
@@ -263,7 +263,7 @@ pub fn element_remove_mouse_move_listener(element: &ExternRef, function_handle: 
         function(element, f){
             element.removeEventListener("mousemove", f);
         }"#);
-    remove_mouse_move_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
+    remove_mouse_move_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
         s.remove_listener(function_handle);
     });
@@ -278,7 +278,7 @@ pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(
             const id = allocate(handler);
             element.addEventListener("mousedown",handler);
             return id;
-        }"#).invoke_and_return_bigint(&[element.into()]);
+        }"#).invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
@@ -291,7 +291,7 @@ pub fn element_remove_mouse_down_listener(element: &ExternRef, function_handle: 
         function(element, f){
             element.removeEventListener("mousedown", f);
         }"#);
-    remove_mouse_down_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
+    remove_mouse_down_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
         s.remove_listener(function_handle);
     });
@@ -306,7 +306,7 @@ pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(Mo
             const id = allocate(handler);
             element.addEventListener("mouseup",handler);
             return id;
-        }"#).invoke_and_return_bigint(&[element.into()]);
+        }"#).invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
@@ -319,7 +319,7 @@ pub fn element_remove_mouse_up_listener(element: &ExternRef, function_handle: &R
         function(element, f){
             element.removeEventListener("mouseup", f);
         }"#);
-    remove_mouse_up_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
+    remove_mouse_up_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
         s.remove_listener(function_handle);
     });
@@ -371,7 +371,7 @@ pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(Ke
             element.addEventListener("keydown",handler);
             return id;
         }"#)
-    .invoke_and_return_bigint(&[element.into()]);
+    .invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     add_keyboard_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
@@ -382,7 +382,7 @@ pub fn element_remove_key_down_listener(element: &ExternRef, function_handle: &R
         function(element, f){
             element.removeEventListener("keydown", f);
         }"#);
-    remove_key_down_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
+    remove_key_down_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     remove_keyboard_event_handler(function_handle);
 }
 
@@ -396,7 +396,7 @@ pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(Keyb
             element.addEventListener("keyup",handler);
             return id;
         }"#)
-    .invoke_and_return_bigint(&[element.into()]);
+    .invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     add_keyboard_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
@@ -407,7 +407,7 @@ pub fn element_remove_key_up_listener(element: &ExternRef, function_handle: &Rc<
         function(element, f){
             element.removeEventListener("keyup", f);
         }"#);
-    remove_key_up_listener.invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
+    remove_key_up_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     remove_keyboard_event_handler(function_handle);
 }
 

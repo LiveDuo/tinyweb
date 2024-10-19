@@ -1,9 +1,9 @@
 
 use core::future::Future;
 
+use crate::js::{ExternRef, InvokeParam, JsFunction};
 use crate::allocations::get_string_from_allocation;
 use crate::runtime::EventHandlerFuture;
-use crate::js::{ExternRef, JsFunction};
 
 pub fn random() -> f32 {
     let random = JsFunction::register(r#"
@@ -18,7 +18,7 @@ pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
         function(element, property){
             return element[property];
         }"#);
-    get_property.invoke_and_return_bigint(&[element.into(), property.into()])
+    get_property.invoke_and_return_bigint(&[InvokeParam::ExternRef(element), InvokeParam::String(property)])
 }
 
 pub fn set_property_i64(element: &ExternRef, property: &str, value: i64) {
@@ -26,7 +26,7 @@ pub fn set_property_i64(element: &ExternRef, property: &str, value: i64) {
         function(element, property, value){
             element[property] = value;
         }"#);
-    set_property.invoke(&[element.into(), property.into(), value.into()]);
+    set_property.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::BigInt(value)]);
 }
 
 pub fn get_property_f64(element: &ExternRef, property: &str) -> f64 {
@@ -34,7 +34,7 @@ pub fn get_property_f64(element: &ExternRef, property: &str) -> f64 {
         function(element, property){
             return element[property];
         }"#);
-    get_property.invoke(&[element.into(), property.into()]) as f64
+    get_property.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(property)]) as f64
 }
 
 pub fn set_property_f64(element: &ExternRef, property: &str, value: f64) {
@@ -42,7 +42,7 @@ pub fn set_property_f64(element: &ExternRef, property: &str, value: f64) {
         function(element, property, value){
             element[property] = value;
         }"#);
-    set_property.invoke(&[element.into(), property.into(), value.into()]);
+    set_property.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Float64(value)]);
 }
 
 pub fn get_property_bool(element: &ExternRef, property: &str) -> bool {
@@ -50,7 +50,7 @@ pub fn get_property_bool(element: &ExternRef, property: &str) -> bool {
         function(element, property){
             return element[property]?1:0;
         }"#);
-    let v = get_property.invoke(&[element.into(), property.into()]);
+    let v = get_property.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(property)]);
     v == 1
 }
 
@@ -59,7 +59,7 @@ pub fn set_property_bool(element: &ExternRef, property: &str, value: bool) {
         function(element, property, value){
             element[property] = value !==0;
         }"#);
-    set_property.invoke(&[element.into(), property.into(), value.into()]);
+    set_property.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Bool(value)]);
 }
 
 pub fn get_property_string(element: &ExternRef, property: &str) -> String {
@@ -69,7 +69,7 @@ pub fn get_property_string(element: &ExternRef, property: &str) -> String {
             const allocationId = writeStringToMemory(text);
             return allocationId;
         }"#);
-    let text_allocation_id = get_property.invoke(&[element.into(), property.into()]);
+    let text_allocation_id = get_property.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(property)]);
     let text = get_string_from_allocation(text_allocation_id);
     text
 }
@@ -79,7 +79,7 @@ pub fn set_property_string(element: &ExternRef, property: &str, value: &str) {
         function(element, property, value){
             element[property] = value;
         }"#);
-    set_property.invoke(&[element.into(), property.into(), value.into()]);
+    set_property.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::String(value)]);
 }
 
 #[no_mangle]
@@ -96,6 +96,6 @@ pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
         }"#);
     let ms = ms.into();
     let (future, state_id) = EventHandlerFuture::<()>::create_future_with_state_id();
-    sleep.invoke(&[ms.into(), state_id.into()]);
+    sleep.invoke(&[InvokeParam::Float64(ms), InvokeParam::Float64(state_id as f64)]);
     future
 }

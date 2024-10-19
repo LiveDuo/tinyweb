@@ -14,7 +14,7 @@ pub fn console_log(message: &str) {
         function(message){
             console.log(message);
         }"#);
-    console_log.invoke(&[message.into()]);
+    console_log.invoke(&[InvokeParam::String(message)]);
 }
 
 pub fn console_error(message: &str) {
@@ -22,7 +22,7 @@ pub fn console_error(message: &str) {
         function(message){
             console.error(message);
         }"#);
-    console_error.invoke(&[message.into()]);
+    console_error.invoke(&[InvokeParam::String(message)]);
 }
 
 pub fn console_warn(message: &str) {
@@ -30,7 +30,7 @@ pub fn console_warn(message: &str) {
         function(message){
             console.warn(message);
         }"#);
-    console_warn.invoke(&[message.into()]);
+    console_warn.invoke(&[InvokeParam::String(message)]);
 }
 
 pub fn console_time(label: &str) {
@@ -38,7 +38,7 @@ pub fn console_time(label: &str) {
         function(label){
             console.time(label);
         }"#);
-    console_time.invoke(&[label.into()]);
+    console_time.invoke(&[InvokeParam::String(label)]);
 }
 
 pub fn console_time_end(label: &str) {
@@ -46,7 +46,7 @@ pub fn console_time_end(label: &str) {
         function(label){
             console.timeEnd(label);
         }"#);
-    console_time_end.invoke(&[label.into()]);
+    console_time_end.invoke(&[InvokeParam::String(label)]);
 }
 
 
@@ -55,7 +55,7 @@ pub fn local_storage_set(key: &str, value: &str) {
         function(key, value){
             localStorage.setItem(key, value);
         }"#);
-    local_storage_set.invoke(&[key.into(), value.into()]);
+    local_storage_set.invoke(&[InvokeParam::String(key), InvokeParam::String(value)]);
 }
 
 pub fn local_storage_remove(key: &str) {
@@ -63,7 +63,7 @@ pub fn local_storage_remove(key: &str) {
         function(key){
             localStorage.removeItem(key);
         }"#);
-    local_storage_remove.invoke(&[key.into()]);
+    local_storage_remove.invoke(&[InvokeParam::String(key)]);
 }
 
 pub fn local_storage_get(key: &str) -> Option<String> {
@@ -76,7 +76,7 @@ pub fn local_storage_get(key: &str) -> Option<String> {
             const allocationId = writeStringToMemory(text);
             return allocationId;
         }"#);
-    let text_allocation_id = local_storage_get.invoke(&[key.into()]);
+    let text_allocation_id = local_storage_get.invoke(&[InvokeParam::String(key)]);
     if text_allocation_id == 0 {
         return None;
     }
@@ -117,7 +117,7 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
             const handle = window.setTimeout(handler, ms);
             return {id,handle};
         }"#)
-    .invoke_and_return_object(&[ms.into().into()]);
+    .invoke_and_return_object(&[InvokeParam::Float64(ms.into())]);
     let function_handle = get_property_i64(&obj_handle, "id");
     let timer_handle = get_property_f64(&obj_handle, "handle");
     TIMEOUT_HANDLERS.with(|h| {
@@ -131,7 +131,7 @@ pub fn clear_timeout(interval_id: impl Into<f64>) {
         function(interval_id){
             window.clearTimeout(interval_id);
         }"#);
-    clear_interval.invoke(&[interval_id.into().into()]);
+    clear_interval.invoke(&[InvokeParam::Float64(interval_id.into())]);
 }
 
 pub fn history_push_state(title: &str, url: &str) {
@@ -140,7 +140,7 @@ pub fn history_push_state(title: &str, url: &str) {
             window.history.pushState({}, title, url);
         }
         ")
-    .invoke(&[title.into(), url.into()]);
+    .invoke(&[InvokeParam::String(title), InvokeParam::String(url)]);
 }
 
 pub fn history_replace_state(title: &str, url: &str) {
@@ -149,7 +149,7 @@ pub fn history_replace_state(title: &str, url: &str) {
             window.history.replaceState({}, title, url);
         }
         ")
-    .invoke(&[title.into(), url.into()]);
+    .invoke(&[InvokeParam::String(title), InvokeParam::String(url)]);
 }
 
 pub fn history_back() {
@@ -176,7 +176,7 @@ pub fn history_go(delta: i32) {
             window.history.go(delta);
         }
         ")
-    .invoke(&[delta.into()]);
+    .invoke(&[InvokeParam::Float64(delta as f64)]);
 }
 
 pub fn history_length() -> u32 {
@@ -306,6 +306,6 @@ pub fn remove_history_pop_state_listener(element: &ExternRef, function_handle: &
         function(element, f){
             window.removeEventListener("popstate", f);
         }"#)
-    .invoke(&[element.into(), InvokeParam::ExternRef(&function_handle)]);
+    .invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     remove_history_pop_state_event_handler(function_handle);
 }
