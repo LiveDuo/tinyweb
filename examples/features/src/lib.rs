@@ -8,8 +8,8 @@ use json::JsonValue;
 use tinyweb::element::{El, Router, Page};
 use tinyweb::signals::Signal;
 
-use tinyweb::bindings::{dom, http_request, window};
-use tinyweb::bindings::http_request::*;
+use tinyweb::bindings::{dom, http, window};
+use tinyweb::bindings::http::*;
 
 const BUTTON_CLASSES: &[&str] = &["bg-blue-500", "hover:bg-blue-700", "text-white", "p-2", "rounded", "m-2"];
 
@@ -21,7 +21,7 @@ async fn fetch_json(method: HTTPMethod, url: String, body: Option<JsonValue>) ->
     let body_temp = body.map(|s| s.dump());
     let body = body_temp.as_ref().map(|s| s.as_str());
     let fetch_options = FetchOptions { action: method, url: &url, body, ..Default::default()};
-    let fetch_res = http_request::fetch(fetch_options).await;
+    let fetch_res = http::fetch(fetch_options).await;
     let result = match fetch_res { FetchResponse::Text(_, d) => Ok(d), _ => Err(()), };
     json::parse(&result.unwrap()).unwrap()
 }

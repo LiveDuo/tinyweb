@@ -1,5 +1,5 @@
 
 pub mod dom;
-pub mod http_request;
+pub mod http;
 pub mod utils;
 pub mod window;
