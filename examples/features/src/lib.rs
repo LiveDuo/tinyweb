@@ -8,7 +8,7 @@ use json::JsonValue;
 use tinyweb::element::{El, Router, Page};
 use tinyweb::signals::Signal;
 
-use tinyweb::bindings::{console, dom, http_request, history};
+use tinyweb::bindings::{console, dom, http_request, window};
 use tinyweb::bindings::http_request::*;
 
 const BUTTON_CLASSES: &[&str] = &["bg-blue-500", "hover:bg-blue-700", "text-white", "p-2", "rounded", "m-2"];
@@ -115,7 +115,7 @@ pub fn main() {
 
     // load page
     let body = dom::query_selector("body");
-    let (_, page) = pages.iter().find(|&(s, _)| *s == history::location_pathname()).unwrap_or(&pages[0]);
+    let (_, page) = pages.iter().find(|&(s, _)| *s == window::location_pathname()).unwrap_or(&pages[0]);
     page.element.mount(&body);
 
     // init router

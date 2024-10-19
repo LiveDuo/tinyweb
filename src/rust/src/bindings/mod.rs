@@ -1,9 +1,7 @@
 pub mod canvas;
 pub mod local_storage;
 pub mod http_request;
-pub mod history;
 pub mod dom;
 pub mod window;
-pub mod web_gpu;
 pub mod console;
 pub mod utils;

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::ops::Deref;
 
 use crate::bindings::dom::{self, ChangeEvent, MouseEvent};
-use crate::bindings::history;
+use crate::bindings::window;
 use crate::js::ExternRef;
 
 #[derive(Debug, Clone, Copy)]
@@ -82,7 +82,7 @@ impl Router {
     pub fn navigate(&self, route: &str) {
 
         let page = self.pages.get(route).unwrap();
-        history::history_push_state(&page.title.to_owned().unwrap_or_default(), route);
+        window::history_push_state(&page.title.to_owned().unwrap_or_default(), route);
 
         let body = self.root.as_ref().unwrap();
         dom::element_set_inner_html(&body, "");
