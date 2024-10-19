@@ -100,18 +100,6 @@ pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
     future
 }
 
-pub fn wait_til_animation_frame() -> impl Future<Output = ()> {
-    let wait_til_animation_frame = JsFunction::register(r#"
-        function(state_id){
-            window.requestAnimationFrame(()=>{
-                wasmModule.instance.exports.web_handle_empty_callback(state_id);
-            });
-        }"#);
-    let (future, state_id) = EventHandlerFuture::<()>::create_future_with_state_id();
-    wait_til_animation_frame.invoke(&[state_id.into()]);
-    future
-}
-
 pub fn create_object() -> ExternRef {
     let config_ref = JsFunction::register(r#"
         function(){
