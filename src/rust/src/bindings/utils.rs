@@ -99,29 +99,3 @@ pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
     sleep.invoke(&[ms.into(), state_id.into()]);
     future
 }
-
-pub fn create_object() -> ExternRef {
-    let config_ref = JsFunction::register(r#"
-        function(){
-            return {};
-        }"#)
-    .invoke_and_return_object(&[]);
-    config_ref
-}
-
-pub fn create_array() -> ExternRef {
-    let config_ref = JsFunction::register(r#"
-        function(){
-            return [];
-        }"#)
-    .invoke_and_return_object(&[]);
-    config_ref
-}
-
-pub fn add_to_array(array: &ExternRef, value: &ExternRef) {
-    let add_to_array = JsFunction::register(r#"
-        function(array, value){
-            array.push(value);
-        }"#);
-    add_to_array.invoke(&[(array).into(), (value).into()]);
-}

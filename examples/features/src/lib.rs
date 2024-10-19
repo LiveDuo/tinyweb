@@ -8,7 +8,7 @@ use json::JsonValue;
 use tinyweb::element::{El, Router, Page};
 use tinyweb::signals::Signal;
 
-use tinyweb::bindings::{console, dom, http_request, window};
+use tinyweb::bindings::{dom, http_request, window};
 use tinyweb::bindings::http_request::*;
 
 const BUTTON_CLASSES: &[&str] = &["bg-blue-500", "hover:bg-blue-700", "text-white", "p-2", "rounded", "m-2"];
@@ -105,7 +105,7 @@ fn page2() -> El {
 #[no_mangle]
 pub fn main() {
 
-    std::panic::set_hook(Box::new(|e| console::console_log(&e.to_string())));
+    std::panic::set_hook(Box::new(|e| window::console_log(&e.to_string())));
 
     // get pages
     let pages = [

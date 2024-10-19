@@ -4,7 +4,93 @@ use std::sync::Mutex;
 use std::collections::HashMap;
 
 use crate::js::{ExternRef, InvokeParam, JsFunction};
-use crate::bindings::utils::*;
+
+use crate::bindings::utils::{get_property_f64, get_property_i64};
+use crate::allocations::get_string_from_allocation;
+
+
+pub fn console_log(message: &str) {
+    let console_log = JsFunction::register(r#"
+        function(message){
+            console.log(message);
+        }"#);
+    console_log.invoke(&[message.into()]);
+}
+
+pub fn console_error(message: &str) {
+    let console_error = JsFunction::register(r#"
+        function(message){
+            console.error(message);
+        }"#);
+    console_error.invoke(&[message.into()]);
+}
+
+pub fn console_warn(message: &str) {
+    let console_warn = JsFunction::register(r#"
+        function(message){
+            console.warn(message);
+        }"#);
+    console_warn.invoke(&[message.into()]);
+}
+
+pub fn console_time(label: &str) {
+    let console_time = JsFunction::register(r#"
+        function(label){
+            console.time(label);
+        }"#);
+    console_time.invoke(&[label.into()]);
+}
+
+pub fn console_time_end(label: &str) {
+    let console_time_end = JsFunction::register(r#"
+        function(label){
+            console.timeEnd(label);
+        }"#);
+    console_time_end.invoke(&[label.into()]);
+}
+
+
+pub fn local_storage_set(key: &str, value: &str) {
+    let local_storage_set = JsFunction::register(r#"
+        function(key, value){
+            localStorage.setItem(key, value);
+        }"#);
+    local_storage_set.invoke(&[key.into(), value.into()]);
+}
+
+pub fn local_storage_remove(key: &str) {
+    let local_storage_remove = JsFunction::register(r#"
+        function(key){
+            localStorage.removeItem(key);
+        }"#);
+    local_storage_remove.invoke(&[key.into()]);
+}
+
+pub fn local_storage_get(key: &str) -> Option<String> {
+    let local_storage_get = JsFunction::register(r#"
+        function(key){
+            const text = localStorage.getItem(key);
+            if(text === null){
+                return 0;
+            }
+            const allocationId = writeStringToMemory(text);
+            return allocationId;
+        }"#);
+    let text_allocation_id = local_storage_get.invoke(&[key.into()]);
+    if text_allocation_id == 0 {
+        return None;
+    }
+    let text = get_string_from_allocation(text_allocation_id as u32);
+    Some(text)
+}
+
+pub fn local_storage_clear() {
+    let local_storage_clear = JsFunction::register(r#"
+        function(){
+            localStorage.clear();
+        }"#);
+    local_storage_clear.invoke(&[]);
+}
 
 
 thread_local! {

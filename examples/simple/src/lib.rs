@@ -1,10 +1,10 @@
 
-use tinyweb::bindings::{console, dom};
+use tinyweb::bindings::{window, dom};
 
 #[no_mangle]
 pub fn main() {
 
-    std::panic::set_hook(Box::new(|e| console::console_log(&e.to_string())));
+    std::panic::set_hook(Box::new(|e| window::console_log(&e.to_string())));
 
     let button = dom::create_element("button");
     let button_text = dom::create_text_node("Click");
