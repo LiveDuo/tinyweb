@@ -31,11 +31,11 @@ const readParamsFromMemory = (ptr, len) => {
         } else if (parameters[i] === 4) {
             const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
-            values.push((new TextDecoder('utf-8')).decode(memory.subarray(ptr, ptr + len)))
+            values.push(textDecoder.decode(memory.subarray(ptr, ptr + len)))
             i += 1 + 4 + 4
         } else if (parameters[i] === 5) {
-            const functionId = dataView.getUint32(i + 1, true)
-            const index = Number(functionId)
+            const objectId = dataView.getUint32(i + 1, true)
+            const index = Number(objectId)
             values.push(state.objects[index])
             i += 1 + 4
         } else if (parameters[i] === 6) {

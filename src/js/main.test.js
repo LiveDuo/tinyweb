@@ -18,7 +18,9 @@ test('check read params', () => {
         {memory: [0], expected: [undefined]},
         {memory: [1], expected: [null]},
         {memory: [2, ...float64Array], expected: [42.42]},
-        {memory: [3, ...bigInt64Array], expected: [42n]}
+        {memory: [3, ...bigInt64Array], expected: [42n]},
+        {memory: [7], expected: [true]},
+        {memory: [8], expected: [false]}
     ]
     for (const testCase of testCases) {
         wasmModule.instance = { exports: { memory: { buffer: testCase.memory } } }
