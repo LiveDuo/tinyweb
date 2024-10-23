@@ -2,37 +2,13 @@
 
 let wasmModule = {}
 
-const state = { objects: [], objectFreeList: [], objectIndex: 0, functions: [] }
-
-const allocate = (object) => {
-    if (state.objectFreeList.length > 0) state.objectFreeList.pop()
-    state.objectIndex++
-    state.objects[state.objectIndex] = object
-    return BigInt(state.objectIndex)
-}
-
-const deallocate = (functionId) => {
-    if (functionId) {
-        state.objectFreeList.push(Number(functionId))
-    } else {
-        throw new Error('Invalid deallocate functionId')
-    }
-}
-
-const writeStringToMemory = (str) => {
-    const bytes = (new TextEncoder()).encode(str)
-    const id = wasmModule.instance.exports.create_allocation(bytes.length)
-    const ptr = wasmModule.instance.exports.allocation_ptr(id)
-    const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-    memory.set(bytes, ptr)
-    return id
-}
+const state = { objects: [], objectIndex: 0, functions: [] }
 
 // 0 = undefined, 1 = null, 2 = f64, 3 = bigint, 4 = string, 5 = extern ref, 6 = array of f64, 7 = true, 8 = false
-const readParams = (ptr, length) => {
-    
+const readParamsFromMemory = (ptr, len) => {
+
     const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-    const parameters = new Uint8Array(memory.slice(ptr, ptr + length))
+    const parameters = new Uint8Array(memory.slice(ptr, ptr + len))
     const dataView = new DataView(parameters.buffer)
     const values = []
     let i = 0
@@ -88,7 +64,7 @@ const readParams = (ptr, length) => {
 }
 
 const getWasmImports = () => {
-    
+
     const env = {
         __register_function (ptr, len) {
             const decoder = new TextDecoder('utf-8')
@@ -99,28 +75,31 @@ const getWasmImports = () => {
             return id
         },
         __invoke_function (functionId, ptr, len) {
-            const values = readParams(ptr, len)
+            const values = readParamsFromMemory(ptr, len)
             const result = state.functions[functionId].call({}, ...values)
             return result
         },
         __invoke_function_and_return_object (functionId, ptr, len) {
-            const values = readParams(ptr, len)
-            const result = state.functions[functionId].call({}, ...values)
-            if (result === undefined || result === null) throw new Error('Invalid return object')
-            return allocate(result)
+            const values = readParamsFromMemory(ptr, len)
+            const object = state.functions[functionId].call({}, ...values)
+            if (object === undefined || object === null) throw new Error('Invalid return object')
+
+            state.objectIndex++
+            state.objects[state.objectIndex] = object
+            return BigInt(state.objectIndex)
         },
         __invoke_function_and_return_bool (functionId, ptr, len) {
-            const values = readParams(ptr, len)
+            const values = readParamsFromMemory(ptr, len)
             const result = state.functions[functionId].call({}, ...values)
             return result ? 1 : 0
         },
         __invoke_function_and_return_bigint (functionId, ptr, len) {
-            const values = readParams(ptr, len)
+            const values = readParamsFromMemory(ptr, len)
             const result = state.functions[functionId].call({}, ...values)
             return result
         },
         __invoke_function_and_return_string (functionId, ptr, len) {
-            const values = readParams(ptr, len)
+            const values = readParamsFromMemory(ptr, len)
             const result = state.functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
@@ -132,7 +111,7 @@ const getWasmImports = () => {
             return id
         },
         __invoke_function_and_return_array_buffer (functionId, ptr, len) {
-            const values = readParams(ptr, len)
+            const values = readParamsFromMemory(ptr, len)
             const result = state.functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return array buffer')
 
@@ -142,9 +121,6 @@ const getWasmImports = () => {
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             memory.set(bytes, allocationPtr)
             return id
-        },
-        __drop_externref (obj) {
-            deallocate(obj)
         },
     }
     return { env }
@@ -158,12 +134,21 @@ const loadWasm = async () => {
     wasmModule.instance.exports.main()
 }
 
+const writeStringToMemory = (str) => {
+    const bytes = (new TextEncoder()).encode(str)
+    const id = wasmModule.instance.exports.create_allocation(bytes.length)
+    const ptr = wasmModule.instance.exports.allocation_ptr(id)
+    const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
+    memory.set(bytes, ptr)
+    return id
+}
+
 const loadExports = () => {
     exports.wasmModule = wasmModule
     exports.writeStringToMemory = writeStringToMemory
     exports.allocate = allocate
     exports.deallocate = deallocate
-    exports.readParams = readParams
+    exports.readParamsFromMemory = readParamsFromMemory
 }
 
 if (typeof window !== 'undefined') { // load wasm (browser)

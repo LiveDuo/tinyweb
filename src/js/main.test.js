@@ -1,7 +1,7 @@
 const test = require('node:test')
 const assert = require('node:assert')
 
-const { readParams, wasmModule } = require('./main')
+const { readParamsFromMemory, wasmModule } = require('./main')
 
 // node src/js/main.test.js
 test('check read params', () => {
@@ -12,9 +12,8 @@ test('check read params', () => {
     ]
     for (const testCase of testCases) {
         wasmModule.instance = { exports: { memory: { buffer: testCase.buffer } } }
-        
-        const result = readParams(0, testCase.buffer.length)
+
+        const result = readParamsFromMemory(0, testCase.buffer.length)
         assert.deepStrictEqual(result, testCase.result)
     }
 })
-
