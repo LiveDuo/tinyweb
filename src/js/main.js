@@ -71,8 +71,8 @@ const getWasmImports = () => {
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             const functionBody = decoder.decode(memory.subarray(ptr, ptr + len))
             state.functions.push(Function(`'use strict';return(${functionBody})`)())
-            const funtionId = state.functions.length - 1
-            return funtionId
+            const functionId = state.functions.length - 1
+            return functionId
         },
         __invoke_function (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
