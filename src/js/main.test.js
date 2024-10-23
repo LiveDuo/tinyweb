@@ -1,9 +1,10 @@
 const test = require('node:test')
 const assert = require('node:assert')
 
-const { readParamsFromMemory, wasmModule } = require('./main')
+const { readParamsFromMemory, writeBufferToMemory, wasmModule } = require('./main')
 
 // node src/js/main.test.js
+
 test('check read params', () => {
 
     const float64View = new DataView(new ArrayBuffer(8))
@@ -39,6 +40,23 @@ test('check read params', () => {
         wasmModule.instance = { exports: { memory: { buffer: testCase.memory } } }
 
         const result = readParamsFromMemory(0, testCase.memory.length)
+        assert.deepStrictEqual(result, testCase.expected)
+    }
+})
+
+test('check write buffer', () => {
+
+    const testCases = [
+        {memory: [], expected: 0},
+    ]
+    const create_allocation = () => { return 0 }
+    const allocation_ptr = () => { return 0 }
+    for (const testCase of testCases) {
+
+        const exports = { create_allocation, allocation_ptr, memory: { buffer: testCase.memory } }
+        wasmModule.instance = { exports }
+
+        const result = writeBufferToMemory(0, [])
         assert.deepStrictEqual(result, testCase.expected)
     }
 })
