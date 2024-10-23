@@ -15,8 +15,6 @@ use crate::bindings::utils::random;
 
 pub struct EventHandlerFuture<T> { shared_state: Arc<Mutex<EventHandlerSharedState<T>>>, }
 
-pub struct EventHandlerSharedState<T> { completed: bool, waker: Option<Waker>, result: Option<T>, }
-
 impl<T> Future for EventHandlerFuture<T> {
     type Output = T;
 
@@ -31,6 +29,29 @@ impl<T> Future for EventHandlerFuture<T> {
         }
     }
 }
+
+// https://rust-lang.github.io/async-book/02_execution/03_wakeups.html
+impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
+    pub fn create_future_with_state_id() -> (Self, u32) {
+        let state = EventHandlerSharedState { completed: false, waker: None, result: None, };
+        let shared_state = Arc::new(Mutex::new(state));
+
+        let id = (random() * std::f32::MAX) as u32;
+        let state_storage = get_globals_mutex::<T>();
+        state_storage.map.lock().map(|mut s| {
+            s.insert(id as u32, shared_state.clone());
+        }).unwrap();
+
+        (EventHandlerFuture { shared_state: shared_state.clone(), }, id)
+    }
+
+    pub fn wake_future_with_state_id(id: u32, result: T) {
+        let state_storage = get_globals_mutex::<T>();
+        state_storage.wake_future(id, result);
+    }
+}
+
+pub struct EventHandlerSharedState<T> { completed: bool, waker: Option<Waker>, result: Option<T>, }
 
 pub struct SharedStateMap<T> {
     map: Mutex<HashMap<u32, Arc<Mutex<EventHandlerSharedState<T>>>>>,
@@ -74,27 +95,6 @@ pub fn get_globals_mutex<T: Send + Sync + 'static>() -> MutexGuard<'static, Shar
         unsafe { &*(leaked as *const Mutex<SharedStateMap<T>>) }
     };
     return mutex.lock().unwrap();
-}
-
-// https://rust-lang.github.io/async-book/02_execution/03_wakeups.html
-impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
-    pub fn create_future_with_state_id() -> (Self, u32) {
-        let state = EventHandlerSharedState { completed: false, waker: None, result: None, };
-        let shared_state = Arc::new(Mutex::new(state));
-
-        let id = (random() * std::f32::MAX) as u32;
-        let state_storage = get_globals_mutex::<T>();
-        state_storage.map.lock().map(|mut s| {
-            s.insert(id as u32, shared_state.clone());
-        }).unwrap();
-
-        (EventHandlerFuture { shared_state: shared_state.clone(), }, id)
-    }
-
-    pub fn wake_future_with_state_id(id: u32, result: T) {
-        let state_storage = get_globals_mutex::<T>();
-        state_storage.wake_future(id, result);
-    }
 }
 
 fn simple_waker<T>(task: &Arc<Task<T>>) -> Waker {
