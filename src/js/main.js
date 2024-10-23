@@ -11,50 +11,50 @@ const textDecoder = new TextDecoder()
 const readParamsFromMemory = (ptr, len) => {
 
     const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-    const parameters = new Uint8Array(memory.slice(ptr, ptr + len))
-    const dataView = new DataView(parameters.buffer)
+    const params = new Uint8Array(memory.slice(ptr, ptr + len))
+    const dataView = new DataView(params.buffer)
     const values = []
     let i = 0
-    while (i < parameters.length) {
-        if (parameters[i] === 0) { // undefined
+    while (i < params.length) {
+        if (params[i] === 0) { // undefined
             values.push(undefined)
             i += 1
-        } else if (parameters[i] === 1) { // null
+        } else if (params[i] === 1) { // null
             values.push(null)
             i += 1
-        } else if (parameters[i] === 2) { // f64
+        } else if (params[i] === 2) { // f64
             values.push(dataView.getFloat64(i + 1, true))
             i += 1 + 8
-        } else if (parameters[i] === 3) { // big int
+        } else if (params[i] === 3) { // big int
             values.push(dataView.getBigInt64(i + 1, true))
             i += 1 + 8
-        } else if (parameters[i] === 4) { // string
+        } else if (params[i] === 4) { // string
             const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(textDecoder.decode(memory.subarray(ptr, ptr + len)))
             i += 1 + 4 + 4
-        } else if (parameters[i] === 5) { // extern ref
+        } else if (params[i] === 5) { // extern ref
             const objectId = dataView.getUint32(i + 1, true)
-            const index = Number(objectId)
+            const index = BigInt(objectId)
             values.push(objects[index])
             i += 1 + 4
-        } else if (parameters[i] === 6) { // float32 array
+        } else if (params[i] === 6) { // float32 array
             const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(new Float32Array(memory.buffer.slice(ptr, ptr + len * 4)))
             i += 1 + 4 + 4
-        } else if (parameters[i] === 7) { // true
+        } else if (params[i] === 7) { // true
             values.push(true)
             i += 1
-        } else if (parameters[i] === 8) { // false
+        } else if (params[i] === 8) { // false
             values.push(false)
             i += 1
-        } else if (parameters[i] === 9) { // float64 array
+        } else if (params[i] === 9) { // float64 array
             const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(new Float64Array(memory.buffer.slice(ptr, ptr + len * 8)))
             i += 1 + 4 + 4
-        } else if (parameters[i] === 10) { // uint32 array
+        } else if (params[i] === 10) { // uint32 array
             const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(new Uint32Array(memory.buffer.slice(ptr, ptr + len * 4)))
