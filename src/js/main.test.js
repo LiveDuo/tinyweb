@@ -12,14 +12,14 @@ test('check read params', () => {
     const float64Array = new Uint8Array(float64View.buffer)
 
     const testCases = [
-        {buffer: [0], result: [undefined]},
-        {buffer: [1], result: [null]},
-        {buffer: float64Array, result: [42.42]}
+        {memory: [0], expected: [undefined]},
+        {memory: [1], expected: [null]},
+        {memory: float64Array, expected: [42.42]}
     ]
     for (const testCase of testCases) {
-        wasmModule.instance = { exports: { memory: { buffer: testCase.buffer } } }
+        wasmModule.instance = { exports: { memory: { buffer: testCase.memory } } }
 
-        const result = readParamsFromMemory(0, testCase.buffer.length)
-        assert.deepStrictEqual(result, testCase.result)
+        const result = readParamsFromMemory(0, testCase.memory.length)
+        assert.deepStrictEqual(result, testCase.expected)
     }
 })
