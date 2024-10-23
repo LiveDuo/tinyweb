@@ -146,8 +146,6 @@ const writeStringToMemory = (str) => {
 const loadExports = () => {
     exports.wasmModule = wasmModule
     exports.writeStringToMemory = writeStringToMemory
-    exports.allocate = allocate
-    exports.deallocate = deallocate
     exports.readParamsFromMemory = readParamsFromMemory
 }
 
