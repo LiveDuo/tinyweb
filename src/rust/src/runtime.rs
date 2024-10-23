@@ -63,14 +63,14 @@ pub fn get_globals_mutex<T: Send + Sync + 'static>() -> MutexGuard<'static, Shar
 
     let list_opt = globals.iter().find(|(r, _)| *r == type_id)
         .map(|(_, v)| *v as *const Mutex<dyn Any + Send + Sync>);
-    
+
     let mutex = if let Some(v) = list_opt {
         unsafe { &*(v as *const Mutex<SharedStateMap<T>>) }
     } else {
         let v = Box::new(Mutex::new(SharedStateMap { map: Mutex::new(HashMap::new()) }));
         let leaked = Box::leak(v);
         globals.push_front((type_id, leaked));
-    
+
         unsafe { &*(leaked as *const Mutex<SharedStateMap<T>>) }
     };
     return mutex.lock().unwrap();
@@ -171,10 +171,9 @@ mod tests {
     fn test_run() {
         let has_run = Arc::new(Mutex::new(false));
         let has_run_clone = has_run.clone();
-        let future = async move {
+        run(async move {
             has_run_clone.lock().map(|mut s| { *s = true; }).unwrap();
-        };
-        run(future);
+        });
         assert_eq!(*has_run.lock().unwrap(), true);
     }
 
@@ -184,10 +183,10 @@ mod tests {
         run(async move {
             let (future, state_id) = EventHandlerFuture::<bool>::create_future_with_state_id();
             assert_eq!(future.shared_state.lock().map(|s| s.result).unwrap(), None);
-            
+
             EventHandlerFuture::<bool>::wake_future_with_state_id(state_id, true);
             assert_eq!(future.shared_state.lock().map(|s| s.result).unwrap(), Some(true));
-            
+
             let result = future.await;
             assert_eq!(result, true);
         });

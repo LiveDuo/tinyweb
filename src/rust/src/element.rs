@@ -6,7 +6,7 @@ use crate::bindings::dom::{self, ChangeEvent, MouseEvent};
 use crate::bindings::window;
 use crate::js::ExternRef;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct El(ExternRef);
 
 impl Deref for El {
@@ -99,10 +99,11 @@ mod tests {
     #[test]
     fn test_element() {
 
-        El::new("div")
-            .classes(&[])
+        let el = El::new("div").classes(&[])
             .child(El::new("button").text("button 1"))
             .child(El::new("button").text("button 2"));
+        assert_eq!(el, El(ExternRef { value: 0, }));
+
     }
 
 }
