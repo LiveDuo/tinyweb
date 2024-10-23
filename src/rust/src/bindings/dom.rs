@@ -42,7 +42,8 @@ pub fn prompt(message: &str, placeholder: &str) -> String {
     let message_fn = JsFunction::register(r#"
         function(message, placeholder){
             const text = prompt(message, placeholder);
-            const allocationId = writeStringToMemory(text);
+            const buffer = (new TextEncoder()).encode(text);
+            const allocationId = writeBufferToMemory(buffer);
             return allocationId;
         }"#);
     let text_allocation_id = message_fn.invoke(&[InvokeParam::String(message), InvokeParam::String(placeholder)]);
@@ -146,8 +147,9 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
     let function_ref = JsFunction::register(r#"
         function(element ){
             const handler = (e) => {
-                const value = e.target.value;
-                const allocationId = writeStringToMemory(value);
+                const text = e.target.value;
+                const buffer = (new TextEncoder()).encode(text);
+                const allocationId = writeBufferToMemory(buffer);
                 wasmModule.instance.exports.web_handle_change_event(id, allocationId);
             };
             const id = allocate(handler);

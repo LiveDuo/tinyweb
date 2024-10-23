@@ -71,8 +71,8 @@ const getWasmImports = () => {
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             const functionBody = decoder.decode(memory.subarray(ptr, ptr + len))
             state.functions.push(Function(`'use strict';return(${functionBody})`)())
-            const id = state.functions.length - 1
-            return id
+            const funtionId = state.functions.length - 1
+            return funtionId
         },
         __invoke_function (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
@@ -103,24 +103,18 @@ const getWasmImports = () => {
             const result = state.functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
-            const bytes = (new TextEncoder()).encode(result)
-            const id = wasmModule.instance.exports.create_allocation(bytes.length)
-            const allocationPtr = wasmModule.instance.exports.allocation_ptr(id)
-            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-            memory.set(bytes, allocationPtr)
-            return id
+            const buffer = (new TextEncoder()).encode(result)
+            const allocationId = writeBufferToMemory(buffer)
+            return allocationId
         },
         __invoke_function_and_return_array_buffer (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = state.functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return array buffer')
 
-            const bytes = new Uint8Array(result)
-            const id = wasmModule.instance.exports.create_allocation(bytes.length)
-            const allocationPtr = wasmModule.instance.exports.allocation_ptr(id)
-            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-            memory.set(bytes, allocationPtr)
-            return id
+            const buffer = new Uint8Array(result)
+            const allocationId = writeBufferToMemory(buffer)
+            return allocationId
         },
     }
     return { env }
@@ -134,18 +128,17 @@ const loadWasm = async () => {
     wasmModule.instance.exports.main()
 }
 
-const writeStringToMemory = (str) => {
-    const bytes = (new TextEncoder()).encode(str)
-    const id = wasmModule.instance.exports.create_allocation(bytes.length)
-    const ptr = wasmModule.instance.exports.allocation_ptr(id)
+const writeBufferToMemory = (buffer) => {
+    const allocationId = wasmModule.instance.exports.create_allocation(buffer.length)
+    const allocationPtr = wasmModule.instance.exports.allocation_ptr(allocationId)
     const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-    memory.set(bytes, ptr)
-    return id
+    memory.set(buffer, allocationPtr)
+    return allocationId
 }
 
 const loadExports = () => {
     exports.wasmModule = wasmModule
-    exports.writeStringToMemory = writeStringToMemory
+    exports.writeBufferToMemory = writeBufferToMemory
     exports.readParamsFromMemory = readParamsFromMemory
 }
 

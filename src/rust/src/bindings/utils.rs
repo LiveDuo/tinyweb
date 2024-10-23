@@ -66,7 +66,8 @@ pub fn get_property_string(element: &ExternRef, property: &str) -> String {
     let get_property = JsFunction::register(r#"
         function(element, property){
             const text = element[property];
-            const allocationId = writeStringToMemory(text);
+            const buffer = (new TextEncoder()).encode(text);
+            const allocationId = writeBufferToMemory(buffer);
             return allocationId;
         }"#);
     let text_allocation_id = get_property.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(property)]);

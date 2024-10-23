@@ -73,7 +73,8 @@ pub fn local_storage_get(key: &str) -> Option<String> {
             if(text === null){
                 return 0;
             }
-            const allocationId = writeStringToMemory(text);
+            const buffer = (new TextEncoder()).encode(text);
+            const allocationId = writeBufferToMemory(buffer);
             return allocationId;
         }"#);
     let text_allocation_id = local_storage_get.invoke(&[InvokeParam::String(key)]);
