@@ -5,8 +5,8 @@ let wasmModule = {}
 const objects = []
 const functions = []
 
-const textDecoder = new TextDecoder()
 const textEncoder = new TextEncoder()
+const textDecoder = new TextDecoder()
 
 const readParamsFromMemory = (ptr, len) => {
 
