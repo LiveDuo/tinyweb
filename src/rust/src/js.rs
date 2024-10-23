@@ -18,68 +18,71 @@ pub enum InvokeParam<'a> {
     Uint32Array(&'a [u32]),
 }
 
-// preceded by a 32 bit integer indicating its type
-pub fn serialize_param(param: &InvokeParam) -> Vec<u8> {
-    let mut param_bytes = Vec::new();
-    match param {
-        InvokeParam::Undefined => {
-            param_bytes.push(0);
+impl<'a> InvokeParam<'a> {
+
+    // preceded by a 32 bit integer indicating its type
+    pub fn serialize(&self) -> Vec<u8> {
+        let mut param_bytes = Vec::new();
+        match self {
+            InvokeParam::Undefined => {
+                param_bytes.push(0);
+            }
+            InvokeParam::Null => {
+                param_bytes.push(1);
+            }
+            InvokeParam::Float64(f) => {
+                param_bytes.push(2);
+                param_bytes.extend_from_slice(&f.to_le_bytes());
+            }
+            InvokeParam::BigInt(i) => {
+                param_bytes.push(3);
+                param_bytes.extend_from_slice(&i.to_le_bytes());
+            }
+            InvokeParam::String(s) => {
+                param_bytes.push(4);
+                let ptr = s.as_ptr() as u32;
+                let len = s.len();
+                param_bytes.extend_from_slice(&ptr.to_le_bytes());
+                param_bytes.extend_from_slice(&len.to_le_bytes());
+            }
+            InvokeParam::ExternRef(i) => {
+                param_bytes.push(5);
+                param_bytes.extend_from_slice(&i.value.to_le_bytes());
+            }
+            InvokeParam::Float32Array(a) => {
+                param_bytes.push(6);
+                let ptr = a.as_ptr() as u32;
+                let len = a.len();
+                param_bytes.extend_from_slice(&ptr.to_le_bytes());
+                param_bytes.extend_from_slice(&len.to_le_bytes());
+            }
+            InvokeParam::Bool(b) => {
+                param_bytes.push(if *b { 7 } else { 8 });
+            }
+            InvokeParam::Float64Array(a) => {
+                param_bytes.push(9);
+                let ptr = a.as_ptr() as u32;
+                let len = a.len();
+                param_bytes.extend_from_slice(&ptr.to_le_bytes());
+                param_bytes.extend_from_slice(&len.to_le_bytes());
+            }
+            InvokeParam::Uint32Array(a) => {
+                param_bytes.push(10);
+                let ptr = a.as_ptr() as u32;
+                let len = a.len();
+                param_bytes.extend_from_slice(&ptr.to_le_bytes());
+                param_bytes.extend_from_slice(&len.to_le_bytes());
+            }
         }
-        InvokeParam::Null => {
-            param_bytes.push(1);
-        }
-        InvokeParam::Float64(f) => {
-            param_bytes.push(2);
-            param_bytes.extend_from_slice(&f.to_le_bytes());
-        }
-        InvokeParam::BigInt(i) => {
-            param_bytes.push(3);
-            param_bytes.extend_from_slice(&i.to_le_bytes());
-        }
-        InvokeParam::String(s) => {
-            param_bytes.push(4);
-            let ptr = s.as_ptr() as u32;
-            let len = s.len();
-            param_bytes.extend_from_slice(&ptr.to_le_bytes());
-            param_bytes.extend_from_slice(&len.to_le_bytes());
-        }
-        InvokeParam::ExternRef(i) => {
-            param_bytes.push(5);
-            param_bytes.extend_from_slice(&i.value.to_le_bytes());
-        }
-        InvokeParam::Float32Array(a) => {
-            param_bytes.push(6);
-            let ptr = a.as_ptr() as u32;
-            let len = a.len();
-            param_bytes.extend_from_slice(&ptr.to_le_bytes());
-            param_bytes.extend_from_slice(&len.to_le_bytes());
-        }
-        InvokeParam::Bool(b) => {
-            param_bytes.push(if *b { 7 } else { 8 });
-        }
-        InvokeParam::Float64Array(a) => {
-            param_bytes.push(9);
-            let ptr = a.as_ptr() as u32;
-            let len = a.len();
-            param_bytes.extend_from_slice(&ptr.to_le_bytes());
-            param_bytes.extend_from_slice(&len.to_le_bytes());
-        }
-        InvokeParam::Uint32Array(a) => {
-            param_bytes.push(10);
-            let ptr = a.as_ptr() as u32;
-            let len = a.len();
-            param_bytes.extend_from_slice(&ptr.to_le_bytes());
-            param_bytes.extend_from_slice(&len.to_le_bytes());
-        }
+        param_bytes
     }
-    param_bytes
 }
 
 // preceded by a 32 bit integer indicating its type
 pub fn serialize_params(params: &[InvokeParam]) -> Vec<u8> {
     let mut param_bytes = Vec::new();
     for param in params {
-        let bytes = serialize_param(param);
+        let bytes = param.serialize();
         param_bytes.extend_from_slice(&bytes);
     }
     param_bytes
@@ -176,47 +179,47 @@ mod tests {
     fn test_params() {
 
         // undefined
-        assert_eq!(serialize_params(&[InvokeParam::Undefined]), vec![0]);
+        assert_eq!(InvokeParam::Undefined.serialize(), vec![0]);
 
         // null
-        assert_eq!(serialize_params(&[InvokeParam::Null]), vec![1]);
+        assert_eq!(InvokeParam::Null.serialize(), vec![1]);
 
         // bigint
-        assert_eq!(serialize_params(&[InvokeParam::BigInt(42)]), [vec![3], 42u64.to_le_bytes().to_vec()].concat());
+        assert_eq!(InvokeParam::BigInt(42).serialize(), [vec![3], 42u64.to_le_bytes().to_vec()].concat());
 
         // string
         let text = "hello";
         let text_ptr = text.as_ptr() as u32;
         let text_len = text.len() as u64;
         let expected = [vec![4], text_ptr.to_le_bytes().to_vec(), text_len.to_le_bytes().to_vec()].concat();
-        assert_eq!(serialize_params(&[InvokeParam::String(text)]), expected);
+        assert_eq!(InvokeParam::String(text).serialize(), expected);
 
         // extern ref
-        assert_eq!(serialize_params(&[InvokeParam::ExternRef(&ExternRef { value: 42 })]), [vec![5], 42u32.to_le_bytes().to_vec()].concat());
+        assert_eq!(InvokeParam::ExternRef(&ExternRef { value: 42 }).serialize(), [vec![5], 42u32.to_le_bytes().to_vec()].concat());
 
         // float32 array
         let array = [1.0, 2.0];
         let array_ptr = array.as_ptr() as u32;
         let array_len = array.len() as u64;
         let expected = [vec![6], array_ptr.to_le_bytes().to_vec(), array_len.to_le_bytes().to_vec()].concat();
-        assert_eq!(serialize_params(&[InvokeParam::Float32Array(&array)]), expected);
+        assert_eq!(InvokeParam::Float32Array(&array).serialize(), expected);
 
         // float64 array
         let array = [1.0, 2.0];
         let array_ptr = array.as_ptr() as u32;
         let array_len = array.len() as u64;
         let expected = [vec![9], array_ptr.to_le_bytes().to_vec(), array_len.to_le_bytes().to_vec()].concat();
-        assert_eq!(serialize_params(&[InvokeParam::Float64Array(&array)]), expected);
+        assert_eq!(InvokeParam::Float64Array(&array).serialize(), expected);
 
         // bool
-        assert_eq!(serialize_params(&[InvokeParam::Bool(true)]), vec![7]);
+        assert_eq!(InvokeParam::Bool(true).serialize(), vec![7]);
 
         // u32 array
         let array = [1, 2];
         let array_ptr = array.as_ptr() as u32;
         let array_len = array.len() as u64;
         let expected = [vec![10], array_ptr.to_le_bytes().to_vec(), array_len.to_le_bytes().to_vec()].concat();
-        assert_eq!(serialize_params(&[InvokeParam::Uint32Array(&array)]), expected);
+        assert_eq!(InvokeParam::Uint32Array(&array).serialize(), expected);
 
     }
 
