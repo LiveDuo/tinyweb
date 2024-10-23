@@ -2,12 +2,12 @@
 
 let wasmModule = {}
 
-const state = { objects: [], objectIndex: 0, functions: [] }
+const objects = []
+const functions = []
 
 const textDecoder = new TextDecoder()
 const textEncoder = new TextEncoder()
 
-// 0 = undefined, 1 = null, 2 = f64, 3 = bigint, 4 = string, 5 = extern ref, 6 = array of f64, 7 = true, 8 = false
 const readParamsFromMemory = (ptr, len) => {
 
     const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
@@ -16,45 +16,45 @@ const readParamsFromMemory = (ptr, len) => {
     const values = []
     let i = 0
     while (i < parameters.length) {
-        if (parameters[i] === 0) {
+        if (parameters[i] === 0) { // undefined
             values.push(undefined)
             i += 1
-        } else if (parameters[i] === 1) {
+        } else if (parameters[i] === 1) { // null
             values.push(null)
             i += 1
-        } else if (parameters[i] === 2) {
+        } else if (parameters[i] === 2) { // f64
             values.push(dataView.getFloat64(i + 1, true))
             i += 1 + 8
-        } else if (parameters[i] === 3) {
+        } else if (parameters[i] === 3) { // big int
             values.push(dataView.getBigInt64(i + 1, true))
             i += 1 + 8
-        } else if (parameters[i] === 4) {
+        } else if (parameters[i] === 4) { // string
             const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(textDecoder.decode(memory.subarray(ptr, ptr + len)))
             i += 1 + 4 + 4
-        } else if (parameters[i] === 5) {
+        } else if (parameters[i] === 5) { // extern ref
             const objectId = dataView.getUint32(i + 1, true)
             const index = Number(objectId)
-            values.push(state.objects[index])
+            values.push(objects[index])
             i += 1 + 4
-        } else if (parameters[i] === 6) {
+        } else if (parameters[i] === 6) { // float32 array
             const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(new Float32Array(memory.buffer.slice(ptr, ptr + len * 4)))
             i += 1 + 4 + 4
-        } else if (parameters[i] === 7) {
+        } else if (parameters[i] === 7) { // true
             values.push(true)
             i += 1
-        } else if (parameters[i] === 8) {
+        } else if (parameters[i] === 8) { // false
             values.push(false)
             i += 1
-        } else if (parameters[i] === 9) {
+        } else if (parameters[i] === 9) { // float64 array
             const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(new Float64Array(memory.buffer.slice(ptr, ptr + len * 8)))
             i += 1 + 4 + 4
-        } else if (parameters[i] === 10) {
+        } else if (parameters[i] === 10) { // uint32 array
             const ptr = dataView.getInt32(i + 1, true)
             const len = dataView.getInt32(i + 1 + 4, true)
             values.push(new Uint32Array(memory.buffer.slice(ptr, ptr + len * 4)))
@@ -72,43 +72,42 @@ const getWasmImports = () => {
         __register_function (ptr, len) {
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             const functionBody = textDecoder.decode(memory.subarray(ptr, ptr + len))
-            state.functions.push(Function(`'use strict';return(${functionBody})`)())
-            const functionId = state.functions.length - 1
+            functions.push(Function(`'use strict';return(${functionBody})`)())
+            const functionId = functions.length - 1
             return functionId
         },
         __invoke_function (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
-            const result = state.functions[functionId].call({}, ...values)
+            const result = functions[functionId].call({}, ...values)
             if (object === undefined || object === null) throw new Error('Invalid return')
 
             return result
         },
         __invoke_function_and_return_object (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
-            const object = state.functions[functionId].call({}, ...values)
+            const object = functions[functionId].call({}, ...values)
             if (object === undefined || object === null) throw new Error('Invalid return object')
 
-            state.objectIndex++
-            state.objects[state.objectIndex] = object
-            return BigInt(state.objectIndex)
+            objects.push(object)
+            return BigInt(objects.length - 1)
         },
         __invoke_function_and_return_bool (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
-            const result = state.functions[functionId].call({}, ...values)
+            const result = functions[functionId].call({}, ...values)
             if (object === undefined || object === null) throw new Error('Invalid return bool')
 
             return result ? 1 : 0
         },
         __invoke_function_and_return_bigint (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
-            const result = state.functions[functionId].call({}, ...values)
+            const result = functions[functionId].call({}, ...values)
             if (object === undefined || object === null) throw new Error('Invalid return big int')
 
             return result
         },
         __invoke_function_and_return_string (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
-            const result = state.functions[functionId].call({}, ...values)
+            const result = functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
             const allocationId = writeBufferToMemory(textEncoder.encode(result))
@@ -116,7 +115,7 @@ const getWasmImports = () => {
         },
         __invoke_function_and_return_array_buffer (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
-            const result = state.functions[functionId].call({}, ...values)
+            const result = functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return array buffer')
 
             const buffer = new Uint8Array(result)
