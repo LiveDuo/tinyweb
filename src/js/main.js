@@ -4,6 +4,9 @@ let wasmModule = {}
 
 const state = { objects: [], objectIndex: 0, functions: [] }
 
+const textDecoder = new TextDecoder()
+const textEncoder = new TextEncoder()
+
 // 0 = undefined, 1 = null, 2 = f64, 3 = bigint, 4 = string, 5 = extern ref, 6 = array of f64, 7 = true, 8 = false
 const readParamsFromMemory = (ptr, len) => {
 
@@ -67,9 +70,8 @@ const getWasmImports = () => {
 
     const env = {
         __register_function (ptr, len) {
-            const decoder = new TextDecoder('utf-8')
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-            const functionBody = decoder.decode(memory.subarray(ptr, ptr + len))
+            const functionBody = textDecoder.decode(memory.subarray(ptr, ptr + len))
             state.functions.push(Function(`'use strict';return(${functionBody})`)())
             const functionId = state.functions.length - 1
             return functionId
@@ -77,6 +79,8 @@ const getWasmImports = () => {
         __invoke_function (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = state.functions[functionId].call({}, ...values)
+            if (object === undefined || object === null) throw new Error('Invalid return')
+
             return result
         },
         __invoke_function_and_return_object (functionId, ptr, len) {
@@ -91,11 +95,15 @@ const getWasmImports = () => {
         __invoke_function_and_return_bool (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = state.functions[functionId].call({}, ...values)
+            if (object === undefined || object === null) throw new Error('Invalid return bool')
+
             return result ? 1 : 0
         },
         __invoke_function_and_return_bigint (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = state.functions[functionId].call({}, ...values)
+            if (object === undefined || object === null) throw new Error('Invalid return big int')
+
             return result
         },
         __invoke_function_and_return_string (functionId, ptr, len) {
@@ -103,8 +111,7 @@ const getWasmImports = () => {
             const result = state.functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
-            const buffer = (new TextEncoder()).encode(result)
-            const allocationId = writeBufferToMemory(buffer)
+            const allocationId = writeBufferToMemory(textEncoder.encode(result))
             return allocationId
         },
         __invoke_function_and_return_array_buffer (functionId, ptr, len) {
