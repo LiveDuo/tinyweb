@@ -88,15 +88,6 @@ impl<'a> InvokeParam<'a> {
     }
 }
 
-pub fn serialize_params(params: &[InvokeParam]) -> Vec<u8> {
-    let mut param_bytes = Vec::new();
-    for param in params {
-        let bytes = param.serialize();
-        param_bytes.extend_from_slice(&bytes);
-    }
-    param_bytes
-}
-
 #[cfg(not(test))]
 extern "C" {
     fn __invoke_and_return_number(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> i32;
@@ -116,6 +107,10 @@ unsafe fn __invoke_and_return_ref(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const
 unsafe fn __invoke_and_return_string(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 #[cfg(test)]
 unsafe fn __invoke_and_return_array_buffer(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
+
+pub fn serialize_params(params: &[InvokeParam]) -> Vec<u8> {
+    params.iter().flat_map(InvokeParam::serialize).collect()
+}
 
 pub fn invoke_and_return_number(code: &str, params: &[InvokeParam]) -> i32 {
     let param_bytes = ManuallyDrop::new(serialize_params(params));
