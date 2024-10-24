@@ -20,7 +20,7 @@ pub enum InvokeParam<'a> {
 
 impl<'a> InvokeParam<'a> {
 
-    // preceded by a 32 bit integer indicating its type
+    // preceded by 1 byte integer indicating its type
     pub fn serialize(&self) -> Vec<u8> {
         let mut param_bytes = Vec::new();
         match self {
@@ -78,7 +78,6 @@ impl<'a> InvokeParam<'a> {
     }
 }
 
-// preceded by a 32 bit integer indicating its type
 pub fn serialize_params(params: &[InvokeParam]) -> Vec<u8> {
     let mut param_bytes = Vec::new();
     for param in params {
