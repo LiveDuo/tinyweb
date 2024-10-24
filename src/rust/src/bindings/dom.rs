@@ -149,10 +149,10 @@ impl<T> EventHandler<T> {
         handlers.remove(id);
     }
 
-    pub fn call(&self, id: u64, event: T) {
+    pub fn call(&self, id: u32, event: T) {
 
         let handler = self.listeners.lock().map(|mut s| {
-            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == id as u32).unwrap();
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == id).unwrap();
             handler as *mut Box<dyn FnMut(T) + 'static>
         }).unwrap();
 
@@ -173,7 +173,7 @@ thread_local! {
 pub extern "C" fn web_handle_mouse_event_handler(id: u64, x: f64, y: f64) {
 
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.call(id, MouseEvent { offset_x: x, offset_y: y });
+        s.call(id as u32, MouseEvent { offset_x: x, offset_y: y });
     })
 }
 
