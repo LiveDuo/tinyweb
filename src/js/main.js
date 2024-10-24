@@ -104,18 +104,6 @@ const getWasmImports = () => {
             objects.push(result)
             return BigInt(objects.length - 1)
         },
-        __invoke_and_return_bool (ptr1, len1, ptr, len) {
-
-            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-            const functionBody = textDecoder.decode(memory.subarray(ptr1, ptr1 + len1))
-            const _function = Function(`'use strict';return(${functionBody})`)()
-
-            const values = readParamsFromMemory(ptr, len)
-            const result = _function.call({}, ...values)
-            if (result === undefined || result === null) throw new Error('Invalid return bool')
-
-            return result ? 1 : 0
-        },
         __invoke_and_return_bigint (ptr1, len1, ptr, len) {
 
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)

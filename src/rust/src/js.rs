@@ -99,7 +99,6 @@ extern "C" {
     fn __invoke_and_return_bigint(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> i64;
     fn __invoke_and_return_string(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
     fn __invoke_and_return_array_buffer(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
-    fn __invoke_and_return_bool(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
 }
 
 #[cfg(test)]
@@ -112,8 +111,6 @@ unsafe fn __invoke_and_return_bigint(_c_ptr: *const u8, _c_len: u32, _p_ptr: *co
 unsafe fn __invoke_and_return_string(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 #[cfg(test)]
 unsafe fn __invoke_and_return_array_buffer(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
-#[cfg(test)]
-unsafe fn __invoke_and_return_bool(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 
 pub fn invoke_and_return_number(code: &str, params: &[InvokeParam]) -> u32 {
     let param_bytes = ManuallyDrop::new(serialize_params(params));
@@ -141,12 +138,6 @@ pub fn invoke_and_return_array_buffer(code: &str, params: &[InvokeParam]) -> Vec
     let param_bytes = ManuallyDrop::new(serialize_params(params));
     let allocation_id = unsafe { __invoke_and_return_array_buffer(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
     crate::allocations::get_vec_from_allocation(allocation_id)
-}
-
-pub fn invoke_and_return_bool(code: &str, params: &[InvokeParam]) -> bool {
-    let param_bytes = ManuallyDrop::new(serialize_params(params));
-    let result = unsafe { __invoke_and_return_bool(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
-    result != 0
 }
 
 
@@ -234,9 +225,6 @@ mod tests {
         let result = invoke_and_return_array_buffer("", &[]);
         assert_eq!(result, vec);
 
-        // invoke and return bool
-        let result = invoke_and_return_bool("", &[]);
-        assert_eq!(result, false);
     }
 
 }
