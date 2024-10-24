@@ -19,7 +19,7 @@ fn add_http_load_event_handler(function_handle: u32, handler: Box<dyn FnMut() + 
 }
 
 #[no_mangle]
-pub fn web_handle_http_load_event_handler(callback_id: u32) {
+pub fn handle_http_load_event_callback(callback_id: u32) {
     HTTP_LOAD_HANDLERS.with(|h| {
         if let Some(mut handler) = h.lock().unwrap().remove(&(callback_id as u32)) {
             handler();
@@ -80,7 +80,7 @@ impl XMLHttpRequest {
         let code = r#"
             function(request){
                 const handler = () => {
-                    wasmModule.instance.exports.web_handle_http_load_event_handler(objectId);
+                    wasmModule.instance.exports.handle_http_load_event_callback(objectId);
                 };
                 objects.push(handler);
                 const objectId = objects.length - 1;

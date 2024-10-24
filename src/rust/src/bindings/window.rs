@@ -75,7 +75,7 @@ thread_local! {
 }
 
 #[no_mangle]
-pub fn web_one_time_empty_handler(callback_id: u32) {
+pub fn handle_one_time_empty_callback(callback_id: u32) {
     TIMEOUT_HANDLERS.with(|h| {
         if let Some(mut handler) = h.lock().unwrap().remove(&(callback_id as u32)) {
             handler();
@@ -87,7 +87,7 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
     let code = r#"
         function(ms){
             const handler = () => {
-                wasmModule.instance.exports.web_one_time_empty_handler(objectId);
+                wasmModule.instance.exports.handle_one_time_empty_callback(objectId);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -192,7 +192,7 @@ fn remove_history_pop_state_event_handler(callback_id: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub fn web_handle_history_pop_state_event(callback_id: u32) {
+pub fn handle_pop_state_event_callback(callback_id: u32) {
     HISTORY_POP_STATE_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {
@@ -208,7 +208,7 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) +
     let code = r#"
         function(){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_history_pop_state_event(objectId);
+                wasmModule.instance.exports.handle_pop_state_event_callback(objectId);
             };
             objects.push(handler);
             const objectId = objects.length - 1;

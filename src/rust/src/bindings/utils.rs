@@ -70,7 +70,7 @@ pub fn set_property_string(element: &ExternRef, property: &str, value: &str) {
 }
 
 #[no_mangle]
-pub fn web_handle_empty_callback(callback_id: u32) {
+pub fn handle_empty_callback(callback_id: u32) {
     EventHandlerFuture::<()>::wake_future_with_state_id(callback_id, ());
 }
 
@@ -78,7 +78,7 @@ pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
     let code = r#"
         function(ms, state_id){
             window.setTimeout(()=>{
-                wasmModule.instance.exports.web_handle_empty_callback(state_id);
+                wasmModule.instance.exports.handle_empty_callback(state_id);
             }, ms);
         }"#;
     let (future, state_id) = EventHandlerFuture::<()>::create_future_with_state_id();

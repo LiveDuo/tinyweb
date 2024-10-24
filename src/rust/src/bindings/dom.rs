@@ -96,7 +96,7 @@ fn remove_change_event_handler(callback_id: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub fn web_handle_change_event(callback_id: u32, allocation_id: u32) {
+pub fn handle_change_event_callback(callback_id: u32, allocation_id: u32) {
     ELEMENT_CHANGE_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {
@@ -117,7 +117,7 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
                 const text = e.target.value;
                 const buffer = (new TextEncoder()).encode(text);
                 const allocationId = writeBufferToMemory(buffer);
-                wasmModule.instance.exports.web_handle_change_event(objectId, allocationId);
+                wasmModule.instance.exports.handle_change_event_callback(objectId, allocationId);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -171,7 +171,7 @@ thread_local! {
 }
 
 #[no_mangle]
-pub fn web_handle_mouse_event_handler(callback_id: u32, x: f64, y: f64) {
+pub fn handle_mouse_event_callback(callback_id: u32, x: f64, y: f64) {
 
     MOUSE_EVENT_HANDLER.with(|s| {
         s.call(callback_id as u32, MouseEvent { offset_x: x, offset_y: y });
@@ -183,7 +183,7 @@ pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(Mouse
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX, e.offsetY);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -211,7 +211,7 @@ pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX, e.offsetY);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -238,7 +238,7 @@ pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX, e.offsetY);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -265,7 +265,7 @@ pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(Mo
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX, e.offsetY);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -310,7 +310,7 @@ fn remove_keyboard_event_handler(function_handle: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub fn web_handle_keyboard_event_handler(callback_id: u32, key_code: f64) {
+pub fn handle_keyboard_event_callback(callback_id: u32, key_code: f64) {
 
     KEYBOARD_EVENT_HANDLERS.with(|s| {
 
@@ -328,7 +328,7 @@ pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(Ke
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_keyboard_event_handler(objectId,e.keyCode);
+                wasmModule.instance.exports.handle_keyboard_event_callback(objectId,e.keyCode);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -351,7 +351,7 @@ pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(Keyb
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_keyboard_event_handler(objectId,e.keyCode);
+                wasmModule.instance.exports.handle_keyboard_event_callback(objectId,e.keyCode);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
