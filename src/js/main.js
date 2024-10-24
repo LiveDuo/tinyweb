@@ -3,9 +3,20 @@
 let wasmModule = {}
 
 const objects = []
+const objectFreeList = []
 
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
+
+const allocate = (object) => {
+    if (objectFreeList.length > 0) objectFreeList.pop()
+    objects.push(object)
+    return BigInt(objects.length - 1)
+}
+
+const deallocate = (objectId) => {
+    objectFreeList.push(Number(objectId))
+}
 
 const readParamsFromMemory = (ptr, len) => {
 
@@ -166,6 +177,8 @@ const writeBufferToMemory = (buffer) => {
 
 const loadExports = () => {
     exports.wasmModule = wasmModule
+    exports.allocate = allocate
+    exports.deallocate = deallocate
     exports.writeBufferToMemory = writeBufferToMemory
     exports.readParamsFromMemory = readParamsFromMemory
 }
