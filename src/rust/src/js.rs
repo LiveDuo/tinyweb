@@ -89,7 +89,7 @@ pub fn serialize_params(params: &[InvokeParam]) -> Vec<u8> {
 
 #[cfg(not(test))]
 extern "C" {
-    fn __invoke_and_return(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
+    fn __invoke_and_return_number(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
     fn __invoke_and_return_object(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u64;
     fn __invoke_and_return_bigint(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> i64;
     fn __invoke_and_return_string(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
@@ -98,7 +98,7 @@ extern "C" {
 }
 
 #[cfg(test)]
-fn __invoke_and_return(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
+fn __invoke_and_return_number(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 #[cfg(test)]
 fn __invoke_and_return_object(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u64 { 0 }
 #[cfg(test)]
@@ -111,9 +111,9 @@ fn __invoke_and_return_array_buffer(_c_ptr: *const u8, _c_len: u32, _p_ptr: *con
 fn __invoke_and_return_bool(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 
 #[allow(unused_unsafe)]
-pub fn invoke_and_return(code: &str, params: &[InvokeParam]) -> u32 {
+pub fn invoke_and_return_number(code: &str, params: &[InvokeParam]) -> u32 {
     let param_bytes = ManuallyDrop::new(serialize_params(params));
-    unsafe { __invoke_and_return(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) }
+    unsafe { __invoke_and_return_number(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) }
 }
 
 #[allow(unused_unsafe)]
@@ -210,7 +210,7 @@ mod tests {
     fn test_invoke() {
 
         // invoke
-        let result = invoke_and_return("", &[]);
+        let result = invoke_and_return_number("", &[]);
         assert_eq!(result, 0);
 
         // invoke and return object

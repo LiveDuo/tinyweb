@@ -38,27 +38,27 @@ impl XMLHttpRequest {
 
     pub fn open(&self, method: &str, url: &str) {
         let code = "function(request, method, url) { request.open(method, url); }";
-        crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(method), InvokeParam::String(url)]);
+        crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(method), InvokeParam::String(url)]);
     }
 
     pub fn send(&self) {
         let code = "function(request) { request.send(); }";
-        crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0)]);
+        crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(&self.0)]);
     }
 
     pub fn send_with_body(&self, body: &str) {
         let code = "function(request, body) { request.send(body); }";
-        crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(body)]);
+        crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(body)]);
     }
 
     pub fn set_request_header(&self, key: &str, value: &str) {
         let code = "function(request, k, v) { request.setRequestHeader(k, v); }";
-        crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(key), InvokeParam::String(value)]);
+        crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(key), InvokeParam::String(value)]);
     }
 
     pub fn response_status(&self) -> u32 {
         let code = "function(request) { return request.status; }";
-        crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0)]) as u32
+        crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(&self.0)]) as u32
     }
 
     pub fn response_text(&self) -> String {
@@ -93,7 +93,7 @@ impl XMLHttpRequest {
 
     pub fn set_response_type(&self, response_type: &str) {
         let code = "function(request, response_type) { request.responseType = response_type; }";
-        crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(response_type)]);
+        crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(response_type)]);
     }
 }
 

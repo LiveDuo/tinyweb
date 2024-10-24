@@ -79,7 +79,7 @@ const readParamsFromMemory = (ptr, len) => {
 const getWasmImports = () => {
 
     const env = {
-        __invoke_and_return (ptr1, len1, ptr, len) {
+        __invoke_and_return_number (ptr1, len1, ptr, len) {
 
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             const functionBody = textDecoder.decode(memory.subarray(ptr1, ptr1 + len1))
