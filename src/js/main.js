@@ -69,53 +69,76 @@ const readParamsFromMemory = (ptr, len) => {
 const getWasmImports = () => {
 
     const env = {
-        __register_function (ptr, len) {
+        __invoke_and_return (ptr1, len1, ptr, len) {
+
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
-            const functionBody = textDecoder.decode(memory.subarray(ptr, ptr + len))
-            functions.push(Function(`'use strict';return(${functionBody})`)())
-            const functionId = functions.length - 1
-            return functionId
-        },
-        __invoke_and_return (functionId, ptr, len) {
+            const functionBody = textDecoder.decode(memory.subarray(ptr1, ptr1 + len1))
+            const _function = Function(`'use strict';return(${functionBody})`)()
+
             const values = readParamsFromMemory(ptr, len)
-            const result = functions[functionId].call({}, ...values)
+            const result = _function.call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return')
 
             return result
         },
-        __invoke_and_return_object (functionId, ptr, len) {
+        __invoke_and_return_object (ptr1, len1, ptr, len) {
+
+            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
+            const functionBody = textDecoder.decode(memory.subarray(ptr1, ptr1 + len1))
+            const _function = Function(`'use strict';return(${functionBody})`)()
+
             const values = readParamsFromMemory(ptr, len)
-            const result = functions[functionId].call({}, ...values)
+            const result = _function.call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return object')
 
             objects.push(result)
             return BigInt(objects.length - 1)
         },
-        __invoke_and_return_bool (functionId, ptr, len) {
+        __invoke_and_return_bool (ptr1, len1, ptr, len) {
+
+            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
+            const functionBody = textDecoder.decode(memory.subarray(ptr1, ptr1 + len1))
+            const _function = Function(`'use strict';return(${functionBody})`)()
+
             const values = readParamsFromMemory(ptr, len)
-            const result = functions[functionId].call({}, ...values)
+            const result = _function.call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return bool')
 
             return result ? 1 : 0
         },
-        __invoke_and_return_bigint (functionId, ptr, len) {
+        __invoke_and_return_bigint (ptr1, len1, ptr, len) {
+
+            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
+            const functionBody = textDecoder.decode(memory.subarray(ptr1, ptr1 + len1))
+            const _function = Function(`'use strict';return(${functionBody})`)()
+
             const values = readParamsFromMemory(ptr, len)
-            const result = functions[functionId].call({}, ...values)
+            const result = _function.call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return big int')
 
             return result
         },
-        __invoke_and_return_string (functionId, ptr, len) {
+        __invoke_and_return_string (ptr1, len1, ptr, len) {
+
+            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
+            const functionBody = textDecoder.decode(memory.subarray(ptr1, ptr1 + len1))
+            const _function = Function(`'use strict';return(${functionBody})`)()
+
             const values = readParamsFromMemory(ptr, len)
-            const result = functions[functionId].call({}, ...values)
+            const result = _function.call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
 
             const allocationId = writeBufferToMemory(textEncoder.encode(result))
             return allocationId
         },
-        __invoke_and_return_array_buffer (functionId, ptr, len) {
+        __invoke_and_return_array_buffer (ptr1, len1, ptr, len) {
+
+            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
+            const functionBody = textDecoder.decode(memory.subarray(ptr1, ptr1 + len1))
+            const _function = Function(`'use strict';return(${functionBody})`)()
+
             const values = readParamsFromMemory(ptr, len)
-            const result = functions[functionId].call({}, ...values)
+            const result = _function.call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return array buffer')
 
             const buffer = new Uint8Array(result)
