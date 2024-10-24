@@ -27,34 +27,18 @@ pub fn create_allocation(size: u32) -> u32 {
     buf.resize(size as usize, 0);
 
     ALLOCATIONS.with_borrow_mut(|s| {
-        let i = s.len();
         s.push(Some(buf));
-        i
+        s.len() - 1
     }) as u32
 }
 
 #[no_mangle]
-pub fn allocation_ptr(allocation_id: u32) -> *const u8 {
+pub fn get_allocation(allocation_id: u32) -> *const u8 {
     ALLOCATIONS.with_borrow(|s| {
         let allocation = s.get(allocation_id as usize).unwrap();
         let vec = allocation.as_ref().unwrap();
         vec.as_ptr()
     })
-}
-
-#[no_mangle]
-pub fn allocation_len(allocation_id: u32) -> u32 {
-    ALLOCATIONS.with_borrow(|s| {
-        let allocation = s.get(allocation_id as usize).unwrap();
-        let vec = allocation.as_ref().unwrap();
-        vec.len() as u32
-    })
-}
-
-pub fn clear_allocation(allocation_id: u32) {
-    ALLOCATIONS.with_borrow_mut(|s| {
-        s[allocation_id as usize] = None;
-    });
 }
 
 
@@ -70,18 +54,12 @@ mod tests {
         let id = create_allocation(1);
         let allocation = ALLOCATIONS.with_borrow(|s| s[id as usize].clone());
         assert_eq!(allocation.is_some(), true);
-        assert_eq!(allocation_ptr(id).is_null(), false);
-        assert_eq!(allocation_len(id), 1u32);
+        assert_eq!(get_allocation(id).is_null(), false);
 
         // create another allocation
         let id2 = create_allocation(1);
         let allocation = ALLOCATIONS.with_borrow(|s| s[id2 as usize].clone());
         assert_eq!(allocation.is_some(), true);
-
-        // clear allocation
-        clear_allocation(id);
-        let allocation = ALLOCATIONS.with_borrow(|s| s[id as usize].clone());
-        assert_eq!(allocation.is_some(), false);
 
     }
 

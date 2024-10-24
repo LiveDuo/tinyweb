@@ -50,10 +50,10 @@ test('check write buffer', () => {
         {memory: [], expected: 0},
     ]
     const create_allocation = () => { return 0 }
-    const allocation_ptr = () => { return 0 }
+    const get_allocation = () => { return 0 }
     for (const testCase of testCases) {
 
-        const exports = { create_allocation, allocation_ptr, memory: { buffer: testCase.memory } }
+        const exports = { create_allocation, get_allocation, memory: { buffer: testCase.memory } }
         wasmModule.instance = { exports }
 
         const result = writeBufferToMemory(0, [])

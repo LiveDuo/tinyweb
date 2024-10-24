@@ -151,7 +151,7 @@ const loadWasm = async () => {
 
 const writeBufferToMemory = (buffer) => {
     const allocationId = wasmModule.instance.exports.create_allocation(buffer.length)
-    const allocationPtr = wasmModule.instance.exports.allocation_ptr(allocationId)
+    const allocationPtr = wasmModule.instance.exports.get_allocation(allocationId)
     const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
     memory.set(buffer, allocationPtr)
     return allocationId
