@@ -122,15 +122,15 @@ pub fn invoke_and_return_number(code: &str, params: &[InvokeParam]) -> i32 {
     unsafe { __invoke_and_return_number(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) }
 }
 
+pub fn invoke_and_return_bigint(code: &str, params: &[InvokeParam]) -> i64 {
+    let param_bytes = ManuallyDrop::new(serialize_params(params));
+    unsafe { __invoke_and_return_bigint(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) }
+}
+
 pub fn invoke_and_return_ref(code: &str, params: &[InvokeParam]) -> ExternRef {
     let param_bytes = ManuallyDrop::new(serialize_params(params));
     let handle = unsafe { __invoke_and_return_ref(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
     ExternRef { value: handle }
-}
-
-pub fn invoke_and_return_bigint(code: &str, params: &[InvokeParam]) -> i64 {
-    let param_bytes = ManuallyDrop::new(serialize_params(params));
-    unsafe { __invoke_and_return_bigint(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) }
 }
 
 pub fn invoke_and_return_string(code: &str, params: &[InvokeParam]) -> String {
