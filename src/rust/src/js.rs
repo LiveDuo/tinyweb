@@ -91,28 +91,28 @@ pub fn serialize_params(params: &[InvokeParam]) -> Vec<u8> {
 #[cfg(not(test))]
 extern "C" {
     fn __register_function(ptr: *const u8, len: u32) -> u32;
-    fn __invoke_function_and_return(function_id: u32, ptr: *const u8, len: u32) -> u32;
-    fn __invoke_function_and_return_object(function_id: u32, ptr: *const u8, len: u32) -> u64;
-    fn __invoke_function_and_return_bigint(function_id: u32, ptr: *const u8, len: u32) -> i64;
-    fn __invoke_function_and_return_string(function_id: u32, ptr: *const u8, len: u32) -> u32;
-    fn __invoke_function_and_return_array_buffer(function_id: u32, ptr: *const u8, len: u32) -> u32;
-    fn __invoke_function_and_return_bool(function_id: u32, ptr: *const u8, len: u32) -> u32;
+    fn __invoke_and_return(function_id: u32, ptr: *const u8, len: u32) -> u32;
+    fn __invoke_and_return_object(function_id: u32, ptr: *const u8, len: u32) -> u64;
+    fn __invoke_and_return_bigint(function_id: u32, ptr: *const u8, len: u32) -> i64;
+    fn __invoke_and_return_string(function_id: u32, ptr: *const u8, len: u32) -> u32;
+    fn __invoke_and_return_array_buffer(function_id: u32, ptr: *const u8, len: u32) -> u32;
+    fn __invoke_and_return_bool(function_id: u32, ptr: *const u8, len: u32) -> u32;
 }
 
 #[cfg(test)]
 fn __register_function(_ptr: *const u8, _len: u32) -> u32 { 0 }
 #[cfg(test)]
-fn __invoke_function_and_return(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
+fn __invoke_and_return(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
 #[cfg(test)]
-fn __invoke_function_and_return_object(_function_id: u32, _ptr: *const u8, _len: u32) -> u64 { 0 }
+fn __invoke_and_return_object(_function_id: u32, _ptr: *const u8, _len: u32) -> u64 { 0 }
 #[cfg(test)]
-fn __invoke_function_and_return_bigint(_function_id: u32, _ptr: *const u8, _len: u32) -> i64 { 0 }
+fn __invoke_and_return_bigint(_function_id: u32, _ptr: *const u8, _len: u32) -> i64 { 0 }
 #[cfg(test)]
-fn __invoke_function_and_return_string(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
+fn __invoke_and_return_string(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
 #[cfg(test)]
-fn __invoke_function_and_return_array_buffer(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
+fn __invoke_and_return_array_buffer(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
 #[cfg(test)]
-fn __invoke_function_and_return_bool(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
+fn __invoke_and_return_bool(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
 
 pub struct JsFunction {}
 
@@ -123,14 +123,14 @@ impl JsFunction {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
-        unsafe { __invoke_function_and_return(function_id, me.as_mut_ptr(), me.len() as u32) }
+        unsafe { __invoke_and_return(function_id, me.as_mut_ptr(), me.len() as u32) }
     }
 
     pub fn invoke_and_return_object(code: &str, params: &[InvokeParam]) -> ExternRef {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
-        let handle = unsafe { __invoke_function_and_return_object(function_id, me.as_mut_ptr(), me.len() as u32) };
+        let handle = unsafe { __invoke_and_return_object(function_id, me.as_mut_ptr(), me.len() as u32) };
         ExternRef { value: handle as u32 }
     }
 
@@ -138,15 +138,14 @@ impl JsFunction {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
-        unsafe { __invoke_function_and_return_bigint(function_id, me.as_mut_ptr(), me.len() as u32) }
+        unsafe { __invoke_and_return_bigint(function_id, me.as_mut_ptr(), me.len() as u32) }
     }
 
     pub fn invoke_and_return_string(code: &str, params: &[InvokeParam]) -> String {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
-        let allocation_id =
-            unsafe { __invoke_function_and_return_string(function_id, me.as_mut_ptr(), me.len() as u32) };
+        let allocation_id = unsafe { __invoke_and_return_string(function_id, me.as_mut_ptr(), me.len() as u32) };
         crate::allocations::get_string_from_allocation(allocation_id)
     }
 
@@ -154,8 +153,7 @@ impl JsFunction {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
-        let allocation_id =
-            unsafe { __invoke_function_and_return_array_buffer(function_id, me.as_mut_ptr(), me.len() as u32) };
+        let allocation_id = unsafe { __invoke_and_return_array_buffer(function_id, me.as_mut_ptr(), me.len() as u32) };
         crate::allocations::get_vec_from_allocation(allocation_id)
     }
 
@@ -163,7 +161,7 @@ impl JsFunction {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
-        let ret = unsafe { __invoke_function_and_return_bool(function_id, me.as_mut_ptr(), me.len() as u32) };
+        let ret = unsafe { __invoke_and_return_bool(function_id, me.as_mut_ptr(), me.len() as u32) };
         ret != 0
     }
 }

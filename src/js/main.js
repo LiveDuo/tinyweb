@@ -76,14 +76,14 @@ const getWasmImports = () => {
             const functionId = functions.length - 1
             return functionId
         },
-        __invoke_function_and_return (functionId, ptr, len) {
+        __invoke_and_return (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return')
 
             return result
         },
-        __invoke_function_and_return_object (functionId, ptr, len) {
+        __invoke_and_return_object (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return object')
@@ -91,21 +91,21 @@ const getWasmImports = () => {
             objects.push(result)
             return BigInt(objects.length - 1)
         },
-        __invoke_function_and_return_bool (functionId, ptr, len) {
+        __invoke_and_return_bool (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return bool')
 
             return result ? 1 : 0
         },
-        __invoke_function_and_return_bigint (functionId, ptr, len) {
+        __invoke_and_return_bigint (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return big int')
 
             return result
         },
-        __invoke_function_and_return_string (functionId, ptr, len) {
+        __invoke_and_return_string (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return string')
@@ -113,7 +113,7 @@ const getWasmImports = () => {
             const allocationId = writeBufferToMemory(textEncoder.encode(result))
             return allocationId
         },
-        __invoke_function_and_return_array_buffer (functionId, ptr, len) {
+        __invoke_and_return_array_buffer (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return array buffer')
