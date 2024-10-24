@@ -101,8 +101,7 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
     let code = r#"
         function(element ){
             const handler = (e) => {
-                const text = e.target.value;
-                const buffer = (new TextEncoder()).encode(text);
+                const buffer = (new TextEncoder()).encode(e.target.value);
                 const allocationId = writeBufferToMemory(buffer);
                 wasmModule.instance.exports.handle_change_event_callback(objectId,allocationId);
             };
