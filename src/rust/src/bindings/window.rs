@@ -11,38 +11,38 @@ use crate::allocations::get_string_from_allocation;
 
 pub fn console_log(message: &str) {
     let code = "function(message){ console.log(message); }";
-    JsFunction::invoke(code, &[InvokeParam::String(message)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::String(message)]);
 }
 
 pub fn console_error(message: &str) {
     let code = "function(message){ console.error(message); }";
-    JsFunction::invoke(code, &[InvokeParam::String(message)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::String(message)]);
 }
 
 pub fn console_warn(message: &str) {
     let code = "function(message){ console.warn(message); }";
-    JsFunction::invoke(code, &[InvokeParam::String(message)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::String(message)]);
 }
 
 pub fn console_time(label: &str) {
     let code = "function(label){ console.time(label); }";
-    JsFunction::invoke(code, &[InvokeParam::String(label)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::String(label)]);
 }
 
 pub fn console_time_end(label: &str) {
     let code = "function(label){ console.timeEnd(label); }";
-    JsFunction::invoke(code, &[InvokeParam::String(label)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::String(label)]);
 }
 
 
 pub fn local_storage_set(key: &str, value: &str) {
     let code = "function(key, value){ localStorage.setItem(key, value); }";
-    JsFunction::invoke(code, &[InvokeParam::String(key), InvokeParam::String(value)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::String(key), InvokeParam::String(value)]);
 }
 
 pub fn local_storage_remove(key: &str) {
     let code = "function(key){ localStorage.removeItem(key); }";
-    JsFunction::invoke(code, &[InvokeParam::String(key)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::String(key)]);
 }
 
 pub fn local_storage_get(key: &str) -> Option<String> {
@@ -56,7 +56,7 @@ pub fn local_storage_get(key: &str) -> Option<String> {
             const allocationId = writeBufferToMemory(buffer);
             return allocationId;
         }"#;
-    let text_allocation_id = JsFunction::invoke(code, &[InvokeParam::String(key)]);
+    let text_allocation_id = JsFunction::invoke_and_return(code, &[InvokeParam::String(key)]);
     if text_allocation_id == 0 {
         return None;
     }
@@ -66,7 +66,7 @@ pub fn local_storage_get(key: &str) -> Option<String> {
 
 pub fn local_storage_clear() {
     let code = "function(){ localStorage.clear(); }";
-    JsFunction::invoke(code, &[]);
+    JsFunction::invoke_and_return(code, &[]);
 }
 
 
@@ -105,37 +105,37 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
 
 pub fn clear_timeout(interval_id: impl Into<f64>) {
     let code = "function(interval_id){ window.clearTimeout(interval_id); }";
-    JsFunction::invoke(code, &[InvokeParam::Float64(interval_id.into())]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::Float64(interval_id.into())]);
 }
 
 pub fn history_push_state(title: &str, url: &str) {
     let code = "function(title, url) { window.history.pushState({}, title, url); }";
-    JsFunction::invoke(code, &[InvokeParam::String(title), InvokeParam::String(url)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::String(title), InvokeParam::String(url)]);
 }
 
 pub fn history_replace_state(title: &str, url: &str) {
     let code = "function(title, url) { window.history.replaceState({}, title, url); }";
-    JsFunction::invoke(code, &[InvokeParam::String(title), InvokeParam::String(url)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::String(title), InvokeParam::String(url)]);
 }
 
 pub fn history_back() {
     let code = "function() { window.history.back(); }";
-    JsFunction::invoke(code, &[]);
+    JsFunction::invoke_and_return(code, &[]);
 }
 
 pub fn history_forward() {
     let code = "function() { window.history.forward(); }";
-    JsFunction::invoke(code, &[]);
+    JsFunction::invoke_and_return(code, &[]);
 }
 
 pub fn history_go(delta: i32) {
     let code = "function(delta) { window.history.go(delta); }";
-    JsFunction::invoke(code, &[InvokeParam::Float64(delta as f64)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::Float64(delta as f64)]);
 }
 
 pub fn history_length() -> u32 {
     let code = "function() { return window.history.length; }";
-    JsFunction::invoke(code, &[]) as u32
+    JsFunction::invoke_and_return(code, &[]) as u32
 }
 
 pub fn location_url() -> String {
@@ -170,7 +170,7 @@ pub fn location_hash() -> String {
 
 pub fn location_reload() {
     let code = "function() { window.location.reload(); }";
-    JsFunction::invoke(code, &[]);
+    JsFunction::invoke_and_return(code, &[]);
 }
 
 pub struct PopStateEvent {}
@@ -225,6 +225,6 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) +
 
 pub fn remove_history_pop_state_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
     let code = "function(element, f){ window.removeEventListener('popstate', f); }";
-    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     remove_history_pop_state_event_handler(function_handle);
 }

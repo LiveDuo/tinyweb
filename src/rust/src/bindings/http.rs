@@ -38,27 +38,27 @@ impl XMLHttpRequest {
 
     pub fn open(&self, method: &str, url: &str) {
         let code = "function(request, method, url) { request.open(method, url); }";
-        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(method), InvokeParam::String(url)]);
+        JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(method), InvokeParam::String(url)]);
     }
 
     pub fn send(&self) {
         let code = "function(request) { request.send(); }";
-        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0)]);
+        JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0)]);
     }
 
     pub fn send_with_body(&self, body: &str) {
         let code = "function(request, body) { request.send(body); }";
-        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(body)]);
+        JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(body)]);
     }
 
     pub fn set_request_header(&self, key: &str, value: &str) {
         let code = "function(request, k, v) { request.setRequestHeader(k, v); }";
-        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(key), InvokeParam::String(value)]);
+        JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(key), InvokeParam::String(value)]);
     }
 
     pub fn response_status(&self) -> u32 {
         let code = "function(request) { return request.status; }";
-        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0)]) as u32
+        JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0)]) as u32
     }
 
     pub fn response_text(&self) -> String {
@@ -93,7 +93,7 @@ impl XMLHttpRequest {
 
     pub fn set_response_type(&self, response_type: &str) {
         let code = "function(request, response_type) { request.responseType = response_type; }";
-        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(response_type)]);
+        JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(response_type)]);
     }
 }
 

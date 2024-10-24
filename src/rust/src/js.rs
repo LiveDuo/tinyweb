@@ -91,7 +91,7 @@ pub fn serialize_params(params: &[InvokeParam]) -> Vec<u8> {
 #[cfg(not(test))]
 extern "C" {
     fn __register_function(ptr: *const u8, len: u32) -> u32;
-    fn __invoke_function(function_id: u32, ptr: *const u8, len: u32) -> u32;
+    fn __invoke_function_and_return(function_id: u32, ptr: *const u8, len: u32) -> u32;
     fn __invoke_function_and_return_object(function_id: u32, ptr: *const u8, len: u32) -> u64;
     fn __invoke_function_and_return_bigint(function_id: u32, ptr: *const u8, len: u32) -> i64;
     fn __invoke_function_and_return_string(function_id: u32, ptr: *const u8, len: u32) -> u32;
@@ -102,7 +102,7 @@ extern "C" {
 #[cfg(test)]
 fn __register_function(_ptr: *const u8, _len: u32) -> u32 { 0 }
 #[cfg(test)]
-fn __invoke_function(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
+fn __invoke_function_and_return(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
 #[cfg(test)]
 fn __invoke_function_and_return_object(_function_id: u32, _ptr: *const u8, _len: u32) -> u64 { 0 }
 #[cfg(test)]
@@ -119,11 +119,11 @@ pub struct JsFunction {}
 #[allow(unused_unsafe)]
 impl JsFunction {
 
-    pub fn invoke(code: &str, params: &[InvokeParam]) -> u32 {
+    pub fn invoke_and_return(code: &str, params: &[InvokeParam]) -> u32 {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
         let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
-        unsafe { __invoke_function(function_id, me.as_mut_ptr(), me.len() as u32) }
+        unsafe { __invoke_function_and_return(function_id, me.as_mut_ptr(), me.len() as u32) }
     }
 
     pub fn invoke_and_return_object(code: &str, params: &[InvokeParam]) -> ExternRef {
@@ -227,7 +227,7 @@ mod tests {
     fn test_register_invoke() {
 
         // invoke
-        let result = JsFunction::invoke("", &[]);
+        let result = JsFunction::invoke_and_return("", &[]);
         assert_eq!(result, 0);
 
         // invoke and return object

@@ -7,7 +7,7 @@ use crate::runtime::EventHandlerFuture;
 
 pub fn random() -> f32 {
     let code = "function(){ return Math.random(); }";
-    JsFunction::invoke(code, &[]) as f32
+    JsFunction::invoke_and_return(code, &[]) as f32
 }
 
 pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
@@ -17,28 +17,28 @@ pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
 
 pub fn set_property_i64(element: &ExternRef, property: &str, value: i64) {
     let code = "function(element, property, value){ element[property] = value; }";
-    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::BigInt(value)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::BigInt(value)]);
 }
 
 pub fn get_property_f64(element: &ExternRef, property: &str) -> f64 {
     let code = "function(element, property){ return element[property]; }";
-    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property)]) as f64
+    JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property)]) as f64
 }
 
 pub fn set_property_f64(element: &ExternRef, property: &str, value: f64) {
     let code = "function(element, property, value){ element[property] = value; }";
-    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Float64(value)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Float64(value)]);
 }
 
 pub fn get_property_bool(element: &ExternRef, property: &str) -> bool {
     let code = "function(element, property){ return element[property]?1:0; }";
-    let v = JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property)]);
+    let v = JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property)]);
     v == 1
 }
 
 pub fn set_property_bool(element: &ExternRef, property: &str, value: bool) {
     let code = "function(element, property, value){ element[property] = value !==0; }";
-    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Bool(value)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Bool(value)]);
 }
 
 pub fn get_property_string(element: &ExternRef, property: &str) -> String {
@@ -49,14 +49,14 @@ pub fn get_property_string(element: &ExternRef, property: &str) -> String {
             const allocationId = writeBufferToMemory(buffer);
             return allocationId;
         }"#;
-    let text_allocation_id = JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property)]);
+    let text_allocation_id = JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property)]);
     let text = get_string_from_allocation(text_allocation_id);
     text
 }
 
 pub fn set_property_string(element: &ExternRef, property: &str, value: &str) {
     let code = "function(element, p, v){ element[p] = v; }";
-    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::String(value)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::String(value)]);
 }
 
 #[no_mangle]
@@ -72,6 +72,6 @@ pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
             }, ms);
         }"#;
     let (future, state_id) = EventHandlerFuture::<()>::create_future_with_state_id();
-    JsFunction::invoke(code, &[InvokeParam::Float64(ms.into()), InvokeParam::Float64(state_id as f64)]);
+    JsFunction::invoke_and_return(code, &[InvokeParam::Float64(ms.into()), InvokeParam::Float64(state_id as f64)]);
     future
 }

@@ -76,7 +76,7 @@ const getWasmImports = () => {
             const functionId = functions.length - 1
             return functionId
         },
-        __invoke_function (functionId, ptr, len) {
+        __invoke_function_and_return (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return')
@@ -85,7 +85,7 @@ const getWasmImports = () => {
         },
         __invoke_function_and_return_object (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
-            const object = functions[functionId].call({}, ...values)
+            const result = functions[functionId].call({}, ...values)
             if (result === undefined || result === null) throw new Error('Invalid return object')
 
             objects.push(result)
