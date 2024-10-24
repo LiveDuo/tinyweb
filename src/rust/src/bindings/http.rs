@@ -19,7 +19,7 @@ fn add_http_load_event_handler(function_handle: u32, handler: Box<dyn FnMut() + 
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_http_load_event_handler(callback_id: u32) {
+pub fn web_handle_http_load_event_handler(callback_id: u32) {
     HTTP_LOAD_HANDLERS.with(|h| {
         if let Some(mut handler) = h.lock().unwrap().remove(&(callback_id as u32)) {
             handler();

@@ -96,7 +96,7 @@ fn remove_change_event_handler(callback_id: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_change_event(callback_id: u32, allocation_id: u32) {
+pub fn web_handle_change_event(callback_id: u32, allocation_id: u32) {
     ELEMENT_CHANGE_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {
@@ -171,7 +171,7 @@ thread_local! {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_mouse_event_handler(callback_id: u32, x: f64, y: f64) {
+pub fn web_handle_mouse_event_handler(callback_id: u32, x: f64, y: f64) {
 
     MOUSE_EVENT_HANDLER.with(|s| {
         s.call(callback_id as u32, MouseEvent { offset_x: x, offset_y: y });
@@ -310,7 +310,7 @@ fn remove_keyboard_event_handler(function_handle: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_keyboard_event_handler(callback_id: u32, key_code: f64) {
+pub fn web_handle_keyboard_event_handler(callback_id: u32, key_code: f64) {
 
     KEYBOARD_EVENT_HANDLERS.with(|s| {
 

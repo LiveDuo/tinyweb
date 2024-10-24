@@ -70,7 +70,7 @@ pub fn set_property_string(element: &ExternRef, property: &str, value: &str) {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_empty_callback(callback_id: u32) {
+pub fn web_handle_empty_callback(callback_id: u32) {
     EventHandlerFuture::<()>::wake_future_with_state_id(callback_id, ());
 }
 
