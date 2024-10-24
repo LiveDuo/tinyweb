@@ -11,38 +11,38 @@ use crate::allocations::get_string_from_allocation;
 
 pub fn console_log(message: &str) {
     let code = "function(message){ console.log(message); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::String(message)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::String(message)]);
 }
 
 pub fn console_error(message: &str) {
     let code = "function(message){ console.error(message); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::String(message)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::String(message)]);
 }
 
 pub fn console_warn(message: &str) {
     let code = "function(message){ console.warn(message); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::String(message)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::String(message)]);
 }
 
 pub fn console_time(label: &str) {
     let code = "function(label){ console.time(label); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::String(label)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::String(label)]);
 }
 
 pub fn console_time_end(label: &str) {
     let code = "function(label){ console.timeEnd(label); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::String(label)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::String(label)]);
 }
 
 
 pub fn local_storage_set(key: &str, value: &str) {
     let code = "function(key, value){ localStorage.setItem(key, value); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::String(key), InvokeParam::String(value)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::String(key), InvokeParam::String(value)]);
 }
 
 pub fn local_storage_remove(key: &str) {
     let code = "function(key){ localStorage.removeItem(key); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::String(key)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::String(key)]);
 }
 
 pub fn local_storage_get(key: &str) -> Option<String> {
@@ -66,7 +66,7 @@ pub fn local_storage_get(key: &str) -> Option<String> {
 
 pub fn local_storage_clear() {
     let code = "function(){ localStorage.clear(); }";
-    crate::js::invoke_and_return_number(code, &[]);
+    crate::js::invoke_and_return(code, &[]);
 }
 
 
@@ -106,32 +106,32 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
 
 pub fn clear_timeout(interval_id: impl Into<f64>) {
     let code = "function(interval_id){ window.clearTimeout(interval_id); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::Float64(interval_id.into())]);
+    crate::js::invoke_and_return(code, &[InvokeParam::Float64(interval_id.into())]);
 }
 
 pub fn history_push_state(title: &str, url: &str) {
     let code = "function(title, url) { window.history.pushState({}, title, url); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::String(title), InvokeParam::String(url)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::String(title), InvokeParam::String(url)]);
 }
 
 pub fn history_replace_state(title: &str, url: &str) {
     let code = "function(title, url) { window.history.replaceState({}, title, url); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::String(title), InvokeParam::String(url)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::String(title), InvokeParam::String(url)]);
 }
 
 pub fn history_back() {
     let code = "function() { window.history.back(); }";
-    crate::js::invoke_and_return_number(code, &[]);
+    crate::js::invoke_and_return(code, &[]);
 }
 
 pub fn history_forward() {
     let code = "function() { window.history.forward(); }";
-    crate::js::invoke_and_return_number(code, &[]);
+    crate::js::invoke_and_return(code, &[]);
 }
 
 pub fn history_go(delta: i32) {
     let code = "function(delta) { window.history.go(delta); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::Float64(delta as f64)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::Float64(delta as f64)]);
 }
 
 pub fn history_length() -> u32 {
@@ -171,7 +171,7 @@ pub fn location_hash() -> String {
 
 pub fn location_reload() {
     let code = "function() { window.location.reload(); }";
-    crate::js::invoke_and_return_number(code, &[]);
+    crate::js::invoke_and_return(code, &[]);
 }
 
 pub struct PopStateEvent {}
@@ -215,7 +215,7 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) +
 
 pub fn remove_history_pop_state_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
     let code = "function(element, f){ window.removeEventListener('popstate', f); }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     HISTORY_POP_STATE_HANDLERS.with(|s| {
         s.lock().unwrap().remove(function_handle);
     });

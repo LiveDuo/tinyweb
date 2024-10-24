@@ -67,6 +67,17 @@ const readParamsFromMemory = (ptr, len) => {
 const getWasmImports = () => {
 
     const env = {
+        __invoke_and_return (c_ptr, c_len, p_ptr, p_len) {
+
+            const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
+            const functionBody = textDecoder.decode(memory.subarray(c_ptr, c_ptr + c_len))
+            const _function = Function(`'use strict';return(${functionBody})`)()
+
+            const values = readParamsFromMemory(p_ptr, p_len)
+            const result = _function.call({}, ...values)
+
+            return result
+        },
         __invoke_and_return_number (c_ptr, c_len, p_ptr, p_len) {
 
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
@@ -75,7 +86,7 @@ const getWasmImports = () => {
 
             const values = readParamsFromMemory(p_ptr, p_len)
             const result = _function.call({}, ...values)
-            // if (result === undefined || result === null) throw new Error('Invalid return')
+            if (result === undefined || result === null) throw new Error('Invalid return number')
 
             return result
         },

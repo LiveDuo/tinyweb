@@ -17,7 +17,7 @@ pub fn get_property_i32(element: &ExternRef, property: &str) -> i32 {
 
 pub fn set_property_i32(element: &ExternRef, property: &str, value: i32) {
     let code = "function(element, property, value){ element[property] = value; }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Int32(value)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Int32(value)]);
 }
 
 pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
@@ -27,7 +27,7 @@ pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
 
 pub fn set_property_i64(element: &ExternRef, property: &str, value: i64) {
     let code = "function(element, property, value){ element[property] = value; }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::BigInt(value)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::BigInt(value)]);
 }
 
 pub fn get_property_f64(element: &ExternRef, property: &str) -> f64 {
@@ -37,7 +37,7 @@ pub fn get_property_f64(element: &ExternRef, property: &str) -> f64 {
 
 pub fn set_property_f64(element: &ExternRef, property: &str, value: f64) {
     let code = "function(element, property, value){ element[property] = value; }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Float64(value)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Float64(value)]);
 }
 
 pub fn get_property_bool(element: &ExternRef, property: &str) -> bool {
@@ -48,7 +48,7 @@ pub fn get_property_bool(element: &ExternRef, property: &str) -> bool {
 
 pub fn set_property_bool(element: &ExternRef, property: &str, value: bool) {
     let code = "function(element, property, value){ element[property] = value !==0; }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Bool(value)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Bool(value)]);
 }
 
 pub fn get_property_string(element: &ExternRef, property: &str) -> String {
@@ -66,7 +66,7 @@ pub fn get_property_string(element: &ExternRef, property: &str) -> String {
 
 pub fn set_property_string(element: &ExternRef, property: &str, value: &str) {
     let code = "function(element, p, v){ element[p] = v; }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::String(value)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::String(value)]);
 }
 
 #[no_mangle]
@@ -82,6 +82,6 @@ pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
             }, ms);
         }"#;
     let (future, state_id) = EventHandlerFuture::<()>::create_future_with_state_id();
-    crate::js::invoke_and_return_number(code, &[InvokeParam::Float64(ms.into()), InvokeParam::Float64(state_id as f64)]);
+    crate::js::invoke_and_return(code, &[InvokeParam::Float64(ms.into()), InvokeParam::Float64(state_id as f64)]);
     future
 }
