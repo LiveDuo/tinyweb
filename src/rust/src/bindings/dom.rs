@@ -149,7 +149,7 @@ impl<T> EventHandler<T> {
         handlers.remove(id);
     }
 
-    pub fn call(&self, id: i64, event: T) {
+    pub fn call(&self, id: u64, event: T) {
 
         let handler = self.listeners.lock().map(|mut s| {
             let (_, handler) = s.iter_mut().find(|(s, _)| s.value == id as u32).unwrap();
@@ -170,7 +170,7 @@ thread_local! {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_mouse_event_handler(id: i64, x: f64, y: f64) {
+pub extern "C" fn web_handle_mouse_event_handler(id: u64, x: f64, y: f64) {
 
     MOUSE_EVENT_HANDLER.with(|s| {
         s.call(id, MouseEvent { offset_x: x, offset_y: y });
@@ -305,7 +305,7 @@ fn remove_keyboard_event_handler(function_handle: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_keyboard_event_handler(id: i64, key_code: f64) {
+pub extern "C" fn web_handle_keyboard_event_handler(id: u64, key_code: f64) {
 
     KEYBOARD_EVENT_HANDLERS.with(|s| {
 

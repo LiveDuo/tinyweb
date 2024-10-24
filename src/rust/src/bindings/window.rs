@@ -75,7 +75,7 @@ thread_local! {
 }
 
 #[no_mangle]
-pub extern "C" fn web_one_time_empty_handler(id: i64) {
+pub extern "C" fn web_one_time_empty_handler(id: u64) {
     TIMEOUT_HANDLERS.with(|h| {
         if let Some(mut handler) = h.lock().unwrap().remove(&(id as u32)) {
             handler();
@@ -195,7 +195,7 @@ fn remove_history_pop_state_event_handler(id: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_history_pop_state_event(id: i64) {
+pub extern "C" fn web_handle_history_pop_state_event(id: u64) {
     HISTORY_POP_STATE_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {

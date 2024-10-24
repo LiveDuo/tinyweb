@@ -11,7 +11,7 @@ thread_local! {
     static HTTP_LOAD_HANDLERS: Mutex<HashMap<u32, Box<dyn FnMut() + 'static>>> = Default::default();
 }
 
-fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + 'static>) {
+fn add_http_load_event_handler(function_handle: u64, handler: Box<dyn FnMut() + 'static>) {
 
     HTTP_LOAD_HANDLERS.with(|h| {
         h.lock().unwrap().insert(function_handle as u32, handler);
@@ -19,7 +19,7 @@ fn add_http_load_event_handler(function_handle: i64, handler: Box<dyn FnMut() + 
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_http_load_event_handler(id: i64) {
+pub extern "C" fn web_handle_http_load_event_handler(id: u64) {
     HTTP_LOAD_HANDLERS.with(|h| {
         if let Some(mut handler) = h.lock().unwrap().remove(&(id as u32)) {
             handler();
@@ -88,7 +88,7 @@ impl XMLHttpRequest {
                 return id;
             }"#;
         let function_ref = crate::js::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(&self.0)]);
-        add_http_load_event_handler(function_ref, Box::new(callback));
+        add_http_load_event_handler(function_ref as u64, Box::new(callback));
     }
 
     pub fn set_response_type(&self, response_type: &str) {
