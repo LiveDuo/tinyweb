@@ -111,45 +111,46 @@ fn __invoke_and_return_array_buffer(_c_ptr: *const u8, _c_len: u32, _p_ptr: *con
 #[cfg(test)]
 fn __invoke_and_return_bool(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 
-pub struct JsFunction {}
+#[allow(unused_unsafe)]
+pub fn invoke_and_return(code: &str, params: &[InvokeParam]) -> u32 {
+    let param_bytes = ManuallyDrop::new(serialize_params(params));
+    unsafe { __invoke_and_return(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) }
+}
 
 #[allow(unused_unsafe)]
-impl JsFunction {
-
-    pub fn invoke_and_return(code: &str, params: &[InvokeParam]) -> u32 {
-        let param_bytes = ManuallyDrop::new(serialize_params(params));
-        unsafe { __invoke_and_return(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) }
-    }
-
-    pub fn invoke_and_return_object(code: &str, params: &[InvokeParam]) -> ExternRef {
-        let param_bytes = ManuallyDrop::new(serialize_params(params));
-        let handle = unsafe { __invoke_and_return_object(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
-        ExternRef { value: handle as u32 }
-    }
-
-    pub fn invoke_and_return_bigint(code: &str, params: &[InvokeParam]) -> i64 {
-        let param_bytes = ManuallyDrop::new(serialize_params(params));
-        unsafe { __invoke_and_return_bigint(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) }
-    }
-
-    pub fn invoke_and_return_string(code: &str, params: &[InvokeParam]) -> String {
-        let param_bytes = ManuallyDrop::new(serialize_params(params));
-        let allocation_id = unsafe { __invoke_and_return_string(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
-        crate::allocations::get_string_from_allocation(allocation_id)
-    }
-
-    pub fn invoke_and_return_array_buffer(code: &str, params: &[InvokeParam]) -> Vec<u8> {
-        let param_bytes = ManuallyDrop::new(serialize_params(params));
-        let allocation_id = unsafe { __invoke_and_return_array_buffer(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
-        crate::allocations::get_vec_from_allocation(allocation_id)
-    }
-
-    pub fn invoke_and_return_bool(code: &str, params: &[InvokeParam]) -> bool {
-        let param_bytes = ManuallyDrop::new(serialize_params(params));
-        let result = unsafe { __invoke_and_return_bool(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
-        result != 0
-    }
+pub fn invoke_and_return_object(code: &str, params: &[InvokeParam]) -> ExternRef {
+    let param_bytes = ManuallyDrop::new(serialize_params(params));
+    let handle = unsafe { __invoke_and_return_object(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
+    ExternRef { value: handle as u32 }
 }
+
+#[allow(unused_unsafe)]
+pub fn invoke_and_return_bigint(code: &str, params: &[InvokeParam]) -> i64 {
+    let param_bytes = ManuallyDrop::new(serialize_params(params));
+    unsafe { __invoke_and_return_bigint(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) }
+}
+
+#[allow(unused_unsafe)]
+pub fn invoke_and_return_string(code: &str, params: &[InvokeParam]) -> String {
+    let param_bytes = ManuallyDrop::new(serialize_params(params));
+    let allocation_id = unsafe { __invoke_and_return_string(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
+    crate::allocations::get_string_from_allocation(allocation_id)
+}
+
+#[allow(unused_unsafe)]
+pub fn invoke_and_return_array_buffer(code: &str, params: &[InvokeParam]) -> Vec<u8> {
+    let param_bytes = ManuallyDrop::new(serialize_params(params));
+    let allocation_id = unsafe { __invoke_and_return_array_buffer(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
+    crate::allocations::get_vec_from_allocation(allocation_id)
+}
+
+#[allow(unused_unsafe)]
+pub fn invoke_and_return_bool(code: &str, params: &[InvokeParam]) -> bool {
+    let param_bytes = ManuallyDrop::new(serialize_params(params));
+    let result = unsafe { __invoke_and_return_bool(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
+    result != 0
+}
+
 
 
 
@@ -210,15 +211,15 @@ mod tests {
     fn test_invoke() {
 
         // invoke
-        let result = JsFunction::invoke_and_return("", &[]);
+        let result = invoke_and_return("", &[]);
         assert_eq!(result, 0);
 
         // invoke and return object
-        let result = JsFunction::invoke_and_return_object("", &[]);
+        let result = invoke_and_return_object("", &[]);
         assert_eq!(result, ExternRef { value: 0 });
 
         // invoke and return bigint
-        let result = JsFunction::invoke_and_return_bigint("", &[]);
+        let result = invoke_and_return_bigint("", &[]);
         assert_eq!(result, 0);
 
         // invoke and return string
@@ -226,7 +227,7 @@ mod tests {
         crate::allocations::ALLOCATIONS.with_borrow_mut(|s| {
             *s = vec![Some(text.as_bytes().to_vec())];
         });
-        let result = JsFunction::invoke_and_return_string("", &[]);
+        let result = invoke_and_return_string("", &[]);
         assert_eq!(result, "hello".to_owned());
 
         // invoke and return array buffer
@@ -234,11 +235,11 @@ mod tests {
         crate::allocations::ALLOCATIONS.with_borrow_mut(|s| {
             *s = vec![Some(vec.clone())];
         });
-        let result = JsFunction::invoke_and_return_array_buffer("", &[]);
+        let result = invoke_and_return_array_buffer("", &[]);
         assert_eq!(result, vec);
 
         // invoke and return bool
-        let result = JsFunction::invoke_and_return_bool("", &[]);
+        let result = invoke_and_return_bool("", &[]);
         assert_eq!(result, false);
     }
 
