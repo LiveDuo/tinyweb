@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use crate::js::{ExternRef, InvokeParam};
 
-use crate::bindings::utils::{get_property_f64, get_property_i64};
+use crate::bindings::utils::{get_property_i32, get_property_f64};
 use crate::allocations::get_string_from_allocation;
 
 
@@ -75,7 +75,7 @@ thread_local! {
 }
 
 #[no_mangle]
-pub extern "C" fn web_one_time_empty_handler(callback_id: u64) {
+pub extern "C" fn web_one_time_empty_handler(callback_id: u32) {
     TIMEOUT_HANDLERS.with(|h| {
         if let Some(mut handler) = h.lock().unwrap().remove(&(callback_id as u32)) {
             handler();
@@ -87,14 +87,14 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
     let code = r#"
         function(ms){
             const handler = () => {
-                wasmModule.instance.exports.web_one_time_empty_handler(BigInt(objectId));
+                wasmModule.instance.exports.web_one_time_empty_handler(objectId);
             };
-            const objectId = BigInt(storeObject(handler));
+            const objectId = storeObject(handler);
             const handle = window.setTimeout(handler, ms);
             return {objectId,handle};
         }"#;
     let obj_handle = crate::js::invoke_and_return_ref(code, &[InvokeParam::Float64(ms.into())]);
-    let function_id = get_property_i64(&obj_handle, "objectId");
+    let function_id = get_property_i32(&obj_handle, "objectId");
     let timer_handle = get_property_f64(&obj_handle, "handle");
     TIMEOUT_HANDLERS.with(|h| {
         h.lock().unwrap().insert(function_id as u32, Box::new(handler));
@@ -191,7 +191,7 @@ fn remove_history_pop_state_event_handler(callback_id: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_history_pop_state_event(callback_id: u64) {
+pub extern "C" fn web_handle_history_pop_state_event(callback_id: u32) {
     HISTORY_POP_STATE_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {
@@ -207,7 +207,7 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) +
     let code = r#"
         function(){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_history_pop_state_event(BigInt(objectId));
+                wasmModule.instance.exports.web_handle_history_pop_state_event(objectId);
             };
             const objectId = storeObject(handler);
             window.addEventListener("popstate",handler);
