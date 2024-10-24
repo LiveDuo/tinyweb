@@ -95,7 +95,7 @@ pub fn serialize_params(params: &[InvokeParam]) -> Vec<u8> {
 #[cfg(not(test))]
 extern "C" {
     fn __invoke_and_return_number(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
-    fn __invoke_and_return_ref(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u64;
+    fn __invoke_and_return_ref(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
     fn __invoke_and_return_bigint(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> i64;
     fn __invoke_and_return_string(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
     fn __invoke_and_return_array_buffer(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
@@ -104,7 +104,7 @@ extern "C" {
 #[cfg(test)]
 unsafe fn __invoke_and_return_number(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 #[cfg(test)]
-unsafe fn __invoke_and_return_ref(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u64 { 0 }
+unsafe fn __invoke_and_return_ref(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 #[cfg(test)]
 unsafe fn __invoke_and_return_bigint(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> i64 { 0 }
 #[cfg(test)]
@@ -120,7 +120,7 @@ pub fn invoke_and_return_number(code: &str, params: &[InvokeParam]) -> u32 {
 pub fn invoke_and_return_ref(code: &str, params: &[InvokeParam]) -> ExternRef {
     let param_bytes = ManuallyDrop::new(serialize_params(params));
     let handle = unsafe { __invoke_and_return_ref(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) };
-    ExternRef { value: handle as u32 }
+    ExternRef { value: handle }
 }
 
 pub fn invoke_and_return_bigint(code: &str, params: &[InvokeParam]) -> i64 {

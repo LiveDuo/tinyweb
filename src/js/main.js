@@ -102,7 +102,7 @@ const getWasmImports = () => {
             if (result === undefined || result === null) throw new Error('Invalid return ref')
 
             objects.push(result)
-            return BigInt(objects.length - 1)
+            return objects.length - 1
         },
         __invoke_and_return_bigint (ptr1, len1, ptr, len) {
 
