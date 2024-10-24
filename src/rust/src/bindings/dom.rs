@@ -384,7 +384,7 @@ mod tests {
 
         // remove listener
         EVENT_HANDLER.with(|s| { s.lock().map(|mut s| { s.remove(&function_handle); }).unwrap(); });
-        let count = EVENT_HANDLER.with(|s| s.lock().unwrap().len());
+        let count = EVENT_HANDLER.with(|s| s.lock().map(|s| s.len()).unwrap());
         assert_eq!(count, 0);
     }
 

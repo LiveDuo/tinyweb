@@ -218,6 +218,6 @@ pub fn remove_history_pop_state_listener(element: &ExternRef, function_handle: &
     let code = "function(element, f){ window.removeEventListener('popstate', f); }";
     crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     HISTORY_POP_STATE_HANDLERS.with(|s| {
-        s.lock().unwrap().remove(function_handle);
+        s.lock().map(|mut h| { h.remove(function_handle); }).unwrap();
     });
 }
