@@ -11,6 +11,7 @@ pub enum InvokeParam<'a> {
     Float64(f64),
     BigInt(i64),
     String(&'a str),
+    Uint32(u32),
     ExternRef(&'a ExternRef),
     Float32Array(&'a [f32]),
     Float64Array(&'a [f64]),
@@ -72,6 +73,10 @@ impl<'a> InvokeParam<'a> {
                 let len = a.len();
                 param_bytes.extend_from_slice(&ptr.to_le_bytes());
                 param_bytes.extend_from_slice(&len.to_le_bytes());
+            }
+            InvokeParam::Uint32(i) => {
+                param_bytes.push(11);
+                param_bytes.extend_from_slice(&i.to_le_bytes());
             }
         }
         param_bytes

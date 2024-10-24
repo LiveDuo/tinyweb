@@ -10,6 +10,16 @@ pub fn random() -> f32 {
     crate::js::invoke_and_return_number(code, &[]) as f32
 }
 
+pub fn get_property_u32(element: &ExternRef, property: &str) -> u32 {
+    let code = "function(element, property){ return element[property]; }";
+    crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property)])
+}
+
+pub fn set_property_u32(element: &ExternRef, property: &str, value: u32) {
+    let code = "function(element, property, value){ element[property] = value; }";
+    crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Uint32(value)]);
+}
+
 pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
     let code = "function(element, property){ return element[property]; }";
     crate::js::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property)])
