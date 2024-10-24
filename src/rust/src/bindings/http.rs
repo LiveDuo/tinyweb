@@ -8,14 +8,15 @@ use std::sync::Mutex;
 use std::rc::Rc;
 
 thread_local! {
-    static HTTP_LOAD_HANDLERS: Mutex<HashMap<u32, Box<dyn FnMut() + 'static>>> = Default::default();
+    static HTTP_LOAD_HANDLERS: Mutex<HashMap<ExternRef, Box<dyn FnMut() + 'static>>> = Default::default();
 }
 
 #[no_mangle]
 pub fn handle_http_load_event_callback(callback_id: u32, _allocation_id: u32) {
     HTTP_LOAD_HANDLERS.with(|h| {
         h.lock().map(|mut h| {
-            let mut handler = h.remove(&callback_id).unwrap();
+            let function_handle = ExternRef { value: callback_id };
+            let mut handler = h.remove(&function_handle).unwrap();
             handler();
         }).unwrap();
     });
@@ -83,7 +84,10 @@ impl XMLHttpRequest {
             }"#;
         let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(&self.0)]);
         HTTP_LOAD_HANDLERS.with(|h| {
-            h.lock().unwrap().insert(function_ref as u32, Box::new(callback));
+            let function_handle = ExternRef { value: function_ref as u32 };
+            h.lock().map(|mut s| {
+                s.insert(function_handle, Box::new(callback));
+            }).unwrap()
         });
     }
 

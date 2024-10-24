@@ -71,14 +71,15 @@ pub fn local_storage_clear() {
 
 
 thread_local! {
-    static TIMEOUT_HANDLERS: Mutex<HashMap<u32, Box<dyn FnMut() + 'static>>> = Default::default();
+    static TIMEOUT_HANDLERS: Mutex<HashMap<ExternRef, Box<dyn FnMut() + 'static>>> = Default::default();
 }
 
 #[no_mangle]
 pub fn handle_one_time_empty_callback(callback_id: u32, _allocation_id: u32) {
     TIMEOUT_HANDLERS.with(|h| {
         h.lock().map(|mut h| {
-            let mut handler = h.remove(&callback_id).unwrap();
+            let function_handle = ExternRef { value: callback_id as u32 };
+            let mut handler = h.remove(&function_handle).unwrap();
             handler();
         }).unwrap();
     });
@@ -99,7 +100,10 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
     let function_id = get_property_i32(&obj_handle, "objectId");
     let timer_handle = get_property_f64(&obj_handle, "handle");
     TIMEOUT_HANDLERS.with(|h| {
-        h.lock().unwrap().insert(function_id as u32, Box::new(handler));
+        h.lock().map(|mut s| {
+            let function_handle = ExternRef { value: function_id as u32 };
+            s.insert(function_handle, Box::new(handler));
+        }).unwrap();
     });
     timer_handle
 }
@@ -208,7 +212,9 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) +
     let function_handle = ExternRef { value: function_ref as u32, };
     let handler = Box::new(handler);
     HISTORY_POP_STATE_HANDLERS.with(|s| {
-        s.lock().unwrap().insert(function_handle.clone(), handler);
+        s.lock().map(|mut s| {
+            s.insert(function_handle.clone(), handler);
+        }).unwrap()
     });
     function_handle
 }

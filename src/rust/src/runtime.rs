@@ -10,7 +10,7 @@ use std::{
 
 use crate::bindings::window::set_timeout;
 use crate::bindings::utils::random;
-
+use crate::js::ExternRef;
 
 
 pub struct EventHandlerFuture<T> { shared_state: Arc<Mutex<EventHandlerSharedState<T>>>, }
@@ -39,7 +39,8 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
         let id = (random() * std::f32::MAX) as u32;
         let state_storage = get_globals_mutex::<T>();
         state_storage.map.lock().map(|mut s| {
-            s.insert(id, shared_state.clone());
+            let function_handle = ExternRef { value: id };
+            s.insert(function_handle, shared_state.clone());
         }).unwrap();
 
         (EventHandlerFuture { shared_state: shared_state.clone(), }, id)
@@ -54,7 +55,7 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
 pub struct EventHandlerSharedState<T> { completed: bool, waker: Option<Waker>, result: Option<T>, }
 
 pub struct SharedStateMap<T> {
-    map: Mutex<HashMap<u32, Arc<Mutex<EventHandlerSharedState<T>>>>>,
+    map: Mutex<HashMap<ExternRef, Arc<Mutex<EventHandlerSharedState<T>>>>>,
 }
 
 impl<T> SharedStateMap<T> {
@@ -62,7 +63,8 @@ impl<T> SharedStateMap<T> {
         let mut waker = None;
         {
             let mut map = self.map.lock().unwrap();
-            if let Some(state) = map.remove(&id) {
+            let function_handle = ExternRef { value: id };
+            if let Some(state) = map.remove(&function_handle) {
                 let mut shared_state = state.lock().unwrap();
                 shared_state.completed = true;
                 shared_state.result = Some(result);
