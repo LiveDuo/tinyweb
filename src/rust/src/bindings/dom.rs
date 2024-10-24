@@ -119,7 +119,8 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
                 const allocationId = writeBufferToMemory(buffer);
                 wasmModule.instance.exports.web_handle_change_event(objectId, allocationId);
             };
-            const objectId = storeObject(handler);
+            objects.push(handler);
+            const objectId = objects.length - 1;
             element.addEventListener("change",handler);
             return objectId;
         }"#;
@@ -184,7 +185,8 @@ pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(Mouse
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
             };
-            const objectId = storeObject(handler);
+            objects.push(handler);
+            const objectId = objects.length - 1;
             element.addEventListener("click",handler);
             return objectId;
         }"#;
@@ -211,7 +213,8 @@ pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
             };
-            const objectId = storeObject(handler);
+            objects.push(handler);
+            const objectId = objects.length - 1;
             element.addEventListener("mousemove",handler);
             return objectId;
         }"#;
@@ -237,7 +240,8 @@ pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
             };
-            const objectId = storeObject(handler);
+            objects.push(handler);
+            const objectId = objects.length - 1;
             element.addEventListener("mousedown",handler);
             return objectId;
         }"#;
@@ -263,7 +267,8 @@ pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(Mo
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
             };
-            const objectId = storeObject(handler);
+            objects.push(handler);
+            const objectId = objects.length - 1;
             element.addEventListener("mouseup",handler);
             return objectId;
         }"#;
@@ -325,7 +330,8 @@ pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(Ke
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_keyboard_event_handler(objectId,e.keyCode);
             };
-            const objectId = storeObject(handler);
+            objects.push(handler);
+            const objectId = objects.length - 1;
             element.addEventListener("keydown",handler);
             return objectId;
         }"#;
@@ -347,7 +353,8 @@ pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(Keyb
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_keyboard_event_handler(objectId,e.keyCode);
             };
-            const objectId = storeObject(handler);
+            objects.push(handler);
+            const objectId = objects.length - 1;
             element.addEventListener("keyup",handler);
             return objectId;
         }"#;

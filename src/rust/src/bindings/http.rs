@@ -82,7 +82,8 @@ impl XMLHttpRequest {
                 const handler = () => {
                     wasmModule.instance.exports.web_handle_http_load_event_handler(objectId);
                 };
-                const objectId = storeObject(handler);
+                objects.push(handler);
+                const objectId = objects.length - 1;
                 request.onload = handler;
                 return objectId;
             }"#;

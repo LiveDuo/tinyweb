@@ -7,11 +7,6 @@ const objects = []
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
 
-const storeObject = (object) => {
-    objects.push(object)
-    return objects.length - 1
-}
-
 const readParamsFromMemory = (ptr, len) => {
 
     const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
@@ -158,7 +153,6 @@ const writeBufferToMemory = (buffer) => {
 
 const loadExports = () => {
     exports.wasmModule = wasmModule
-    exports.storeObject = storeObject
     exports.writeBufferToMemory = writeBufferToMemory
     exports.readParamsFromMemory = readParamsFromMemory
 }

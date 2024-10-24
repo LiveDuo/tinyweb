@@ -89,7 +89,8 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
             const handler = () => {
                 wasmModule.instance.exports.web_one_time_empty_handler(objectId);
             };
-            const objectId = storeObject(handler);
+            objects.push(handler);
+            const objectId = objects.length - 1;
             const handle = window.setTimeout(handler, ms);
             return {objectId,handle};
         }"#;
@@ -209,7 +210,8 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) +
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_history_pop_state_event(objectId);
             };
-            const objectId = storeObject(handler);
+            objects.push(handler);
+            const objectId = objects.length - 1;
             window.addEventListener("popstate",handler);
             return objectId;
         }"#;
