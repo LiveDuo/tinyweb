@@ -12,7 +12,7 @@ thread_local! {
 }
 
 #[no_mangle]
-pub fn handle_http_load_event_callback(callback_id: u32) {
+pub fn handle_http_load_event_callback(callback_id: u32, allocation_id: u32) {
     HTTP_LOAD_HANDLERS.with(|h| {
         h.lock().map(|mut h| {
             let mut handler = h.remove(&callback_id).unwrap();
@@ -74,7 +74,7 @@ impl XMLHttpRequest {
         let code = r#"
             function(request){
                 const handler = () => {
-                    wasmModule.instance.exports.handle_http_load_event_callback(objectId);
+                    wasmModule.instance.exports.handle_http_load_event_callback(objectId,0);
                 };
                 objects.push(handler);
                 const objectId = objects.length - 1;
