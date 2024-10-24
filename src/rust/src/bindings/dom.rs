@@ -79,7 +79,7 @@ pub struct ChangeEvent {
 }
 
 thread_local! {
-    static ELEMENT_CHANGE_HANDLERS: Mutex<HashMap<Rc<ExternRef>, Box<dyn FnMut(ChangeEvent) + 'static>>> = Default::default();
+    static ELEMENT_CHANGE_HANDLERS: Mutex<HashMap<ExternRef, Box<dyn FnMut(ChangeEvent) + 'static>>> = Default::default();
 }
 
 #[no_mangle]
@@ -97,7 +97,7 @@ pub fn handle_change_event_callback(callback_id: u32, allocation_id: u32) {
     });
 }
 
-pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(ChangeEvent) + 'static) -> Rc<ExternRef> {
+pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(ChangeEvent) + 'static) -> ExternRef {
     let code = r#"
         function(element ){
             const handler = (e) => {
@@ -111,7 +111,7 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
             return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
+    let function_handle = ExternRef { value: function_ref as u32, };
 
     let handler = Box::new(handler);
     ELEMENT_CHANGE_HANDLERS.with(|s| {
@@ -130,15 +130,15 @@ pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Rc<
 }
 
 pub struct EventHandler<T> {
-    pub listeners: Mutex<HashMap<Rc<ExternRef>, Box<dyn FnMut(T) + 'static>>>,
+    pub listeners: Mutex<HashMap<ExternRef, Box<dyn FnMut(T) + 'static>>>,
 }
 
 impl<T> EventHandler<T> {
-    pub fn add_listener(&self, callback_id: Rc<ExternRef>, handler: Box<dyn FnMut(T) + 'static>) {
+    pub fn add_listener(&self, callback_id: ExternRef, handler: Box<dyn FnMut(T) + 'static>) {
         self.listeners.lock().map(|mut s| { s.insert(callback_id, handler); }).unwrap();
     }
 
-    pub fn remove_listener(&self, callback_id: &Rc<ExternRef>) {
+    pub fn remove_listener(&self, callback_id: &ExternRef) {
         let mut handlers = self.listeners.lock().unwrap();
         handlers.remove(callback_id);
     }
@@ -171,7 +171,7 @@ pub fn handle_mouse_event_callback(callback_id: u32, x: f64, y: f64) {
     })
 }
 
-pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
+pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> ExternRef {
 
     let code = r#"
         function(element ){
@@ -184,7 +184,7 @@ pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(Mouse
             return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
+    let function_handle = ExternRef { value: function_ref as u32, };
 
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
@@ -200,7 +200,7 @@ pub fn element_remove_click_listener(element: &ExternRef, function_handle: &Rc<E
     });
 }
 
-pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
+pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> ExternRef {
     let code = r#"
         function(element ){
             const handler = (e) => {
@@ -212,7 +212,7 @@ pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(
             return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
+    let function_handle = ExternRef { value: function_ref as u32, };
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
     });
@@ -227,7 +227,7 @@ pub fn element_remove_mouse_move_listener(element: &ExternRef, function_handle: 
     });
 }
 
-pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
+pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> ExternRef {
     let code = r#"
         function(element ){
             const handler = (e) => {
@@ -239,7 +239,7 @@ pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(
             return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
+    let function_handle = ExternRef { value: function_ref as u32, };
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
     });
@@ -254,7 +254,7 @@ pub fn element_remove_mouse_down_listener(element: &ExternRef, function_handle: 
     });
 }
 
-pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
+pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> ExternRef {
     let code = r#"
         function(element ){
             const handler = (e) => {
@@ -266,7 +266,7 @@ pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(Mo
             return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
+    let function_handle = ExternRef { value: function_ref as u32, };
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
     });
@@ -286,7 +286,7 @@ pub struct KeyboardEvent {
 }
 
 thread_local! {
-    static KEYBOARD_EVENT_HANDLERS: Mutex<HashMap<Rc<ExternRef>, Box<dyn FnMut(KeyboardEvent) + 'static>>> = Default::default();
+    static KEYBOARD_EVENT_HANDLERS: Mutex<HashMap<ExternRef, Box<dyn FnMut(KeyboardEvent) + 'static>>> = Default::default();
 }
 
 #[no_mangle]
@@ -304,7 +304,7 @@ pub fn handle_keyboard_event_callback(callback_id: u32, key_code: u32) {
     });
 }
 
-pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(KeyboardEvent) + 'static) -> Rc<ExternRef> {
+pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(KeyboardEvent) + 'static) -> ExternRef {
     let code = r#"
         function(element ){
             const handler = (e) => {
@@ -316,7 +316,7 @@ pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(Ke
             return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
+    let function_handle = ExternRef { value: function_ref as u32, };
 
     let handler = Box::new(handler);
     KEYBOARD_EVENT_HANDLERS.with(|h| {
@@ -334,7 +334,7 @@ pub fn element_remove_key_down_listener(element: &ExternRef, function_handle: &R
     });
 }
 
-pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(KeyboardEvent) + 'static) -> Rc<ExternRef> {
+pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(KeyboardEvent) + 'static) -> ExternRef {
     let code = r#"
         function(element ){
             const handler = (e) => {
@@ -346,7 +346,7 @@ pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(Keyb
             return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
-    let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
+    let function_handle = ExternRef { value: function_ref as u32, };
 
     let handler = Box::new(handler);
     KEYBOARD_EVENT_HANDLERS.with(|h| {
@@ -385,7 +385,7 @@ mod tests {
         let has_run_clone = has_run.clone();
 
         // add listener
-        let function_handle = Rc::new(ExternRef { value: 0, });
+        let function_handle = ExternRef { value: 0, };
         let handler = move |_| {
             *has_run_clone.borrow_mut() = true;
         };
