@@ -8,12 +8,12 @@ use std::rc::Rc;
 
 pub fn create_element(tag: &str) -> ExternRef {
     let code = "function (t) { return document.createElement(t); }";
-    crate::js::invoke_and_return_object(code, &[InvokeParam::String(tag)])
+    crate::js::invoke_and_return_ref(code, &[InvokeParam::String(tag)])
 }
 
 pub fn create_text_node(text: &str) -> ExternRef {
     let code = "function (t) { return document.createTextNode(t); }";
-    crate::js::invoke_and_return_object(code, &[InvokeParam::String(text)])
+    crate::js::invoke_and_return_ref(code, &[InvokeParam::String(text)])
 }
 
 pub fn append_child(parent: &ExternRef, child: &ExternRef) {
@@ -41,7 +41,7 @@ pub fn prompt(message: &str, placeholder: &str) -> String {
 
 pub fn query_selector(selector: &str) -> ExternRef {
     let code = "function(s){ return document.querySelector(s); }";
-    crate::js::invoke_and_return_object(code, &[InvokeParam::String(selector)])
+    crate::js::invoke_and_return_ref(code, &[InvokeParam::String(selector)])
 }
 
 pub fn element_set_inner_html(element: &ExternRef, html: &str) {

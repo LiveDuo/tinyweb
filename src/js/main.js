@@ -91,7 +91,7 @@ const getWasmImports = () => {
 
             return result
         },
-        __invoke_and_return_object (ptr1, len1, ptr, len) {
+        __invoke_and_return_ref (ptr1, len1, ptr, len) {
 
             const memory = new Uint8Array(wasmModule.instance.exports.memory.buffer)
             const functionBody = textDecoder.decode(memory.subarray(ptr1, ptr1 + len1))
@@ -99,7 +99,7 @@ const getWasmImports = () => {
 
             const values = readParamsFromMemory(ptr, len)
             const result = _function.call({}, ...values)
-            if (result === undefined || result === null) throw new Error('Invalid return object')
+            if (result === undefined || result === null) throw new Error('Invalid return ref')
 
             objects.push(result)
             return BigInt(objects.length - 1)

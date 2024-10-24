@@ -94,7 +94,7 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
             const handle = window.setTimeout(handler, ms);
             return {id,handle};
         }"#;
-    let obj_handle = crate::js::invoke_and_return_object(code, &[InvokeParam::Float64(ms.into())]);
+    let obj_handle = crate::js::invoke_and_return_ref(code, &[InvokeParam::Float64(ms.into())]);
     let function_handle = get_property_i64(&obj_handle, "id");
     let timer_handle = get_property_f64(&obj_handle, "handle");
     TIMEOUT_HANDLERS.with(|h| {

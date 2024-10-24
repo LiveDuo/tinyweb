@@ -32,7 +32,7 @@ pub struct XMLHttpRequest(ExternRef);
 impl XMLHttpRequest {
     pub fn new() -> XMLHttpRequest {
         let code = "function() { return new XMLHttpRequest(); }";
-        let request = crate::js::invoke_and_return_object(code, &[]);
+        let request = crate::js::invoke_and_return_ref(code, &[]);
         XMLHttpRequest(request)
     }
 
