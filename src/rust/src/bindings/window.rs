@@ -87,18 +87,17 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
     let code = r#"
         function(ms){
             const handler = () => {
-                wasmModule.instance.exports.web_one_time_empty_handler(id);
-                deallocate(id);
+                wasmModule.instance.exports.web_one_time_empty_handler(objectId);
             };
-            const id = allocate(handler);
+            const objectId = storeObject(handler);
             const handle = window.setTimeout(handler, ms);
-            return {id,handle};
+            return {objectId,handle};
         }"#;
     let obj_handle = crate::js::invoke_and_return_ref(code, &[InvokeParam::Float64(ms.into())]);
-    let function_handle = get_property_i64(&obj_handle, "id");
+    let function_id = get_property_i64(&obj_handle, "objectId");
     let timer_handle = get_property_f64(&obj_handle, "handle");
     TIMEOUT_HANDLERS.with(|h| {
-        h.lock().unwrap().insert(function_handle as u32, Box::new(handler));
+        h.lock().unwrap().insert(function_id as u32, Box::new(handler));
     });
     timer_handle
 }
@@ -208,11 +207,11 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) +
     let code = r#"
         function(){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_history_pop_state_event(id);
+                wasmModule.instance.exports.web_handle_history_pop_state_event(objectId);
             };
-            const id = allocate(handler);
+            const objectId = storeObject(handler);
             window.addEventListener("popstate",handler);
-            return id;
+            return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_bigint(code, &[]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });

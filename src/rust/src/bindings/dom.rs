@@ -117,11 +117,11 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
                 const text = e.target.value;
                 const buffer = (new TextEncoder()).encode(text);
                 const allocationId = writeBufferToMemory(buffer);
-                wasmModule.instance.exports.web_handle_change_event(id, allocationId);
+                wasmModule.instance.exports.web_handle_change_event(objectId, allocationId);
             };
-            const id = allocate(handler);
+            const objectId = storeObject(handler);
             element.addEventListener("change",handler);
-            return id;
+            return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
@@ -182,11 +182,11 @@ pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(Mouse
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
             };
-            const id = allocate(handler);
+            const objectId = storeObject(handler);
             element.addEventListener("click",handler);
-            return id;
+            return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
@@ -209,11 +209,11 @@ pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
             };
-            const id = allocate(handler);
+            const objectId = storeObject(handler);
             element.addEventListener("mousemove",handler);
-            return id;
+            return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
@@ -235,11 +235,11 @@ pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
             };
-            const id = allocate(handler);
+            const objectId = storeObject(handler);
             element.addEventListener("mousedown",handler);
-            return id;
+            return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
@@ -261,11 +261,11 @@ pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(Mo
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.web_handle_mouse_event_handler(objectId,e.offsetX, e.offsetY);
             };
-            const id = allocate(handler);
+            const objectId = storeObject(handler);
             element.addEventListener("mouseup",handler);
-            return id;
+            return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
@@ -323,11 +323,11 @@ pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(Ke
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
+                wasmModule.instance.exports.web_handle_keyboard_event_handler(objectId,e.keyCode);
             };
-            const id = allocate(handler);
+            const objectId = storeObject(handler);
             element.addEventListener("keydown",handler);
-            return id;
+            return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
@@ -345,11 +345,11 @@ pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(Keyb
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
+                wasmModule.instance.exports.web_handle_keyboard_event_handler(objectId,e.keyCode);
             };
-            const id = allocate(handler);
+            const objectId = storeObject(handler);
             element.addEventListener("keyup",handler);
-            return id;
+            return objectId;
         }"#;
     let function_ref = crate::js::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });

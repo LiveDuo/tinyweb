@@ -8,14 +8,9 @@ const objectFreeList = []
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
 
-const allocate = (object) => {
-    if (objectFreeList.length > 0) objectFreeList.pop()
+const storeObject = (object) => {
     objects.push(object)
     return BigInt(objects.length - 1)
-}
-
-const deallocate = (objectId) => {
-    objectFreeList.push(Number(objectId))
 }
 
 const readParamsFromMemory = (ptr, len) => {
@@ -45,8 +40,7 @@ const readParamsFromMemory = (ptr, len) => {
             i += 1 + 4 + 4
         } else if (params[i] === 5) { // extern ref
             const objectId = dataView.getUint32(i + 1, true)
-            const index = BigInt(objectId)
-            values.push(objects[index])
+            values.push(objects[objectId])
             i += 1 + 4
         } else if (params[i] === 6) { // float32 array
             const ptr = dataView.getInt32(i + 1, true)
@@ -165,8 +159,7 @@ const writeBufferToMemory = (buffer) => {
 
 const loadExports = () => {
     exports.wasmModule = wasmModule
-    exports.allocate = allocate
-    exports.deallocate = deallocate
+    exports.storeObject = storeObject
     exports.writeBufferToMemory = writeBufferToMemory
     exports.readParamsFromMemory = readParamsFromMemory
 }

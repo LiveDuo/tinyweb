@@ -80,12 +80,11 @@ impl XMLHttpRequest {
         let code = r#"
             function(request){
                 const handler = () => {
-                    wasmModule.instance.exports.web_handle_http_load_event_handler(id);
-                    deallocate(id);
+                    wasmModule.instance.exports.web_handle_http_load_event_handler(objectId);
                 };
-                const id = allocate(handler);
+                const objectId = storeObject(handler);
                 request.onload = handler;
-                return id;
+                return objectId;
             }"#;
         let function_ref = crate::js::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(&self.0)]);
         add_http_load_event_handler(function_ref as u32, Box::new(callback));
