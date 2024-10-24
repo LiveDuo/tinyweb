@@ -3,7 +3,6 @@
 let wasmModule = {}
 
 const objects = []
-const objectFreeList = []
 
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
