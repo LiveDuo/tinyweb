@@ -9,7 +9,7 @@ const textDecoder = new TextDecoder()
 
 const storeObject = (object) => {
     objects.push(object)
-    return BigInt(objects.length - 1)
+    return objects.length - 1
 }
 
 const readParamsFromMemory = (ptr, len) => {

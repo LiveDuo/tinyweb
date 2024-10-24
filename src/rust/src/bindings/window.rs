@@ -87,9 +87,9 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
     let code = r#"
         function(ms){
             const handler = () => {
-                wasmModule.instance.exports.web_one_time_empty_handler(objectId);
+                wasmModule.instance.exports.web_one_time_empty_handler(BigInt(objectId));
             };
-            const objectId = storeObject(handler);
+            const objectId = BigInt(storeObject(handler));
             const handle = window.setTimeout(handler, ms);
             return {objectId,handle};
         }"#;
@@ -207,13 +207,13 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) +
     let code = r#"
         function(){
             const handler = (e) => {
-                wasmModule.instance.exports.web_handle_history_pop_state_event(objectId);
+                wasmModule.instance.exports.web_handle_history_pop_state_event(BigInt(objectId));
             };
             const objectId = storeObject(handler);
             window.addEventListener("popstate",handler);
             return objectId;
         }"#;
-    let function_ref = crate::js::invoke_and_return_bigint(code, &[]);
+    let function_ref = crate::js::invoke_and_return_number(code, &[]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     add_history_pop_state_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
