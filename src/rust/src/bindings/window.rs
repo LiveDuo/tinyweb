@@ -178,10 +178,8 @@ pub fn location_reload() {
     crate::js::invoke_and_return(code, &[]);
 }
 
-pub struct PopStateEvent {}
-
 thread_local! {
-    static HISTORY_POP_STATE_HANDLERS: Mutex<HashMap<ExternRef, Box<dyn FnMut(PopStateEvent) + 'static>>> = Default::default();
+    static HISTORY_POP_STATE_HANDLERS: Mutex<HashMap<ExternRef, Box<dyn FnMut() + 'static>>> = Default::default();
 }
 
 #[no_mangle]
@@ -190,14 +188,14 @@ pub fn handle_pop_state_event_callback(callback_id: u32, _allocation_id: u32) {
 
         let handler = s.lock().map(|mut s| {
             let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id).unwrap();
-            handler as *mut Box<dyn FnMut(PopStateEvent) + 'static>
+            handler as *mut Box<dyn FnMut() + 'static>
         }).unwrap();
 
-        unsafe { (*handler)(PopStateEvent {}) }
+        unsafe { (*handler)() }
     });
 }
 
-pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) + 'static) -> ExternRef {
+pub fn add_history_pop_state_event_listener(handler: impl FnMut() + 'static) -> ExternRef {
     let code = r#"
         function(){
             const handler = (e) => {
