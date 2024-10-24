@@ -282,7 +282,7 @@ pub fn element_remove_mouse_up_listener(element: &ExternRef, function_handle: &R
 }
 
 pub struct KeyboardEvent {
-    pub key_code: f64,
+    pub key_code: u32,
 }
 
 thread_local! {
@@ -290,7 +290,7 @@ thread_local! {
 }
 
 #[no_mangle]
-pub fn handle_keyboard_event_callback(callback_id: u32, key_code: f64) {
+pub fn handle_keyboard_event_callback(callback_id: u32, key_code: u32) {
 
     KEYBOARD_EVENT_HANDLERS.with(|s| {
 
