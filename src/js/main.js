@@ -3,7 +3,6 @@
 let wasmModule = {}
 
 const objects = []
-const functions = []
 
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
