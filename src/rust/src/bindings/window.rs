@@ -208,11 +208,8 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut() + 'static) -> 
         }"#;
     let function_ref = crate::js::invoke_and_return_number(code, &[]);
     let function_handle = ExternRef { value: function_ref as u32, };
-    let handler = Box::new(handler);
     HISTORY_POP_STATE_HANDLERS.with(|s| {
-        s.lock().map(|mut s| {
-            s.insert(function_handle.clone(), handler);
-        }).unwrap()
+        s.lock().map(|mut s| { s.insert(function_handle.clone(), Box::new(handler)); }).unwrap();
     });
     function_handle
 }

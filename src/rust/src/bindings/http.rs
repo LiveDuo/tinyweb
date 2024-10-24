@@ -85,9 +85,7 @@ impl XMLHttpRequest {
         let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(&self.0)]);
         HTTP_LOAD_HANDLERS.with(|h| {
             let function_handle = ExternRef { value: function_ref as u32 };
-            h.lock().map(|mut s| {
-                s.insert(function_handle, Box::new(callback));
-            }).unwrap()
+            h.lock().map(|mut s| { s.insert(function_handle, Box::new(callback)); }).unwrap();
         });
     }
 

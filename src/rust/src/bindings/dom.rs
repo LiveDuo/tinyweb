@@ -113,11 +113,8 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = ExternRef { value: function_ref as u32, };
 
-    let handler = Box::new(handler);
     ELEMENT_CHANGE_HANDLERS.with(|s| {
-        s.lock().map(|mut s| {
-            s.insert(function_handle.clone(), handler);
-        }).unwrap();
+        s.lock().map(|mut s| { s.insert(function_handle.clone(), Box::new(handler)); }).unwrap();
     });
 
     function_handle
@@ -127,9 +124,7 @@ pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Rc<
     let code = "function(element, f){ element.removeEventListener('change', f); }";
     crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     ELEMENT_CHANGE_HANDLERS.with(|s| {
-        s.lock().map(|mut s| {
-            s.remove(function_handle);
-        }).unwrap();
+        s.lock().map(|mut s| { s.remove(function_handle); }).unwrap();
     });
 }
 
@@ -302,11 +297,8 @@ pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(Ke
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = ExternRef { value: function_ref as u32, };
 
-    let handler = Box::new(handler);
     KEYBOARD_EVENT_HANDLERS.with(|h| {
-        h.lock().map(|mut s| {
-            s.insert(function_handle.clone(), handler);
-        }).unwrap();
+        h.lock().map(|mut s| { s.insert(function_handle.clone(), Box::new(handler)); }).unwrap();
     });
 
     function_handle
@@ -316,9 +308,7 @@ pub fn element_remove_key_down_listener(element: &ExternRef, function_handle: &R
     let code = "function(element, f){ element.removeEventListener('keydown', f); }";
     crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     KEYBOARD_EVENT_HANDLERS.with(|h| {
-        h.lock().map(|mut s| {
-            s.remove(function_handle);
-        }).unwrap();
+        h.lock().map(|mut s| { s.remove(function_handle); }).unwrap();
     });
 }
 
@@ -336,11 +326,8 @@ pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(Keyb
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = ExternRef { value: function_ref as u32, };
 
-    let handler = Box::new(handler);
     KEYBOARD_EVENT_HANDLERS.with(|h| {
-        h.lock().map(|mut s| {
-            s.insert(function_handle.clone(), handler);
-        }).unwrap()
+        h.lock().map(|mut s| { s.insert(function_handle.clone(), Box::new(handler)); }).unwrap();
     });
 
     function_handle
@@ -350,9 +337,7 @@ pub fn element_remove_key_up_listener(element: &ExternRef, function_handle: &Rc<
     let code = "function(element, f){ element.removeEventListener('keyup', f); }";
     crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     KEYBOARD_EVENT_HANDLERS.with(|h| {
-        h.lock().map(|mut s| {
-            s.remove(function_handle);
-        }).unwrap();
+        h.lock().map(|mut s| { s.remove(function_handle); }).unwrap();
     });
 }
 
