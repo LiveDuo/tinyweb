@@ -77,9 +77,10 @@ thread_local! {
 #[no_mangle]
 pub fn handle_one_time_empty_callback(callback_id: u32) {
     TIMEOUT_HANDLERS.with(|h| {
-        if let Some(mut handler) = h.lock().unwrap().remove(&callback_id) {
+        h.lock().map(|mut h| {
+            let mut handler = h.remove(&callback_id).unwrap();
             handler();
-        }
+        }).unwrap();
     });
 }
 
