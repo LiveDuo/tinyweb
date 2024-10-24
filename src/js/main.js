@@ -76,7 +76,7 @@ const getWasmImports = () => {
 
             const values = readParamsFromMemory(ptr, len)
             const result = _function.call({}, ...values)
-            if (result === undefined || result === null) throw new Error('Invalid return')
+            // if (result === undefined || result === null) throw new Error('Invalid return')
 
             return result
         },
