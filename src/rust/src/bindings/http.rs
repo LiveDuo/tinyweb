@@ -12,7 +12,7 @@ thread_local! {
 }
 
 #[no_mangle]
-pub fn handle_http_load_event_callback(callback_id: u32, allocation_id: u32) {
+pub fn handle_http_load_event_callback(callback_id: u32, _allocation_id: u32) {
     HTTP_LOAD_HANDLERS.with(|h| {
         h.lock().map(|mut h| {
             let mut handler = h.remove(&callback_id).unwrap();
