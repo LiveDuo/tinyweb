@@ -125,6 +125,8 @@ impl Default for FetchOptions<'_> {
 }
 
 pub fn fetch(options: FetchOptions) -> impl Future<Output = FetchResponse> {
+
+    // open request
     let method_str = match options.action {
         HTTPMethod::GET => "GET",
         HTTPMethod::POST => "POST",
@@ -136,25 +138,28 @@ pub fn fetch(options: FetchOptions) -> impl Future<Output = FetchResponse> {
     };
     let request = Rc::new(XMLHttpRequest::new());
     request.open(method_str, &options.url);
+
+    // send request
     if let Some(body) = options.body {
         request.send_with_body(&body);
     } else {
         request.send();
     }
+
+    // set headers
     if let Some(headers) = options.headers {
         for (key, value) in headers {
             request.set_request_header(&key, &value);
         }
     }
+
+    // set response type
     match options.response_type {
-        FetchResponseType::Text => {
-            request.set_response_type("text");
-        }
-        FetchResponseType::ArrayBuffer => {
-            request.set_response_type("arraybuffer");
-        }
+        FetchResponseType::Text => { request.set_response_type("text"); }
+        FetchResponseType::ArrayBuffer => { request.set_response_type("arraybuffer"); }
     }
 
+    // set on load
     let r2 = request.clone();
     let (future, state_id) = EventHandlerFuture::<FetchResponse>::create_future_with_state_id();
     request.set_on_load(move || match options.response_type {
