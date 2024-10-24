@@ -104,7 +104,7 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
                 const text = e.target.value;
                 const buffer = (new TextEncoder()).encode(text);
                 const allocationId = writeBufferToMemory(buffer);
-                wasmModule.instance.exports.handle_change_event_callback(objectId, allocationId);
+                wasmModule.instance.exports.handle_change_event_callback(objectId,allocationId);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -177,7 +177,7 @@ pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(Mouse
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX,e.offsetY);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -205,7 +205,7 @@ pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX,e.offsetY);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -232,7 +232,7 @@ pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX,e.offsetY);
             };
             objects.push(handler);
             const objectId = objects.length - 1;
@@ -259,7 +259,7 @@ pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(Mo
     let code = r#"
         function(element ){
             const handler = (e) => {
-                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX, e.offsetY);
+                wasmModule.instance.exports.handle_mouse_event_callback(objectId,e.offsetX,e.offsetY);
             };
             objects.push(handler);
             const objectId = objects.length - 1;

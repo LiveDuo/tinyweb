@@ -76,9 +76,9 @@ pub fn handle_empty_callback(callback_id: u32) {
 
 pub fn sleep(ms: impl Into<f64>) -> impl Future<Output = ()> {
     let code = r#"
-        function(ms, state_id){
+        function(ms, stateId){
             window.setTimeout(()=>{
-                wasmModule.instance.exports.handle_empty_callback(state_id);
+                wasmModule.instance.exports.handle_empty_callback(stateId);
             }, ms);
         }"#;
     let (future, state_id) = EventHandlerFuture::<()>::create_future_with_state_id();
