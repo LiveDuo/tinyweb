@@ -39,7 +39,7 @@ impl <T: Send + Sync + 'static> EventHandlerFuture<T> {
         let id = (random() * std::f32::MAX) as u32;
         let state_storage = get_globals_mutex::<T>();
         state_storage.map.lock().map(|mut s| {
-            s.insert(id as u32, shared_state.clone());
+            s.insert(id, shared_state.clone());
         }).unwrap();
 
         (EventHandlerFuture { shared_state: shared_state.clone(), }, id)
@@ -62,7 +62,7 @@ impl<T> SharedStateMap<T> {
         let mut waker = None;
         {
             let mut map = self.map.lock().unwrap();
-            if let Some(state) = map.remove(&(id as u32)) {
+            if let Some(state) = map.remove(&id) {
                 let mut shared_state = state.lock().unwrap();
                 shared_state.completed = true;
                 shared_state.result = Some(result);

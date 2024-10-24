@@ -77,7 +77,7 @@ thread_local! {
 #[no_mangle]
 pub fn handle_one_time_empty_callback(callback_id: u32) {
     TIMEOUT_HANDLERS.with(|h| {
-        if let Some(mut handler) = h.lock().unwrap().remove(&(callback_id as u32)) {
+        if let Some(mut handler) = h.lock().unwrap().remove(&callback_id) {
             handler();
         }
     });
@@ -196,7 +196,7 @@ pub fn handle_pop_state_event_callback(callback_id: u32) {
     HISTORY_POP_STATE_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {
-            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id as u32).unwrap();
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id).unwrap();
             handler as *mut Box<dyn FnMut(PopStateEvent) + 'static>
         }).unwrap();
 

@@ -21,7 +21,7 @@ fn add_http_load_event_handler(function_handle: u32, handler: Box<dyn FnMut() + 
 #[no_mangle]
 pub fn handle_http_load_event_callback(callback_id: u32) {
     HTTP_LOAD_HANDLERS.with(|h| {
-        if let Some(mut handler) = h.lock().unwrap().remove(&(callback_id as u32)) {
+        if let Some(mut handler) = h.lock().unwrap().remove(&callback_id) {
             handler();
         }
     });

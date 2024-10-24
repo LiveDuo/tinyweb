@@ -100,7 +100,7 @@ pub fn handle_change_event_callback(callback_id: u32, allocation_id: u32) {
     ELEMENT_CHANGE_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {
-            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id as u32).unwrap();
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id).unwrap();
             handler as *mut Box<dyn FnMut(ChangeEvent) + 'static>
         }).unwrap();
 
@@ -174,7 +174,7 @@ thread_local! {
 pub fn handle_mouse_event_callback(callback_id: u32, x: f64, y: f64) {
 
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.call(callback_id as u32, MouseEvent { offset_x: x, offset_y: y });
+        s.call(callback_id, MouseEvent { offset_x: x, offset_y: y });
     })
 }
 
@@ -315,7 +315,7 @@ pub fn handle_keyboard_event_callback(callback_id: u32, key_code: f64) {
     KEYBOARD_EVENT_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {
-            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id as u32).unwrap();
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id).unwrap();
             handler as *mut Box<dyn FnMut(KeyboardEvent) + 'static>
         }).unwrap();
 
