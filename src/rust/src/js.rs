@@ -11,6 +11,7 @@ pub enum InvokeParam<'a> {
     Float64(f64),
     BigInt(i64),
     String(&'a str),
+    Int32(i32),
     Uint32(u32),
     ExternRef(&'a ExternRef),
     Float32Array(&'a [f32]),
@@ -78,6 +79,10 @@ impl<'a> InvokeParam<'a> {
                 param_bytes.push(11);
                 param_bytes.extend_from_slice(&i.to_le_bytes());
             }
+            InvokeParam::Int32(i) => {
+                param_bytes.push(12);
+                param_bytes.extend_from_slice(&i.to_le_bytes());
+            }
         }
         param_bytes
     }
@@ -94,25 +99,25 @@ pub fn serialize_params(params: &[InvokeParam]) -> Vec<u8> {
 
 #[cfg(not(test))]
 extern "C" {
-    fn __invoke_and_return_number(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
-    fn __invoke_and_return_ref(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
+    fn __invoke_and_return_number(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> i32;
     fn __invoke_and_return_bigint(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> i64;
+    fn __invoke_and_return_ref(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
     fn __invoke_and_return_string(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
     fn __invoke_and_return_array_buffer(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u32;
 }
 
 #[cfg(test)]
-unsafe fn __invoke_and_return_number(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
-#[cfg(test)]
-unsafe fn __invoke_and_return_ref(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
+unsafe fn __invoke_and_return_number(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> i32 { 0 }
 #[cfg(test)]
 unsafe fn __invoke_and_return_bigint(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> i64 { 0 }
+#[cfg(test)]
+unsafe fn __invoke_and_return_ref(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 #[cfg(test)]
 unsafe fn __invoke_and_return_string(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 #[cfg(test)]
 unsafe fn __invoke_and_return_array_buffer(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u32 { 0 }
 
-pub fn invoke_and_return_number(code: &str, params: &[InvokeParam]) -> u32 {
+pub fn invoke_and_return_number(code: &str, params: &[InvokeParam]) -> i32 {
     let param_bytes = ManuallyDrop::new(serialize_params(params));
     unsafe { __invoke_and_return_number(code.as_ptr(), code.len() as u32, param_bytes.as_ptr(), param_bytes.len() as u32) }
 }

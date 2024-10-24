@@ -35,7 +35,7 @@ pub fn prompt(message: &str, placeholder: &str) -> String {
             return allocationId;
         }"#;
     let text_allocation_id = crate::js::invoke_and_return_number(code, &[InvokeParam::String(message), InvokeParam::String(placeholder)]);
-    let text = get_string_from_allocation(text_allocation_id);
+    let text = get_string_from_allocation(text_allocation_id as u32);
     text
 }
 

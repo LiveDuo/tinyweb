@@ -10,14 +10,14 @@ pub fn random() -> f32 {
     crate::js::invoke_and_return_number(code, &[]) as f32
 }
 
-pub fn get_property_u32(element: &ExternRef, property: &str) -> u32 {
+pub fn get_property_i32(element: &ExternRef, property: &str) -> i32 {
     let code = "function(element, property){ return element[property]; }";
     crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property)])
 }
 
-pub fn set_property_u32(element: &ExternRef, property: &str, value: u32) {
+pub fn set_property_i32(element: &ExternRef, property: &str, value: i32) {
     let code = "function(element, property, value){ element[property] = value; }";
-    crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Uint32(value)]);
+    crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property), InvokeParam::Int32(value)]);
 }
 
 pub fn get_property_i64(element: &ExternRef, property: &str) -> i64 {
@@ -60,7 +60,7 @@ pub fn get_property_string(element: &ExternRef, property: &str) -> String {
             return allocationId;
         }"#;
     let text_allocation_id = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::String(property)]);
-    let text = get_string_from_allocation(text_allocation_id);
+    let text = get_string_from_allocation(text_allocation_id as u32);
     text
 }
 
