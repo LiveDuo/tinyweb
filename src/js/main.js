@@ -79,29 +79,29 @@ const getWasmImports = () => {
         __invoke_function (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = functions[functionId].call({}, ...values)
-            if (object === undefined || object === null) throw new Error('Invalid return')
+            if (result === undefined || result === null) throw new Error('Invalid return')
 
             return result
         },
         __invoke_function_and_return_object (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const object = functions[functionId].call({}, ...values)
-            if (object === undefined || object === null) throw new Error('Invalid return object')
+            if (result === undefined || result === null) throw new Error('Invalid return object')
 
-            objects.push(object)
+            objects.push(result)
             return BigInt(objects.length - 1)
         },
         __invoke_function_and_return_bool (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = functions[functionId].call({}, ...values)
-            if (object === undefined || object === null) throw new Error('Invalid return bool')
+            if (result === undefined || result === null) throw new Error('Invalid return bool')
 
             return result ? 1 : 0
         },
         __invoke_function_and_return_bigint (functionId, ptr, len) {
             const values = readParamsFromMemory(ptr, len)
             const result = functions[functionId].call({}, ...values)
-            if (object === undefined || object === null) throw new Error('Invalid return big int')
+            if (result === undefined || result === null) throw new Error('Invalid return big int')
 
             return result
         },
