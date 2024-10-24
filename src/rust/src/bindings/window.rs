@@ -75,9 +75,9 @@ thread_local! {
 }
 
 #[no_mangle]
-pub extern "C" fn web_one_time_empty_handler(id: u64) {
+pub extern "C" fn web_one_time_empty_handler(callback_id: u64) {
     TIMEOUT_HANDLERS.with(|h| {
-        if let Some(mut handler) = h.lock().unwrap().remove(&(id as u32)) {
+        if let Some(mut handler) = h.lock().unwrap().remove(&(callback_id as u32)) {
             handler();
         }
     });
@@ -179,27 +179,24 @@ thread_local! {
     static HISTORY_POP_STATE_HANDLERS: Mutex<HashMap<Rc<ExternRef>, Box<dyn FnMut(PopStateEvent) + 'static>>> = Default::default();
 }
 
-fn add_history_pop_state_event_handler(
-    id: Rc<ExternRef>,
-    handler: Box<dyn FnMut(PopStateEvent) + 'static>,
-) {
+fn add_history_pop_state_event_handler(callback_id: Rc<ExternRef>, handler: Box<dyn FnMut(PopStateEvent) + 'static>) {
     HISTORY_POP_STATE_HANDLERS.with(|s| {
-        s.lock().unwrap().insert(id, handler);
+        s.lock().unwrap().insert(callback_id, handler);
     });
 }
 
-fn remove_history_pop_state_event_handler(id: &Rc<ExternRef>) {
+fn remove_history_pop_state_event_handler(callback_id: &Rc<ExternRef>) {
     HISTORY_POP_STATE_HANDLERS.with(|s| {
-        s.lock().unwrap().remove(id);
+        s.lock().unwrap().remove(callback_id);
     });
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_history_pop_state_event(id: u64) {
+pub extern "C" fn web_handle_history_pop_state_event(callback_id: u64) {
     HISTORY_POP_STATE_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {
-            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == id as u32).unwrap();
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id as u32).unwrap();
             handler as *mut Box<dyn FnMut(PopStateEvent) + 'static>
         }).unwrap();
 

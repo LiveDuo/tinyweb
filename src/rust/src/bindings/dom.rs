@@ -82,25 +82,25 @@ thread_local! {
     static ELEMENT_CHANGE_HANDLERS: Mutex<HashMap<Rc<ExternRef>, Box<dyn FnMut(ChangeEvent) + 'static>>> = Default::default();
 }
 
-fn add_change_event_handler(id: Rc<ExternRef>, handler: Box<dyn FnMut(ChangeEvent) + 'static>) {
+fn add_change_event_handler(callback_id: Rc<ExternRef>, handler: Box<dyn FnMut(ChangeEvent) + 'static>) {
     ELEMENT_CHANGE_HANDLERS.with(|s| {
-        s.lock().unwrap().insert(id, handler);
+        s.lock().unwrap().insert(callback_id, handler);
     });
 }
 
-fn remove_change_event_handler(id: &Rc<ExternRef>) {
+fn remove_change_event_handler(callback_id: &Rc<ExternRef>) {
 
     ELEMENT_CHANGE_HANDLERS.with(|s| {
-        s.lock().unwrap().remove(id);
+        s.lock().unwrap().remove(callback_id);
     });
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_change_event(id: i64, allocation_id: u32) {
+pub extern "C" fn web_handle_change_event(callback_id: u64, allocation_id: u32) {
     ELEMENT_CHANGE_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {
-            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == id as u32).unwrap();
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id as u32).unwrap();
             handler as *mut Box<dyn FnMut(ChangeEvent) + 'static>
         }).unwrap();
 
@@ -140,19 +140,19 @@ pub struct EventHandler<T> {
 }
 
 impl<T> EventHandler<T> {
-    pub fn add_listener(&self, id: Rc<ExternRef>, handler: Box<dyn FnMut(T) + 'static>) {
-        self.listeners.lock().map(|mut s| { s.insert(id, handler); }).unwrap();
+    pub fn add_listener(&self, callback_id: Rc<ExternRef>, handler: Box<dyn FnMut(T) + 'static>) {
+        self.listeners.lock().map(|mut s| { s.insert(callback_id, handler); }).unwrap();
     }
 
-    pub fn remove_listener(&self, id: &Rc<ExternRef>) {
+    pub fn remove_listener(&self, callback_id: &Rc<ExternRef>) {
         let mut handlers = self.listeners.lock().unwrap();
-        handlers.remove(id);
+        handlers.remove(callback_id);
     }
 
-    pub fn call(&self, id: u32, event: T) {
+    pub fn call(&self, callback_id: u32, event: T) {
 
         let handler = self.listeners.lock().map(|mut s| {
-            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == id).unwrap();
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id).unwrap();
             handler as *mut Box<dyn FnMut(T) + 'static>
         }).unwrap();
 
@@ -170,10 +170,10 @@ thread_local! {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_mouse_event_handler(id: u64, x: f64, y: f64) {
+pub extern "C" fn web_handle_mouse_event_handler(callback_id: u64, x: f64, y: f64) {
 
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.call(id as u32, MouseEvent { offset_x: x, offset_y: y });
+        s.call(callback_id as u32, MouseEvent { offset_x: x, offset_y: y });
     })
 }
 
@@ -305,12 +305,12 @@ fn remove_keyboard_event_handler(function_handle: &Rc<ExternRef>) {
 }
 
 #[no_mangle]
-pub extern "C" fn web_handle_keyboard_event_handler(id: u64, key_code: f64) {
+pub extern "C" fn web_handle_keyboard_event_handler(callback_id: u64, key_code: f64) {
 
     KEYBOARD_EVENT_HANDLERS.with(|s| {
 
         let handler = s.lock().map(|mut s| {
-            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == id as u32).unwrap();
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id as u32).unwrap();
             handler as *mut Box<dyn FnMut(KeyboardEvent) + 'static>
         }).unwrap();
 
