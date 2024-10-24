@@ -10,64 +10,43 @@ use crate::allocations::get_string_from_allocation;
 
 
 pub fn console_log(message: &str) {
-    let console_log = JsFunction::register(r#"
-        function(message){
-            console.log(message);
-        }"#);
-    console_log.invoke(&[InvokeParam::String(message)]);
+    let code = "function(message){ console.log(message); }";
+    JsFunction::invoke(code, &[InvokeParam::String(message)]);
 }
 
 pub fn console_error(message: &str) {
-    let console_error = JsFunction::register(r#"
-        function(message){
-            console.error(message);
-        }"#);
-    console_error.invoke(&[InvokeParam::String(message)]);
+    let code = "function(message){ console.error(message); }";
+    JsFunction::invoke(code, &[InvokeParam::String(message)]);
 }
 
 pub fn console_warn(message: &str) {
-    let console_warn = JsFunction::register(r#"
-        function(message){
-            console.warn(message);
-        }"#);
-    console_warn.invoke(&[InvokeParam::String(message)]);
+    let code = "function(message){ console.warn(message); }";
+    JsFunction::invoke(code, &[InvokeParam::String(message)]);
 }
 
 pub fn console_time(label: &str) {
-    let console_time = JsFunction::register(r#"
-        function(label){
-            console.time(label);
-        }"#);
-    console_time.invoke(&[InvokeParam::String(label)]);
+    let code = "function(label){ console.time(label); }";
+    JsFunction::invoke(code, &[InvokeParam::String(label)]);
 }
 
 pub fn console_time_end(label: &str) {
-    let console_time_end = JsFunction::register(r#"
-        function(label){
-            console.timeEnd(label);
-        }"#);
-    console_time_end.invoke(&[InvokeParam::String(label)]);
+    let code = "function(label){ console.timeEnd(label); }";
+    JsFunction::invoke(code, &[InvokeParam::String(label)]);
 }
 
 
 pub fn local_storage_set(key: &str, value: &str) {
-    let local_storage_set = JsFunction::register(r#"
-        function(key, value){
-            localStorage.setItem(key, value);
-        }"#);
-    local_storage_set.invoke(&[InvokeParam::String(key), InvokeParam::String(value)]);
+    let code = "function(key, value){ localStorage.setItem(key, value); }";
+    JsFunction::invoke(code, &[InvokeParam::String(key), InvokeParam::String(value)]);
 }
 
 pub fn local_storage_remove(key: &str) {
-    let local_storage_remove = JsFunction::register(r#"
-        function(key){
-            localStorage.removeItem(key);
-        }"#);
-    local_storage_remove.invoke(&[InvokeParam::String(key)]);
+    let code = "function(key){ localStorage.removeItem(key); }";
+    JsFunction::invoke(code, &[InvokeParam::String(key)]);
 }
 
 pub fn local_storage_get(key: &str) -> Option<String> {
-    let local_storage_get = JsFunction::register(r#"
+    let code = r#"
         function(key){
             const text = localStorage.getItem(key);
             if(text === null){
@@ -76,8 +55,8 @@ pub fn local_storage_get(key: &str) -> Option<String> {
             const buffer = (new TextEncoder()).encode(text);
             const allocationId = writeBufferToMemory(buffer);
             return allocationId;
-        }"#);
-    let text_allocation_id = local_storage_get.invoke(&[InvokeParam::String(key)]);
+        }"#;
+    let text_allocation_id = JsFunction::invoke(code, &[InvokeParam::String(key)]);
     if text_allocation_id == 0 {
         return None;
     }
@@ -86,11 +65,8 @@ pub fn local_storage_get(key: &str) -> Option<String> {
 }
 
 pub fn local_storage_clear() {
-    let local_storage_clear = JsFunction::register(r#"
-        function(){
-            localStorage.clear();
-        }"#);
-    local_storage_clear.invoke(&[]);
+    let code = "function(){ localStorage.clear(); }";
+    JsFunction::invoke(code, &[]);
 }
 
 
@@ -108,7 +84,7 @@ pub extern "C" fn web_one_time_empty_handler(id: i64) {
 }
 
 pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
-    let obj_handle = JsFunction::register(r#"
+    let code = r#"
         function(ms){
             const handler = () => {
                 wasmModule.instance.exports.web_one_time_empty_handler(id);
@@ -117,8 +93,8 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
             const id = allocate(handler);
             const handle = window.setTimeout(handler, ms);
             return {id,handle};
-        }"#)
-    .invoke_and_return_object(&[InvokeParam::Float64(ms.into())]);
+        }"#;
+    let obj_handle = JsFunction::invoke_and_return_object(code, &[InvokeParam::Float64(ms.into())]);
     let function_handle = get_property_i64(&obj_handle, "id");
     let timer_handle = get_property_f64(&obj_handle, "handle");
     TIMEOUT_HANDLERS.with(|h| {
@@ -128,128 +104,73 @@ pub fn set_timeout(handler: impl FnMut() + 'static, ms: impl Into<f64>) -> f64 {
 }
 
 pub fn clear_timeout(interval_id: impl Into<f64>) {
-    let clear_interval = JsFunction::register(r#"
-        function(interval_id){
-            window.clearTimeout(interval_id);
-        }"#);
-    clear_interval.invoke(&[InvokeParam::Float64(interval_id.into())]);
+    let code = "function(interval_id){ window.clearTimeout(interval_id); }";
+    JsFunction::invoke(code, &[InvokeParam::Float64(interval_id.into())]);
 }
 
 pub fn history_push_state(title: &str, url: &str) {
-    JsFunction::register("
-        function(title, url) {
-            window.history.pushState({}, title, url);
-        }
-        ")
-    .invoke(&[InvokeParam::String(title), InvokeParam::String(url)]);
+    let code = "function(title, url) { window.history.pushState({}, title, url); }";
+    JsFunction::invoke(code, &[InvokeParam::String(title), InvokeParam::String(url)]);
 }
 
 pub fn history_replace_state(title: &str, url: &str) {
-    JsFunction::register("
-        function(title, url) {
-            window.history.replaceState({}, title, url);
-        }
-        ")
-    .invoke(&[InvokeParam::String(title), InvokeParam::String(url)]);
+    let code = "function(title, url) { window.history.replaceState({}, title, url); }";
+    JsFunction::invoke(code, &[InvokeParam::String(title), InvokeParam::String(url)]);
 }
 
 pub fn history_back() {
-    JsFunction::register("
-        function() {
-            window.history.back();
-        }
-        ")
-    .invoke(&[]);
+    let code = "function() { window.history.back(); }";
+    JsFunction::invoke(code, &[]);
 }
 
 pub fn history_forward() {
-    JsFunction::register("
-        function() {
-            window.history.forward();
-        }
-        ")
-    .invoke(&[]);
+    let code = "function() { window.history.forward(); }";
+    JsFunction::invoke(code, &[]);
 }
 
 pub fn history_go(delta: i32) {
-    JsFunction::register("
-        function(delta) {
-            window.history.go(delta);
-        }
-        ")
-    .invoke(&[InvokeParam::Float64(delta as f64)]);
+    let code = "function(delta) { window.history.go(delta); }";
+    JsFunction::invoke(code, &[InvokeParam::Float64(delta as f64)]);
 }
 
 pub fn history_length() -> u32 {
-    JsFunction::register("
-        function() {
-            return window.history.length;
-        }
-        ")
-    .invoke(&[]) as u32
+    let code = "function() { return window.history.length; }";
+    JsFunction::invoke(code, &[]) as u32
 }
 
 pub fn location_url() -> String {
-    JsFunction::register("
-        function() {
-            return window.location.href;
-        }
-        ")
-    .invoke_and_return_string(&[])
+    let code = "function() { return window.location.href; }";
+    JsFunction::invoke_and_return_string(code, &[])
 }
 
 pub fn location_host() -> String {
-    JsFunction::register("
-        function() {
-            return window.location.host;
-        }
-        ")
-    .invoke_and_return_string(&[])
+    let code = "function() { return window.location.host; }";
+    JsFunction::invoke_and_return_string(code, &[])
 }
 
 pub fn location_hostname() -> String {
-    JsFunction::register("
-        function() {
-            return window.location.hostname;
-        }
-        ")
-    .invoke_and_return_string(&[])
+    let code = "function() { return window.location.hostname; }";
+    JsFunction::invoke_and_return_string(code, &[])
 }
 
 pub fn location_pathname() -> String {
-    JsFunction::register("
-        function() {
-            return window.location.pathname;
-        }
-        ")
-    .invoke_and_return_string(&[])
+    let code = "function() { return window.location.pathname; }";
+    JsFunction::invoke_and_return_string(code, &[])
 }
 
 pub fn location_search() -> String {
-    JsFunction::register("
-        function() {
-            return window.location.search;
-        }
-        ")
-    .invoke_and_return_string(&[])
+    let code = "function() { return window.location.search; }";
+    JsFunction::invoke_and_return_string(code, &[])
 }
 
 pub fn location_hash() -> String {
-    JsFunction::register("
-        function() {
-            return window.location.hash;
-        }
-        ")
-    .invoke_and_return_string(&[])
+    let code = "function() { return window.location.hash; }";
+    JsFunction::invoke_and_return_string(code, &[])
 }
 
 pub fn location_reload() {
-    JsFunction::register("
-        function() {
-            window.location.reload();
-        }
-        ")
-    .invoke(&[]);
+    let code = "function() { window.location.reload(); }";
+    JsFunction::invoke(code, &[]);
 }
 
 pub struct PopStateEvent {}
@@ -287,7 +208,7 @@ pub extern "C" fn web_handle_history_pop_state_event(id: i64) {
 }
 
 pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) + 'static) -> Rc<ExternRef> {
-    let function_ref = JsFunction::register(r#"
+    let code = r#"
         function(){
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_history_pop_state_event(id);
@@ -295,18 +216,15 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) +
             const id = allocate(handler);
             window.addEventListener("popstate",handler);
             return id;
-        }"#)
-    .invoke_and_return_bigint(&[]);
+        }"#;
+    let function_ref = JsFunction::invoke_and_return_bigint(code, &[]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     add_history_pop_state_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
 pub fn remove_history_pop_state_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
-    JsFunction::register(r#"
-        function(element, f){
-            window.removeEventListener("popstate", f);
-        }"#)
-    .invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
+    let code = "function(element, f){ window.removeEventListener('popstate', f); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     remove_history_pop_state_event_handler(function_handle);
 }

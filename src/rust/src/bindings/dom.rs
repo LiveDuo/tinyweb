@@ -7,104 +7,71 @@ use std::sync::Mutex;
 use std::rc::Rc;
 
 pub fn create_element(tag: &str) -> ExternRef {
-    let create_fn = JsFunction::register(r#"
-        function (t) {
-            return document.createElement(t);
-        }"#);
-    create_fn.invoke_and_return_object(&[InvokeParam::String(tag)])
+    let code = "function (t) { return document.createElement(t); }";
+    JsFunction::invoke_and_return_object(code, &[InvokeParam::String(tag)])
 }
 
 pub fn create_text_node(text: &str) -> ExternRef {
-    let create_fn = JsFunction::register(r#"
-        function (t) {
-            return document.createTextNode(t);
-        }"#);
-    create_fn.invoke_and_return_object(&[InvokeParam::String(text)])
+    let code = "function (t) { return document.createTextNode(t); }";
+    JsFunction::invoke_and_return_object(code, &[InvokeParam::String(text)])
 }
 
 pub fn append_child(parent: &ExternRef, child: &ExternRef) {
-    let append_fn = JsFunction::register("
-        function (p, e) {
-            p.appendChild(e);
-        }");
-    append_fn.invoke(&[InvokeParam::ExternRef(parent), InvokeParam::ExternRef(child)]);
+    let code = "function (p, e) { p.appendChild(e); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(parent), InvokeParam::ExternRef(child)]);
 }
 
 pub fn alert(message: &str) {
-    let message_fn = JsFunction::register(r#"
-        function(message){
-            alert(message);
-        }"#);
-    message_fn.invoke(&[InvokeParam::String(message)]);
+    let code = "function(message){ alert(message); }";
+    JsFunction::invoke(code, &[InvokeParam::String(message)]);
 }
 
 pub fn prompt(message: &str, placeholder: &str) -> String {
-    let message_fn = JsFunction::register(r#"
+    let code = r#"
         function(message, placeholder){
             const text = prompt(message, placeholder);
             const buffer = (new TextEncoder()).encode(text);
             const allocationId = writeBufferToMemory(buffer);
             return allocationId;
-        }"#);
-    let text_allocation_id = message_fn.invoke(&[InvokeParam::String(message), InvokeParam::String(placeholder)]);
+        }"#;
+    let text_allocation_id = JsFunction::invoke(code, &[InvokeParam::String(message), InvokeParam::String(placeholder)]);
     let text = get_string_from_allocation(text_allocation_id);
     text
 }
 
 pub fn query_selector(selector: &str) -> ExternRef {
-    let query_selector = JsFunction::register(r#"
-        function(selector){
-            return document.querySelector(selector);
-        }"#);
-    query_selector.invoke_and_return_object(&[InvokeParam::String(selector)])
+    let code = "function(s){ return document.querySelector(s); }";
+    JsFunction::invoke_and_return_object(code, &[InvokeParam::String(selector)])
 }
 
 pub fn element_set_inner_html(element: &ExternRef, html: &str) {
-    let set_inner_html = JsFunction::register(r#"
-        function(element, html){
-            element.innerHTML = html;
-        }"#);
-    set_inner_html.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(html)]);
+    let code = "function(element, html){ element.innerHTML = html; }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(html)]);
 }
 
 pub fn element_add_class(element: &ExternRef, class: &str) {
-    let add_class = JsFunction::register(r#"
-        function(element, c){
-            element.classList.add(c);
-        }"#);
-    add_class.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(class)]);
+    let code = "function(element, c){ element.classList.add(c); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(class)]);
 }
 
 pub fn element_remove_class(element: &ExternRef, class: &str) {
-    let remove_class = JsFunction::register(r#"
-        function(element, c){
-            element.classList.remove(c);
-        }"#);
-    remove_class.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(class)]);
+    let code = "function(element, c){ element.classList.remove(c); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(class)]);
 }
 
 pub fn element_set_style_attribute(element: &ExternRef, attribute: &str, value: &str) {
-    let set_style_attribute = JsFunction::register(r#"
-        function(element, attribute, value){
-            element.style[attribute] = value;
-        }"#);
-    set_style_attribute.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(attribute), InvokeParam::String(value)]);
+    let code = "function(element, attribute, value){ element.style[attribute] = value; }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(attribute), InvokeParam::String(value)]);
 }
 
 pub fn element_set_attribute(element: &ExternRef, attribute: &str, value: &str) {
-    let set_attribute = JsFunction::register(r#"
-        function(element, attribute, value){
-            element.setAttribute(attribute, value);
-        }"#);
-    set_attribute.invoke(&[InvokeParam::ExternRef(element), InvokeParam::String(attribute), InvokeParam::String(value)]);
+    let code = "function(element, attribute, value){ element.setAttribute(attribute, value); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::String(attribute), InvokeParam::String(value)]);
 }
 
 pub fn element_remove(element: &ExternRef) {
-    let remove = JsFunction::register(r#"
-        function(element){
-            element.remove();
-        }"#);
-    remove.invoke(&[InvokeParam::ExternRef(element)]);
+    let code = "function(element){ element.remove(); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element)]);
 }
 
 pub struct ChangeEvent {
@@ -144,7 +111,7 @@ pub extern "C" fn web_handle_change_event(id: i64, allocation_id: u32) {
 }
 
 pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(ChangeEvent) + 'static) -> Rc<ExternRef> {
-    let function_ref = JsFunction::register(r#"
+    let code = r#"
         function(element ){
             const handler = (e) => {
                 const text = e.target.value;
@@ -155,19 +122,16 @@ pub fn add_change_event_listener(element: &ExternRef, handler: impl FnMut(Change
             const id = allocate(handler);
             element.addEventListener("change",handler);
             return id;
-        }"#)
-    .invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
+        }"#;
+    let function_ref = JsFunction::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     add_change_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
 pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
-    let remove_change_listener = JsFunction::register(r#"
-        function(element, f){
-            element.removeEventListener("change", f);
-        }"#);
-    remove_change_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
+    let code = "function(element, f){ element.removeEventListener('change', f); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     remove_change_event_handler(function_handle);
 }
 
@@ -215,7 +179,7 @@ pub extern "C" fn web_handle_mouse_event_handler(id: i64, x: f64, y: f64) {
 
 pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
 
-    let function_ref = JsFunction::register(r#"
+    let code = r#"
         function(element ){
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
@@ -223,7 +187,8 @@ pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(Mouse
             const id = allocate(handler);
             element.addEventListener("click",handler);
             return id;
-        }"#).invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
+        }"#;
+    let function_ref = JsFunction::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
 
     MOUSE_EVENT_HANDLER.with(|s| {
@@ -233,18 +198,15 @@ pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(Mouse
 }
 
 pub fn element_remove_click_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
-    let remove_click_listener = JsFunction::register(r#"
-        function(element, f){
-            element.removeEventListener("click", f);
-        }"#);
-    remove_click_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
+    let code = "function(element, f){ element.removeEventListener('click', f); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
         s.remove_listener(function_handle);
     });
 }
 
 pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
-    let function_ref = JsFunction::register(r#"
+    let code = r#"
         function(element ){
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
@@ -252,7 +214,8 @@ pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(
             const id = allocate(handler);
             element.addEventListener("mousemove",handler);
             return id;
-        }"#).invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
+        }"#;
+    let function_ref = JsFunction::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
@@ -261,18 +224,15 @@ pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(
 }
 
 pub fn element_remove_mouse_move_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
-    let remove_mouse_move_listener = JsFunction::register(r#"
-        function(element, f){
-            element.removeEventListener("mousemove", f);
-        }"#);
-    remove_mouse_move_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
+    let code = "function(element, f){ element.removeEventListener('mousemove', f); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
         s.remove_listener(function_handle);
     });
 }
 
 pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
-    let function_ref = JsFunction::register(r#"
+    let code = r#"
         function(element ){
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
@@ -280,7 +240,8 @@ pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(
             const id = allocate(handler);
             element.addEventListener("mousedown",handler);
             return id;
-        }"#).invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
+        }"#;
+    let function_ref = JsFunction::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
@@ -289,18 +250,15 @@ pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(
 }
 
 pub fn element_remove_mouse_down_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
-    let remove_mouse_down_listener = JsFunction::register(r#"
-        function(element, f){
-            element.removeEventListener("mousedown", f);
-        }"#);
-    remove_mouse_down_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
+    let code = "function(element, f){ element.removeEventListener('mousedown', f); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
         s.remove_listener(function_handle);
     });
 }
 
 pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(MouseEvent) + 'static) -> Rc<ExternRef> {
-    let function_ref = JsFunction::register(r#"
+    let code = r#"
         function(element ){
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_mouse_event_handler(id,e.offsetX, e.offsetY);
@@ -308,7 +266,8 @@ pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(Mo
             const id = allocate(handler);
             element.addEventListener("mouseup",handler);
             return id;
-        }"#).invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
+        }"#;
+    let function_ref = JsFunction::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     MOUSE_EVENT_HANDLER.with(|s| {
         s.add_listener(function_handle.clone(), Box::new(handler));
@@ -317,11 +276,8 @@ pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(Mo
 }
 
 pub fn element_remove_mouse_up_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
-    let remove_mouse_up_listener = JsFunction::register(r#"
-        function(element, f){
-            element.removeEventListener("mouseup", f);
-        }"#);
-    remove_mouse_up_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
+    let code = "function(element, f){ element.removeEventListener('mouseup', f); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
         s.remove_listener(function_handle);
     });
@@ -364,7 +320,7 @@ pub extern "C" fn web_handle_keyboard_event_handler(id: i64, key_code: f64) {
 }
 
 pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(KeyboardEvent) + 'static) -> Rc<ExternRef> {
-    let function_ref = JsFunction::register(r#"
+    let code = r#"
         function(element ){
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
@@ -372,24 +328,21 @@ pub fn element_add_key_down_listener(element: &ExternRef, handler: impl FnMut(Ke
             const id = allocate(handler);
             element.addEventListener("keydown",handler);
             return id;
-        }"#)
-    .invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
+        }"#;
+    let function_ref = JsFunction::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     add_keyboard_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
 pub fn element_remove_key_down_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
-    let remove_key_down_listener = JsFunction::register(r#"
-        function(element, f){
-            element.removeEventListener("keydown", f);
-        }"#);
-    remove_key_down_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
+    let code = "function(element, f){ element.removeEventListener('keydown', f); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     remove_keyboard_event_handler(function_handle);
 }
 
 pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(KeyboardEvent) + 'static) -> Rc<ExternRef> {
-    let function_ref = JsFunction::register(r#"
+    let code = r#"
         function(element ){
             const handler = (e) => {
                 wasmModule.instance.exports.web_handle_keyboard_event_handler(id,e.keyCode);
@@ -397,19 +350,16 @@ pub fn element_add_key_up_listener(element: &ExternRef, handler: impl FnMut(Keyb
             const id = allocate(handler);
             element.addEventListener("keyup",handler);
             return id;
-        }"#)
-    .invoke_and_return_bigint(&[InvokeParam::ExternRef(element)]);
+        }"#;
+    let function_ref = JsFunction::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
     add_keyboard_event_handler(function_handle.clone(), Box::new(handler));
     function_handle
 }
 
 pub fn element_remove_key_up_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
-    let remove_key_up_listener = JsFunction::register(r#"
-        function(element, f){
-            element.removeEventListener("keyup", f);
-        }"#);
-    remove_key_up_listener.invoke(&[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
+    let code = "function(element, f){ element.removeEventListener('keyup', f); }";
+    JsFunction::invoke(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     remove_keyboard_event_handler(function_handle);
 }
 

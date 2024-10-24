@@ -114,56 +114,56 @@ fn __invoke_function_and_return_array_buffer(_function_id: u32, _ptr: *const u8,
 #[cfg(test)]
 fn __invoke_function_and_return_bool(_function_id: u32, _ptr: *const u8, _len: u32) -> u32 { 0 }
 
-pub struct JsFunction {
-    pub function_id: u32,
-}
+pub struct JsFunction {}
 
 #[allow(unused_unsafe)]
 impl JsFunction {
 
-    pub fn register(code: &str) -> Self {
-        Self { function_id: unsafe { __register_function(code.as_ptr(), code.len() as u32) } }
-    }
-
-    pub fn invoke(&self, params: &[InvokeParam]) -> u32 {
+    pub fn invoke(code: &str, params: &[InvokeParam]) -> u32 {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
-        unsafe { __invoke_function(self.function_id, me.as_mut_ptr(), me.len() as u32) }
+        let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
+        unsafe { __invoke_function(function_id, me.as_mut_ptr(), me.len() as u32) }
     }
 
-    pub fn invoke_and_return_object(&self, params: &[InvokeParam]) -> ExternRef {
+    pub fn invoke_and_return_object(code: &str, params: &[InvokeParam]) -> ExternRef {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
-        let handle = unsafe { __invoke_function_and_return_object(self.function_id, me.as_mut_ptr(), me.len() as u32) };
+        let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
+        let handle = unsafe { __invoke_function_and_return_object(function_id, me.as_mut_ptr(), me.len() as u32) };
         ExternRef { value: handle as u32 }
     }
 
-    pub fn invoke_and_return_bigint(&self, params: &[InvokeParam]) -> i64 {
+    pub fn invoke_and_return_bigint(code: &str, params: &[InvokeParam]) -> i64 {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
-        unsafe { __invoke_function_and_return_bigint(self.function_id, me.as_mut_ptr(), me.len() as u32) }
+        let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
+        unsafe { __invoke_function_and_return_bigint(function_id, me.as_mut_ptr(), me.len() as u32) }
     }
 
-    pub fn invoke_and_return_string(&self, params: &[InvokeParam]) -> String {
+    pub fn invoke_and_return_string(code: &str, params: &[InvokeParam]) -> String {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
+        let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
         let allocation_id =
-            unsafe { __invoke_function_and_return_string(self.function_id, me.as_mut_ptr(), me.len() as u32) };
+            unsafe { __invoke_function_and_return_string(function_id, me.as_mut_ptr(), me.len() as u32) };
         crate::allocations::get_string_from_allocation(allocation_id)
     }
 
-    pub fn invoke_and_return_array_buffer(&self, params: &[InvokeParam]) -> Vec<u8> {
+    pub fn invoke_and_return_array_buffer(code: &str, params: &[InvokeParam]) -> Vec<u8> {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
+        let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
         let allocation_id =
-            unsafe { __invoke_function_and_return_array_buffer(self.function_id, me.as_mut_ptr(), me.len() as u32) };
+            unsafe { __invoke_function_and_return_array_buffer(function_id, me.as_mut_ptr(), me.len() as u32) };
         crate::allocations::get_vec_from_allocation(allocation_id)
     }
 
-    pub fn invoke_and_return_bool(&self, params: &[InvokeParam]) -> bool {
+    pub fn invoke_and_return_bool(code: &str, params: &[InvokeParam]) -> bool {
         let param_bytes = serialize_params(params);
         let mut me = ManuallyDrop::new(param_bytes);
-        let ret = unsafe { __invoke_function_and_return_bool(self.function_id, me.as_mut_ptr(), me.len() as u32) };
+        let function_id = unsafe { __register_function(code.as_ptr(), code.len() as u32) };
+        let ret = unsafe { __invoke_function_and_return_bool(function_id, me.as_mut_ptr(), me.len() as u32) };
         ret != 0
     }
 }
@@ -226,20 +226,16 @@ mod tests {
     #[test]
     fn test_register_invoke() {
 
-        // register
-        let func = JsFunction::register("");
-        assert_eq!(func.function_id, 0);
-
         // invoke
-        let result = func.invoke(&[]);
+        let result = JsFunction::invoke("", &[]);
         assert_eq!(result, 0);
 
         // invoke and return object
-        let result = func.invoke_and_return_object(&[]);
+        let result = JsFunction::invoke_and_return_object("", &[]);
         assert_eq!(result, ExternRef { value: 0 });
 
         // invoke and return bigint
-        let result = func.invoke_and_return_bigint(&[]);
+        let result = JsFunction::invoke_and_return_bigint("", &[]);
         assert_eq!(result, 0);
 
         // invoke and return string
@@ -247,7 +243,7 @@ mod tests {
         crate::allocations::ALLOCATIONS.with_borrow_mut(|s| {
             *s = vec![Some(text.as_bytes().to_vec())];
         });
-        let result = func.invoke_and_return_string(&[]);
+        let result = JsFunction::invoke_and_return_string("", &[]);
         assert_eq!(result, "hello".to_owned());
 
         // invoke and return array buffer
@@ -255,11 +251,11 @@ mod tests {
         crate::allocations::ALLOCATIONS.with_borrow_mut(|s| {
             *s = vec![Some(vec.clone())];
         });
-        let result = func.invoke_and_return_array_buffer(&[]);
+        let result = JsFunction::invoke_and_return_array_buffer("", &[]);
         assert_eq!(result, vec);
 
         // invoke and return bool
-        let result = func.invoke_and_return_bool(&[]);
+        let result = JsFunction::invoke_and_return_bool("", &[]);
         assert_eq!(result, false);
     }
 

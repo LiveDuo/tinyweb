@@ -31,89 +31,53 @@ pub struct XMLHttpRequest(ExternRef);
 
 impl XMLHttpRequest {
     pub fn new() -> XMLHttpRequest {
-        let request = JsFunction::register("
-            function() {
-                return new XMLHttpRequest();
-            }
-            ")
-        .invoke_and_return_object(&[]);
+        let code = "function() { return new XMLHttpRequest(); }";
+        let request = JsFunction::invoke_and_return_object(code, &[]);
         XMLHttpRequest(request)
     }
 
     pub fn open(&self, method: &str, url: &str) {
-        JsFunction::register("
-            function(request, method, url) {
-                request.open(method, url);
-            }
-            ")
-        .invoke(&[InvokeParam::ExternRef(&self.0), InvokeParam::String(method), InvokeParam::String(url)]);
+        let code = "function(request, method, url) { request.open(method, url); }";
+        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(method), InvokeParam::String(url)]);
     }
 
     pub fn send(&self) {
-        JsFunction::register("
-            function(request) {
-                request.send();
-            }
-            ")
-        .invoke(&[InvokeParam::ExternRef(&self.0)]);
+        let code = "function(request) { request.send(); }";
+        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0)]);
     }
 
     pub fn send_with_body(&self, body: &str) {
-        JsFunction::register("
-            function(request, body) {
-                request.send(body);
-            }
-            ")
-        .invoke(&[InvokeParam::ExternRef(&self.0), InvokeParam::String(body)]);
+        let code = "function(request, body) { request.send(body); }";
+        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(body)]);
     }
 
     pub fn set_request_header(&self, key: &str, value: &str) {
-        JsFunction::register("
-            function(request, key, value) {
-                request.setRequestHeader(key, value);
-            }
-            ")
-        .invoke(&[InvokeParam::ExternRef(&self.0), InvokeParam::String(key), InvokeParam::String(value)]);
+        let code = "function(request, k, v) { request.setRequestHeader(k, v); }";
+        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(key), InvokeParam::String(value)]);
     }
 
     pub fn response_status(&self) -> u32 {
-        JsFunction::register("
-            function(request) {
-                return request.status;
-            }
-            ")
-        .invoke(&[InvokeParam::ExternRef(&self.0)]) as u32
+        let code = "function(request) { return request.status; }";
+        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0)]) as u32
     }
 
     pub fn response_text(&self) -> String {
-        JsFunction::register("
-            function(request) {
-                return request.responseText;
-            }
-            ")
-        .invoke_and_return_string(&[InvokeParam::ExternRef(&self.0)])
+        let code = "function(request) { return request.responseText; }";
+        JsFunction::invoke_and_return_string(code, &[InvokeParam::ExternRef(&self.0)])
     }
 
     pub fn response_array_buffer(&self) -> Vec<u8> {
-        JsFunction::register("
-            function(request) {
-                return request.response;
-            }
-            ")
-        .invoke_and_return_array_buffer(&[InvokeParam::ExternRef(&self.0)])
+        let code = "function(request) { return request.response; }";
+        JsFunction::invoke_and_return_array_buffer(code, &[InvokeParam::ExternRef(&self.0)])
     }
 
     pub fn response_header(&self, key: &str) -> String {
-        JsFunction::register("
-            function(request, key) {
-                return request.getResponseHeader(key);
-            }
-            ")
-        .invoke_and_return_string(&[InvokeParam::ExternRef(&self.0), InvokeParam::String(key)])
+        let code = "function(request, key) { return request.getResponseHeader(key); }";
+        JsFunction::invoke_and_return_string(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(key)])
     }
 
     pub fn set_on_load(&self, callback: impl FnMut() + 'static) {
-        let function_ref = JsFunction::register(r#"
+        let code = r#"
             function(request){
                 const handler = () => {
                     wasmModule.instance.exports.web_handle_http_load_event_handler(id);
@@ -122,18 +86,14 @@ impl XMLHttpRequest {
                 const id = allocate(handler);
                 request.onload = handler;
                 return id;
-            }"#)
-        .invoke_and_return_bigint(&[InvokeParam::ExternRef(&self.0)]);
+            }"#;
+        let function_ref = JsFunction::invoke_and_return_bigint(code, &[InvokeParam::ExternRef(&self.0)]);
         add_http_load_event_handler(function_ref, Box::new(callback));
     }
 
     pub fn set_response_type(&self, response_type: &str) {
-        JsFunction::register("
-            function(request, response_type) {
-                request.responseType = response_type;
-            }
-            ")
-        .invoke(&[InvokeParam::ExternRef(&self.0), InvokeParam::String(response_type)]);
+        let code = "function(request, response_type) { request.responseType = response_type; }";
+        JsFunction::invoke(code, &[InvokeParam::ExternRef(&self.0), InvokeParam::String(response_type)]);
     }
 }
 
