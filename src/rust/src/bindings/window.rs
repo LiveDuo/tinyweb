@@ -179,18 +179,6 @@ thread_local! {
     static HISTORY_POP_STATE_HANDLERS: Mutex<HashMap<Rc<ExternRef>, Box<dyn FnMut(PopStateEvent) + 'static>>> = Default::default();
 }
 
-fn add_history_pop_state_event_handler(callback_id: Rc<ExternRef>, handler: Box<dyn FnMut(PopStateEvent) + 'static>) {
-    HISTORY_POP_STATE_HANDLERS.with(|s| {
-        s.lock().unwrap().insert(callback_id, handler);
-    });
-}
-
-fn remove_history_pop_state_event_handler(callback_id: &Rc<ExternRef>) {
-    HISTORY_POP_STATE_HANDLERS.with(|s| {
-        s.lock().unwrap().remove(callback_id);
-    });
-}
-
 #[no_mangle]
 pub fn handle_pop_state_event_callback(callback_id: u32) {
     HISTORY_POP_STATE_HANDLERS.with(|s| {
@@ -217,12 +205,17 @@ pub fn add_history_pop_state_event_listener(handler: impl FnMut(PopStateEvent) +
         }"#;
     let function_ref = crate::js::invoke_and_return_number(code, &[]);
     let function_handle = Rc::new(ExternRef { value: function_ref as u32, });
-    add_history_pop_state_event_handler(function_handle.clone(), Box::new(handler));
+    let handler = Box::new(handler);
+    HISTORY_POP_STATE_HANDLERS.with(|s| {
+        s.lock().unwrap().insert(function_handle.clone(), handler);
+    });
     function_handle
 }
 
 pub fn remove_history_pop_state_listener(element: &ExternRef, function_handle: &Rc<ExternRef>) {
     let code = "function(element, f){ window.removeEventListener('popstate', f); }";
     crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
-    remove_history_pop_state_event_handler(function_handle);
+    HISTORY_POP_STATE_HANDLERS.with(|s| {
+        s.lock().unwrap().remove(function_handle);
+    });
 }
