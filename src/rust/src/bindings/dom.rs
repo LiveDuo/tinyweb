@@ -133,34 +133,13 @@ pub fn element_remove_change_listener(element: &ExternRef, function_handle: &Rc<
     });
 }
 
-pub struct EventHandler<T> {
-    pub listeners: Mutex<HashMap<ExternRef, Box<dyn FnMut(T) + 'static>>>,
-}
-
-impl<T> EventHandler<T> {
-    pub fn add_listener(&self, callback_id: ExternRef, handler: Box<dyn FnMut(T) + 'static>) {
-        self.listeners.lock().map(|mut s| { s.insert(callback_id, handler); }).unwrap();
-    }
-
-    pub fn remove_listener(&self, callback_id: &ExternRef) {
-        let mut handlers = self.listeners.lock().unwrap();
-        handlers.remove(callback_id);
-    }
-
-    pub fn call(&self, callback_id: u32, event: T) {
-
-        let handler = self.listeners.lock().map(|mut s| {
-            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id).unwrap();
-            handler as *mut Box<dyn FnMut(T) + 'static>
-        }).unwrap();
-
-        unsafe { (*handler)(event) }
-    }
-}
-
 pub struct MouseEvent {
     pub offset_x: f64,
     pub offset_y: f64,
+}
+
+pub struct EventHandler<T> {
+    pub listeners: Mutex<HashMap<ExternRef, Box<dyn FnMut(T) + 'static>>>,
 }
 
 thread_local! {
@@ -171,7 +150,12 @@ thread_local! {
 pub fn handle_mouse_event_callback(callback_id: u32, x: f64, y: f64) {
 
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.call(callback_id, MouseEvent { offset_x: x, offset_y: y });
+        let handler = s.listeners.lock().map(|mut s| {
+            let (_, handler) = s.iter_mut().find(|(s, _)| s.value == callback_id).unwrap();
+            handler as *mut Box<dyn FnMut(MouseEvent) + 'static>
+        }).unwrap();
+
+        unsafe { (*handler)(MouseEvent { offset_x: x, offset_y: y }) }
     })
 }
 
@@ -191,7 +175,7 @@ pub fn element_add_click_listener(element: &ExternRef, handler: impl FnMut(Mouse
     let function_handle = ExternRef { value: function_ref as u32, };
 
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.add_listener(function_handle.clone(), Box::new(handler));
+        s.listeners.lock().map(|mut s| { s.insert(function_handle.clone(), Box::new(handler)); }).unwrap();
     });
     function_handle
 }
@@ -200,7 +184,7 @@ pub fn element_remove_click_listener(element: &ExternRef, function_handle: &Rc<E
     let code = "function(element, f){ element.removeEventListener('click', f); }";
     crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.remove_listener(function_handle);
+        s.listeners.lock().map(|mut s| { s.remove(function_handle); }).unwrap();
     });
 }
 
@@ -218,7 +202,7 @@ pub fn element_add_mouse_move_listener(element: &ExternRef, handler: impl FnMut(
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = ExternRef { value: function_ref as u32, };
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.add_listener(function_handle.clone(), Box::new(handler));
+        s.listeners.lock().map(|mut s| { s.insert(function_handle.clone(), Box::new(handler)); }).unwrap();
     });
     function_handle
 }
@@ -227,7 +211,7 @@ pub fn element_remove_mouse_move_listener(element: &ExternRef, function_handle: 
     let code = "function(element, f){ element.removeEventListener('mousemove', f); }";
     crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.remove_listener(function_handle);
+        s.listeners.lock().map(|mut s| { s.remove(function_handle); }).unwrap();
     });
 }
 
@@ -245,7 +229,7 @@ pub fn element_add_mouse_down_listener(element: &ExternRef, handler: impl FnMut(
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = ExternRef { value: function_ref as u32, };
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.add_listener(function_handle.clone(), Box::new(handler));
+        s.listeners.lock().map(|mut s| { s.insert(function_handle.clone(), Box::new(handler)); }).unwrap();
     });
     function_handle
 }
@@ -254,7 +238,7 @@ pub fn element_remove_mouse_down_listener(element: &ExternRef, function_handle: 
     let code = "function(element, f){ element.removeEventListener('mousedown', f); }";
     crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.remove_listener(function_handle);
+        s.listeners.lock().map(|mut s| { s.remove(function_handle); }).unwrap();
     });
 }
 
@@ -272,7 +256,7 @@ pub fn element_add_mouse_up_listener(element: &ExternRef, handler: impl FnMut(Mo
     let function_ref = crate::js::invoke_and_return_number(code, &[InvokeParam::ExternRef(element)]);
     let function_handle = ExternRef { value: function_ref as u32, };
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.add_listener(function_handle.clone(), Box::new(handler));
+        s.listeners.lock().map(|mut s| { s.insert(function_handle.clone(), Box::new(handler)); }).unwrap();
     });
     function_handle
 }
@@ -281,7 +265,7 @@ pub fn element_remove_mouse_up_listener(element: &ExternRef, function_handle: &R
     let code = "function(element, f){ element.removeEventListener('mouseup', f); }";
     crate::js::invoke_and_return(code, &[InvokeParam::ExternRef(element), InvokeParam::ExternRef(&function_handle)]);
     MOUSE_EVENT_HANDLER.with(|s| {
-        s.remove_listener(function_handle);
+        s.listeners.lock().map(|mut s| { s.remove(function_handle); }).unwrap();
     });
 }
 
@@ -401,14 +385,24 @@ mod tests {
         let handler = move |_| {
             *has_run_clone.borrow_mut() = true;
         };
-        EVENT_HANDLER.with(|s| s.add_listener(function_handle.clone(), Box::new(handler)));
+        EVENT_HANDLER.with(|s| {
+            s.listeners.lock().map(|mut s| { s.insert(function_handle.clone(), Box::new(handler)); }).unwrap();
+        });
 
         // call listener
-        EVENT_HANDLER.with(|s| s.call(0, ()));
+        EVENT_HANDLER.with(|s| {
+
+            let handler = s.listeners.lock().map(|mut s| {
+                let (_, handler) = s.iter_mut().find(|(s, _)| s.value == 0).unwrap();
+                handler as *mut Box<dyn FnMut(()) + 'static>
+            }).unwrap();
+
+            unsafe { (*handler)(()) }
+        });
         assert_eq!(*has_run.borrow(), true);
 
         // remove listener
-        EVENT_HANDLER.with(|s| s.remove_listener(&function_handle.clone()));
+        EVENT_HANDLER.with(|s| { s.listeners.lock().map(|mut s| { s.remove(&function_handle); }).unwrap(); });
         let count = EVENT_HANDLER.with(|s| s.listeners.lock().unwrap().len());
         assert_eq!(count, 0);
     }
