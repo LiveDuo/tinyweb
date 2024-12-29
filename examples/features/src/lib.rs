@@ -64,13 +64,11 @@ fn page1() -> El {
 
         })
         .classes(&["m-2"])
-        .child(El::new("button").text("api").classes(&BUTTON_CLASSES).on_event("click", |_| {
-            Runtime::block_on(async move {
-                let url = format!("https://pokeapi.co/api/v2/pokemon/{}", 1);
-                let result = fetch_json("GET", &url, None).await.unwrap();
-                let name = result["name"].as_str().unwrap();
-                Js::invoke("alert({})", &[name.into()]);
-            });
+        .child(El::new("button").text("api").classes(&BUTTON_CLASSES).on_event_async("click", move |_| async {
+            let url = format!("https://pokeapi.co/api/v2/pokemon/{}", 1);
+            let result = fetch_json("GET", &url, None).await.unwrap();
+            let name = result["name"].as_str().unwrap();
+            Js::invoke("alert({})", &[name.into()]);
         }))
         .child(El::new("button").text("page 2").classes(&BUTTON_CLASSES).on_event("click", move |_| {
             ROUTER.with(|s| { s.borrow().navigate("/page2"); });

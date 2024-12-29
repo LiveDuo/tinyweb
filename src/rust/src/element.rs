@@ -1,7 +1,10 @@
 
+use std::future::Future;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::invoke::{Js, ObjectRef};
+use crate::runtime::Runtime;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct El { pub element: ObjectRef, pub callbacks: RefCell<Vec<ObjectRef>> }
@@ -53,9 +56,38 @@ impl El {
         cb(Box::leak(Box::new(self.to_owned())));
         self
     }
+    pub fn on_mount_async<Fut: Future<Output = ()>>(self, mut cb: impl FnMut(&'static Self) -> Fut + 'static) -> Self {
+
+        let self_leak = Box::leak(Box::new(self.to_owned()));
+
+        Runtime::block_on(async move {
+            cb(self_leak).await;
+        });
+
+        self
+    }
     pub fn on_event(self, event: &str, cb: impl FnMut(ObjectRef) + 'static) -> Self {
 
         let function_ref = crate::callbacks::create_callback(cb);
+        let code = &format!("{{}}.addEventListener('{}',{{}})", event);
+        Js::invoke(code, &[self.element.into(), function_ref.into()]);
+
+        self.callbacks.borrow_mut().push(function_ref);
+
+        self
+    }
+    pub fn on_event_async<Fut: Future<Output = ()>>(self, event: &str, cb: impl FnMut(ObjectRef) -> Fut + 'static) -> Self {
+
+        let cb = Rc::new(RefCell::new(cb));
+        let cb_async = move |e| {
+            let cb = cb.clone();
+
+            Runtime::block_on(async move {
+                cb.borrow_mut()(e).await;
+            });
+        };
+
+        let function_ref = crate::callbacks::create_callback(cb_async);
         let code = &format!("{{}}.addEventListener('{}',{{}})", event);
         Js::invoke(code, &[self.element.into(), function_ref.into()]);
 
