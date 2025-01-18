@@ -2,7 +2,8 @@
 
 let wasmModule = {}
 
-const objects = []
+const objects = {}
+const MAX_U32 = 2 ** 32
 
 const textEncoder = new TextEncoder()
 const textDecoder = new TextDecoder()
@@ -69,16 +70,18 @@ const getWasmImports = () => {
               const ptr = writeBufferToMemory(textEncoder.encode(result))
               return (BigInt(1) << 32n) | BigInt(ptr)
             } else if (typeof result === "function") {
-              objects.push(result)
-              return (BigInt(2) << 32n) | BigInt(objects.length - 1)
+              const objectId = Math.floor(Math.random() * MAX_U32)
+              objects[objectId] = result
+              return (BigInt(2) << 32n) | BigInt(objectId)
             } else if (typeof result === "object") {
               // because js has no primitive types for arrays
               if (result instanceof Uint8Array) {
                 const ptr = writeBufferToMemory(new Uint8Array(result))
                 return (BigInt(3) << 32n) | BigInt(ptr)
               } else {
-                objects.push(result)
-                return (BigInt(2) << 32n) | BigInt(objects.length - 1)
+                const objectId = Math.floor(Math.random() * MAX_U32)
+                objects[objectId] = result
+                return (BigInt(2) << 32n) | BigInt(objectId)
               }
             } else if (typeof result === "string") {
               const ptr = writeBufferToMemory(textEncoder.encode(result))
@@ -92,8 +95,7 @@ const getWasmImports = () => {
             }
         },
       __deallocate(object_id) {
-          const index = objects.indexOf(object_id)
-          objects.splice(index, 1);
+          delete objects[object_id]
       }
     }
     return { env }

@@ -13,12 +13,12 @@ thread_local! {
 pub fn create_callback(mut handler: impl FnMut(ObjectRef) + 'static) -> ObjectRef {
     let code = r#"
         const handler = (e) => {
-            objects.push(e);
-            const callbackObjectId = objects.length - 1;
+            const callbackObjectId = Math.floor(Math.random() * MAX_U32)
+            objects[callbackObjectId] = e;
             wasmModule.instance.exports.handle_callback(objectId,callbackObjectId);
         };
-        objects.push(handler);
-        const objectId = objects.length - 1;
+        const objectId = Math.floor(Math.random() * MAX_U32)
+        objects[objectId] = handler;
         return objectId;
     "#;
     let object_id = Js::invoke(code, &[]).to_num().unwrap();
