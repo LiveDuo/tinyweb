@@ -45,7 +45,7 @@ fn component() -> El {
 
 #[no_mangle]
 pub fn main() {
-    let body = Js::invoke("return document.querySelector('body')"]).to_ref().unwrap();
+    let body = Js::invoke("return document.querySelector('body')", &[]).to_ref().unwrap();
     component().mount(&body);
 }
 ```
