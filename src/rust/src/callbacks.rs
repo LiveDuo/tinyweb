@@ -39,7 +39,7 @@ pub fn handle_callback(callback_id: u32, param: i32) {
         unsafe { (*handler)(object_ref) }
     });
 
-    Js::deallocate(object_ref);
+    // Js::deallocate(object_ref);
     Js::deallocate(callback_ref);
 }
 

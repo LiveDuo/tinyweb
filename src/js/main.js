@@ -68,7 +68,7 @@ const getWasmImports = () => {
         const result = runFunction(c_ptr, c_len, p_ptr, p_len)
         if (typeof result === "undefined") {
           return (BigInt(0) << 32n) | BigInt(0)
-        }  else if (typeof result === "number") {
+        } else if (typeof result === "number") {
           const ptr = writeBufferToMemory(textEncoder.encode(result))
           return (BigInt(1) << 32n) | BigInt(ptr)
         } else if (typeof result === "function") {
