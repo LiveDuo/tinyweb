@@ -13,12 +13,12 @@ thread_local! {
 pub fn create_callback(mut handler: impl FnMut(ObjectRef) + 'static) -> ObjectRef {
     let code = r#"
         const handler = (e) => {
-            objects.push(e);
-            const callbackObjectId = objects.length - 1;
-            wasmModule.instance.exports.handle_callback(objectId,callbackObjectId);
+            const handlerObjectId = getRandomId();
+            objects.set(handlerObjectId, e);
+            wasmModule.instance.exports.handle_callback(objectId, handlerObjectId);
         };
-        objects.push(handler);
-        const objectId = objects.length - 1;
+        const objectId = getRandomId();
+        objects.set(objectId, handler);
         return objectId;
     "#;
     let object_id = Js::invoke(code, &[]).to_num().unwrap();
@@ -32,13 +32,15 @@ pub fn create_callback(mut handler: impl FnMut(ObjectRef) + 'static) -> ObjectRe
 pub fn handle_callback(callback_id: u32, param: i32) {
 
     let object_ref = ObjectRef::new(param as u32);
+    let callback_ref = ObjectRef::new(callback_id);
 
     CALLBACK_HANDLERS.with(|s| {
-        let handler = s.borrow_mut().get_mut(&ObjectRef::new(callback_id)).unwrap() as *mut Box<dyn FnMut(_) + 'static>;
+        let handler = s.borrow_mut().get_mut(&callback_ref).unwrap() as *mut Box<dyn FnMut(_) + 'static>;
         unsafe { (*handler)(object_ref) }
     });
 
     Js::deallocate(object_ref);
+    Js::deallocate(callback_ref);
 }
 
 pub fn create_async_callback() -> (ObjectRef, FutureTask<ObjectRef>) {
