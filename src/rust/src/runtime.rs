@@ -35,14 +35,14 @@ impl Future for FutureTask {
     }
 }
 
-// impl Drop for FutureTask {
-//     fn drop(&mut self) {
-//         match *self.state.borrow_mut() {
-//             FutureState::Ready(id) => Js::deallocate(id),
-//             _ => {}
-//         }
-//     }
-// }
+impl Drop for FutureTask {
+    fn drop(&mut self) {
+        match *self.state.borrow_mut() {
+            FutureState::Ready(id) => Js::deallocate(id),
+            _ => {}
+        }
+    }
+}
 
 impl Runtime {
 

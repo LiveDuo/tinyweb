@@ -27,7 +27,8 @@ async fn fetch_json(method: &str, url: &str, body: Option<JsonValue>) -> Result<
         fetch({}, options).then(r => r.json()).then(r => { {}(r) })
     "#;
     Js::invoke(request, &[method.into(), body.into(), url.into(), callback_ref.into()]);
-    let result_ref = future.await;
+    let future_leak = Box::leak(Box::new(future));
+    let result_ref = future_leak.await;
     let result = Js::invoke("return JSON.stringify({})", &[result_ref.into()]).to_str().unwrap();
     Js::deallocate(result_ref);
     json::parse(&result).map_err(|_| "Parse error".to_owned())
@@ -57,11 +58,9 @@ fn page1() -> El {
             Runtime::block_on(async move {
                 loop {
                     signal_time.set("⏰ tik");
-                    let result_id = Runtime::promise("window.setTimeout({},{})", move |c| vec![c.into(), 1_000.into()]).await;
-                    Js::deallocate(result_id);
+                    Runtime::promise("window.setTimeout({},{})", move |c| vec![c.into(), 1_000.into()]).await;
                     signal_time.set("⏰ tok");
-                    let result_id = Runtime::promise("window.setTimeout({},{})", move |c| vec![c.into(), 1_000.into()]).await;
-                    Js::deallocate(result_id);
+                    Runtime::promise("window.setTimeout({},{})", move |c| vec![c.into(), 1_000.into()]).await;
                 }
             });
 
