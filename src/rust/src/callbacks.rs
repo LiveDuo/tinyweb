@@ -39,12 +39,10 @@ pub fn handle_callback(callback_id: u32, param_id: u32) {
         unsafe { (*handler)(object_ref) }
     });
 
-    // TODO restore deallocate
-    // Js::deallocate(object_ref);
     Js::deallocate(callback_ref);
 }
 
-pub fn create_async_callback() -> (ObjectRef, FutureTask<ObjectRef>) {
+pub fn create_async_callback() -> (ObjectRef, FutureTask) {
     let future = FutureTask { state: Rc::new(RefCell::new(FutureState::Init)) };
     let state_clone = future.state.clone();
     let callback_ref = create_callback(move |e| {

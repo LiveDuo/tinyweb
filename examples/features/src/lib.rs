@@ -29,6 +29,7 @@ async fn fetch_json(method: &str, url: &str, body: Option<JsonValue>) -> Result<
     Js::invoke(request, &[method.into(), body.into(), url.into(), callback_ref.into()]);
     let result_ref = future.await;
     let result = Js::invoke("return JSON.stringify({})", &[result_ref.into()]).to_str().unwrap();
+    Js::deallocate(result_ref);
     json::parse(&result).map_err(|_| "Parse error".to_owned())
 }
 
@@ -56,9 +57,11 @@ fn page1() -> El {
             Runtime::block_on(async move {
                 loop {
                     signal_time.set("⏰ tik");
-                    Runtime::promise("window.setTimeout({},{})", move |c| vec![c.into(), 1_000.into()]).await;
+                    let result_id = Runtime::promise("window.setTimeout({},{})", move |c| vec![c.into(), 1_000.into()]).await;
+                    Js::deallocate(result_id);
                     signal_time.set("⏰ tok");
-                    Runtime::promise("window.setTimeout({},{})", move |c| vec![c.into(), 1_000.into()]).await;
+                    let result_id = Runtime::promise("window.setTimeout({},{})", move |c| vec![c.into(), 1_000.into()]).await;
+                    Js::deallocate(result_id);
                 }
             });
 
