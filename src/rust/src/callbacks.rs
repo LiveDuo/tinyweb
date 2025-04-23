@@ -29,9 +29,9 @@ pub fn create_callback(mut handler: impl FnMut(ObjectRef) + 'static) -> ObjectRe
 }
 
 #[no_mangle]
-pub fn handle_callback(callback_id: u32, param: i32) {
+pub fn handle_callback(callback_id: u32, param_id: u32) {
 
-    let object_ref = ObjectRef::new(param as u32);
+    let object_ref = ObjectRef::new(param_id as u32);
     let callback_ref = ObjectRef::new(callback_id);
 
     CALLBACK_HANDLERS.with(|s| {
@@ -39,6 +39,7 @@ pub fn handle_callback(callback_id: u32, param: i32) {
         unsafe { (*handler)(object_ref) }
     });
 
+    // TODO restore deallocate
     // Js::deallocate(object_ref);
     Js::deallocate(callback_ref);
 }
