@@ -3,7 +3,7 @@
 let wasmModule = {}
 
 const objects = new Map()
-window.objects = objects
+if (typeof window !== 'undefined') window.objects = objects
 
 const getRandomId = () => Math.floor(Math.random() * Number(0xFFFFn))
 
