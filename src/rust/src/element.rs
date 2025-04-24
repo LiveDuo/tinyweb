@@ -87,6 +87,7 @@ impl El {
 
             Runtime::block_on(async move {
                 cb.borrow_mut()(e).await;
+                Js::deallocate(e);
             });
         };
 
