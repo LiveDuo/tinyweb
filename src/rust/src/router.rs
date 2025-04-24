@@ -12,7 +12,7 @@ impl Page {
     pub fn new(path: &str, element: El) -> Self {
         Self { path: path.to_owned(), element, title: None }
     }
-    pub fn ttile(mut self, title: String) -> Self {
+    pub fn title(mut self, title: String) -> Self {
         self.title = Some(title);
         self
     }
