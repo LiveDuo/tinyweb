@@ -4,13 +4,13 @@ use std::ops::Deref;
 #[cfg(not(test))]
 extern "C" {
     fn __invoke(c_ptr: *const u8, c_len: u32, p_ptr: *const u8, p_len: u32) -> u64;
-    fn __deallocate(object_id: *const u8);
+    fn __deallocate(object_id: u32);
 }
 
 #[cfg(test)]
 unsafe fn __invoke(_c_ptr: *const u8, _c_len: u32, _p_ptr: *const u8, _p_len: u32) -> u64 { 0 }
 #[cfg(test)]
-unsafe fn __deallocate(_object_id: *const u8) {}
+unsafe fn __deallocate(_object_id: u32) {}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ObjectRef(u32);
@@ -169,7 +169,7 @@ impl Js {
         JsValue::deserialize(r_type, r_value)
     }
     pub fn deallocate(object_id: ObjectRef) {
-        unsafe { __deallocate(*object_id as *const u8) };
+        unsafe { __deallocate(*object_id) };
     }
 }
 

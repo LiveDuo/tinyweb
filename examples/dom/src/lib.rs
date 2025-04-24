@@ -10,7 +10,7 @@ pub fn main() {
     let button = Js::invoke("return document.createElement('button')", &[]).to_ref().unwrap();
     Js::invoke("{}.textContent = 'Click'", &[button.into()]);
 
-    let function_ref = create_callback(move |_s| { Js::invoke("alert('hello')", &[]); });
+    let function_ref = create_callback(move |e| { Js::invoke("alert('hello')", &[]); Js::deallocate(e); });
     Js::invoke("{}.addEventListener('click',{})", &[button.into(), function_ref.into()]);
 
     let body = Js::invoke("return document.querySelector('body')", &[]).to_ref().unwrap();

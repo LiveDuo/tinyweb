@@ -85,9 +85,8 @@ impl El {
         let cb_async = move |e| {
             let cb = cb.clone();
 
-            Runtime::block_on(async move {
-                cb.borrow_mut()(e).await;
-            });
+            Runtime::block_on(async move { cb.borrow_mut()(e).await; });
+            Js::deallocate(e);
         };
 
         let function_ref = crate::callbacks::create_callback(cb_async);

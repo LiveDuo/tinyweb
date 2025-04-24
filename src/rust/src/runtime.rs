@@ -10,17 +10,17 @@ use std::{
 use crate::callbacks::{create_async_callback, create_callback};
 use crate::invoke::{Js, JsValue, ObjectRef};
 
-pub enum FutureState<T> { Init, Pending(Waker), Ready(T) }
-pub struct FutureTask<T> { pub state: Rc<RefCell<FutureState<T>>> }
+pub enum FutureState { Init, Pending(Waker), Ready(ObjectRef) }
+pub struct FutureTask { pub state: Rc<RefCell<FutureState>> }
 
 pub struct Runtime {}
 
 type FutureRc<T> = Rc<RefCell<Pin<Box<dyn Future<Output = T>>>>>;
 
-impl<T: Clone + 'static> Future for FutureTask<T> {
-    type Output = T;
+impl Future for FutureTask {
+    type Output = ObjectRef;
 
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<ObjectRef> {
 
         let mut future_state = self.state.borrow_mut();
         match &*future_state {
@@ -31,6 +31,15 @@ impl<T: Clone + 'static> Future for FutureTask<T> {
                 *future_state = FutureState::Pending(cx.waker().to_owned());
                 Poll::Pending
             }
+        }
+    }
+}
+
+impl Drop for FutureTask {
+    fn drop(&mut self) {
+        match *self.state.borrow_mut() {
+            FutureState::Ready(id) => Js::deallocate(id),
+            _ => {}
         }
     }
 }
@@ -54,7 +63,7 @@ impl Runtime {
         }
         fn wake_fn<T: 'static>(ptr: *const ()) {
             let future = unsafe { FutureRc::<T>::from_raw(ptr as *const _) };
-            let function_ref = create_callback(move |_| { Runtime::poll(&future); });
+            let function_ref = create_callback(move |e| { Runtime::poll(&future); Js::deallocate(e); });
             Js::invoke("window.setTimeout({},0)", &[function_ref.into()]);
         }
         fn drop_fn<T>(ptr: *const ()) {
@@ -72,7 +81,7 @@ impl Runtime {
         Self::poll(&Rc::new(RefCell::new(Box::pin(future))));
     }
 
-    pub fn promise<F: FnOnce(ObjectRef) -> Vec<JsValue>>(code: &str, params_fn: F) -> FutureTask<ObjectRef> {
+    pub fn promise<F: FnOnce(ObjectRef) -> Vec<JsValue>>(code: &str, params_fn: F) -> FutureTask {
         let (callback_ref, future) = create_async_callback();
         Js::invoke(code, &params_fn(callback_ref));
         future
@@ -94,14 +103,15 @@ mod tests {
         assert_eq!(matches!(*future_state.borrow(), FutureState::Init), true);
 
         // set to ready
-        *future_state.borrow_mut() = FutureState::Ready(true);
-        assert_eq!(matches!(*future_state.borrow(), FutureState::Ready(true)), true);
+        *future_state.borrow_mut() = FutureState::Ready(ObjectRef::new(42));
+        let _object_ref = ObjectRef::new(42);
+        assert_eq!(matches!(*future_state.borrow(), FutureState::Ready(_object_ref)), true);
 
         // block on future
-        let has_run = Rc::new(RefCell::new(false));
+        let has_run = Rc::new(RefCell::new(ObjectRef::new(42)));
         let has_run_clone = has_run.clone();
         Runtime::block_on(async move { *has_run_clone.borrow_mut() = future.await; });
-        assert_eq!(*has_run.borrow(), true);
+        assert_eq!(*has_run.borrow(), ObjectRef::new(42));
     }
 
 }
