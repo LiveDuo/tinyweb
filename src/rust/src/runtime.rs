@@ -63,7 +63,7 @@ impl Runtime {
         }
         fn wake_fn<T: 'static>(ptr: *const ()) {
             let future = unsafe { FutureRc::<T>::from_raw(ptr as *const _) };
-            let function_ref = create_callback(move |id| { Runtime::poll(&future); Js::deallocate(id); });
+            let function_ref = create_callback(move |e| { Runtime::poll(&future); Js::deallocate(e); });
             Js::invoke("window.setTimeout({},0)", &[function_ref.into()]);
         }
         fn drop_fn<T>(ptr: *const ()) {
